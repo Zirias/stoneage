@@ -11,6 +11,7 @@ Object_ctor(Object o, TypeList types)
 {
     types = RegisterType(types, CLASS_Object);
     o->types = types;
+    return o;
 }
 
 Type
