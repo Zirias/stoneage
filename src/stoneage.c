@@ -4,6 +4,11 @@
 
 Stoneage mainApp;
 
+// methods:
+void Stoneage_run(void *s);
+void Stoneage_abort(void *s);
+
+
 int
 main(int argc, char **argv)
 {
@@ -27,19 +32,23 @@ Stoneage_dtor(Stoneage s)
     Object_dtor((Object)s);
 }
 
-void Stoneage_run(Stoneage s)
+void Stoneage_run(void *s)
 {
-    s->screen = SDL_SetVideoMode(640, 480, 16, 0);
-    if (!s->screen)
+    METHOD(Stoneage, s);
+
+    this->screen = SDL_SetVideoMode(640, 480, 16, 0);
+    if (!this->screen)
     {
 	log_err("Unable to set video mode: %s\n", SDL_GetError());
-	s->abort(s);
+	this->abort(this);
     }
 }
 
-void Stoneage_abort(Stoneage s)
+void Stoneage_abort(void *s)
 {
-    Stoneage_dtor(s);
+    METHOD(Stoneage, s);
+
+    Stoneage_dtor(this);
     exit(-1);
 }
 

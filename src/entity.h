@@ -16,18 +16,18 @@ struct Entity
     int x;
     int y;
 
-    int (*init)(Entity);
+    int (*init)(void *);
 
     /* move around on the board */
-    int (*left)(Entity);
-    int (*right)(Entity);
-    int (*up)(Entity);
-    int (*down)(Entity);
+    int (*left)(void *);
+    int (*right)(void *);
+    int (*up)(void *);
+    int (*down)(void *);
 
-    int (*draw)(Entity);
+    int (*draw)(void *);
 };
 
 extern Entity Entity_ctor(Entity e, TypeList types);
-extern void Entity_delete(Entity e);
+extern void Entity_dtor(Entity e);
 
 #endif

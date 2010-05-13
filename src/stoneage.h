@@ -16,13 +16,11 @@ struct Stoneage
 
     SDL_Surface *screen;
 
-    void (*run)(Stoneage);
-    void (*abort)(Stoneage);
+    void (*run)(void *);
+    void (*abort)(void *);
 };
 
 extern Stoneage Stoneage_ctor(Stoneage s, TypeList types);
 extern void Stoneage_dtor(Stoneage s);
-extern void Stoneage_run(Stoneage s);
-extern void Stoneage_abort(Stoneage s);
 
 #endif
