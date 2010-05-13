@@ -1,4 +1,5 @@
 #include "common.h"
+#include "stoneage.h"
 
 void *
 xmalloc(size_t n)
@@ -7,7 +8,7 @@ xmalloc(size_t n)
     if (!p)
     {
 	log_err(ERRMSG_OOM);
-	exit(-1);
+	mainApp->abort(mainApp);
     }
     return p;
 }
@@ -21,7 +22,7 @@ xrealloc(void *p, size_t n)
     {
 	free(p);
 	log_err(ERRMSG_OOM);
-	exit(-1);
+	mainApp->abort(mainApp);
     }
     return rp;
 }
