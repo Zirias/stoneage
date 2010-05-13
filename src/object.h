@@ -22,6 +22,7 @@ typedef struct Object *Object;
     types = RegisterType(types, CLASS_##myclass); \
     baseclass##_ctor((baseclass)pointer, types)
 #define OBJECT_INIT(pointer, myclass) INHERIT_INIT(pointer, myclass, Object)
+#define METHOD(myclass, object) myclass this = CAST(object, myclass)
 
 extern Object Object_ctor(Object o, TypeList types);
 extern void Object_dtor(Object o);

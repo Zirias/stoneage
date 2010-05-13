@@ -57,7 +57,6 @@ TypeList
 RegisterType(TypeList types, const Type T)
 {
     TypeList current;
-    TypeList tmp;
 
     if (!types) types = CreateTypeList();
 
