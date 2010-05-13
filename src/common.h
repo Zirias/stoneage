@@ -5,6 +5,7 @@
 #include "config.h"
 #endif
 
+#include "classes.h"
 #include "log.h"
 #include "mm.h"
 #include "object.h"
