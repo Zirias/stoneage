@@ -7,6 +7,7 @@
 
 #include "log.h"
 #include "mm.h"
+#include "object.h"
 
 #endif
 
