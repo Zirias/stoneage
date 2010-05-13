@@ -12,6 +12,7 @@ AC_CONFIG_FILES([Makefile src/Makefile])
 AC_PROG_CC
 
 # Checks for libraries.
+PKG_CHECK_MODULES(SDL, [sdl >= 1.2])
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h])
