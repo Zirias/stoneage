@@ -12,8 +12,8 @@ struct Object {
 
 typedef struct Object *Object;
 
-#define CLASS() struct Object _object
-#define INHERIT(baseclass) struct baseclass _object
+#define CLASS() struct Object _baseobject
+#define INHERIT(baseclass) struct baseclass _baseobject
 #define CAST(pointer, type) ((type)GetObjectOf(pointer, CLASS_##type))
 #define NEW(T) T##_ctor((T)XMALLOC(struct T, 1), 0)
 #define DELETE(T, object) T##_dtor(object); XFREE(object)
