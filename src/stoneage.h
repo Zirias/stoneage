@@ -4,17 +4,14 @@
 #include <SDL.h>
 
 #include "common.h"
+#include "app.h"
 
 CLASS(Stoneage)
 {
-    INHERIT(Object);
+    INHERIT(App);
 
     SDL_Surface *screen;
 
-    void FUNC(run) ARG();
-    void FUNC(abort) ARG();
 };
-
-extern Stoneage mainApp;
 
 #endif

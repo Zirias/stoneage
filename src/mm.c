@@ -1,5 +1,5 @@
 #include "common.h"
-#include "stoneage.h"
+#include "app.h"
 
 void *
 xmalloc(size_t n)
