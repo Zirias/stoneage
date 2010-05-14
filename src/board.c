@@ -63,27 +63,27 @@ m_init ARG(SDL_Surface *screen, int width, int height)
 	mainApp->abort(mainApp);
     }
 
-    rf->load(rf, "empty", &r);
+    rf->load(rf, "tile_empty", &r);
     this->pimpl->tile_empty = createScaledSurface(r,
 	    this->pimpl->tile_width, this->pimpl->tile_height);
     DELETE(Resource, r);
-    rf->load(rf, "earth", &r);
+    rf->load(rf, "tile_earth", &r);
     this->pimpl->tile_earth = createScaledSurface(r,
 	    this->pimpl->tile_width, this->pimpl->tile_height);
     DELETE(Resource, r);
-    rf->load(rf, "wall", &r);
+    rf->load(rf, "tile_wall", &r);
     this->pimpl->tile_wall = createScaledSurface(r,
 	    this->pimpl->tile_width, this->pimpl->tile_height);
     DELETE(Resource, r);
-    rf->load(rf, "rock", &r);
+    rf->load(rf, "tile_rock", &r);
     this->pimpl->tile_rock = createScaledSurface(r,
 	    this->pimpl->tile_width, this->pimpl->tile_height);
     DELETE(Resource, r);
-    rf->load(rf, "cabbage", &r);
+    rf->load(rf, "tile_cabbage", &r);
     this->pimpl->tile_cabbage = createScaledSurface(r,
 	    this->pimpl->tile_width, this->pimpl->tile_height);
     DELETE(Resource, r);
-    rf->load(rf, "willy", &r);
+    rf->load(rf, "tile_willy", &r);
     this->pimpl->tile_willy = createScaledSurface(r,
 	    this->pimpl->tile_width, this->pimpl->tile_height);
     DELETE(Resource, r);
@@ -190,7 +190,7 @@ DTOR(Board)
     for (i=0; i<32*24; ++i)
     {
 	e = ep[i];
-	e->dispose(e);
+	if(e) e->dispose(e);
     }
 
     XFREE(this->pimpl);

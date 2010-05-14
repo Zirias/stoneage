@@ -1,6 +1,6 @@
 #include "entity.h"
 
-SDL_Rect drawArea;
+static SDL_Rect drawArea;
 
 static void
 m_init ARG(Board b, int x, int y)
