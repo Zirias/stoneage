@@ -5,29 +5,26 @@
 
 #include "common.h"
 
-struct Entity;
-typedef struct Entity *Entity;
-
-struct Entity
+CLASS(Entity)
 {
-    CLASS();
+    INHERIT(Object);
     
     SDL_Surface *tile;
     int x;
     int y;
 
-    int (*init)(void *);
+    int FUNC(init) ARG();
 
     /* move around on the board */
-    int (*left)(void *);
-    int (*right)(void *);
-    int (*up)(void *);
-    int (*down)(void *);
+    int FUNC(left) ARG();
+    int FUNC(right) ARG();
+    int FUNC(up) ARG();
+    int FUNC(down) ARG();
 
-    int (*draw)(void *);
+    int FUNC(draw) ARG();
 };
 
-extern Entity Entity_ctor(Entity e, TypeList types);
-extern void Entity_dtor(Entity e);
+extern CTOR(Entity);
+extern DTOR(Entity);
 
 #endif

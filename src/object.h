@@ -6,26 +6,35 @@
 struct TypeList;
 typedef struct TypeList *TypeList;
 
-struct Object {
+#define CLASS(name) struct name; \
+    typedef struct name *name; \
+    struct name
+
+CLASS(Object) {
     TypeList types;
 };
 
-typedef struct Object *Object;
-
-#define CLASS() struct Object _baseobject
 #define INHERIT(baseclass) struct baseclass _baseobject
 #define CAST(pointer, type) ((type)GetObjectOf(pointer, CLASS_##type))
 #define NEW(T) T##_ctor((T)XMALLOC(struct T, 1), 0)
 #define DELETE(T, object) T##_dtor(object); XFREE(object)
 
-#define INHERIT_INIT(pointer, myclass, baseclass) \
+#define BASECTOR(myclass, baseclass) \
     types = RegisterType(types, CLASS_##myclass); \
-    baseclass##_ctor((baseclass)pointer, types)
-#define OBJECT_INIT(pointer, myclass) INHERIT_INIT(pointer, myclass, Object)
-#define METHOD(myclass, object) myclass this = CAST(object, myclass)
+    baseclass##_ctor((baseclass)this, types)
+#define BASEDTOR(baseclass) baseclass##_dtor((baseclass)this)
 
-extern Object Object_ctor(Object o, TypeList types);
-extern void Object_dtor(Object o);
+#define FUNC(name) (* name )
+#define ARG(...) (void *_this, ##__VA_ARGS__)
+
+#define METHOD(myclass) myclass this = CAST(_this, myclass)
+
+#define CTOR(myclass) myclass myclass##_ctor(myclass this, TypeList types)
+#define DTOR(myclass) void myclass##_dtor(myclass this)
+
+extern CTOR(Object);
+extern DTOR(Object);
+
 extern Type GetType(void const *object);
 extern Object GetObject(void const *object);
 extern Object GetObjectOf(void const *object, const Type T);

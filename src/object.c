@@ -6,12 +6,11 @@ struct TypeList {
     TypeList next;
 };
 
-Object
-Object_ctor(Object o, TypeList types)
+CTOR(Object)
 {
     types = RegisterType(types, CLASS_Object);
-    o->types = types;
-    return o;
+    this->types = types;
+    return this;
 }
 
 Type
@@ -78,9 +77,8 @@ FreeTypeList(TypeList types)
     XFREE(types);
 }
 
-void
-Object_dtor(Object o)
+DTOR(Object)
 {
-    FreeTypeList(o->types);
+    FreeTypeList(this->types);
 }
 
