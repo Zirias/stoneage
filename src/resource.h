@@ -17,7 +17,7 @@ CLASS(Resource)
     const char *FUNC(getName) ARG();
 
     int FUNC(giveData) ARG(void *data, size_t dataSize);
-    int FUNC(copyDataFrom) ARG(void *data, size_t dataSize);
+    int FUNC(copyDataFrom) ARG(const void *data, size_t dataSize);
     int FUNC(readDataFrom) ARG(FILE *file, size_t dataSize);
 
     size_t FUNC(getDataSize) ARG();

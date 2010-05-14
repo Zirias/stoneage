@@ -1,11 +1,8 @@
-#include "common.h"
 #include "entity.h"
 #include "stoneage.h"
 
-Stoneage mainApp;
-
-void
-m_run ARG()
+int
+m_run ARG(int argc, char **argv)
 {
     METHOD(Stoneage);
 
@@ -13,7 +10,7 @@ m_run ARG()
     if (!this->screen)
     {
 	log_err("Unable to set video mode: %s\n", SDL_GetError());
-	this->abort(this);
+	((App)this)->abort(this);
     }
 }
 
@@ -28,23 +25,23 @@ m_abort ARG()
 
 CTOR(Stoneage)
 {
-    BASECTOR(Stoneage, Object);
-    this->run = &m_run;
-    this->abort = &m_abort;
+    BASECTOR(Stoneage, App);
+    ((App)this)->run = &m_run;
+    ((App)this)->abort = &m_abort;
     return this;
 }
 
 DTOR(Stoneage)
 {
     SDL_Quit();
-    BASEDTOR(Object);
+    BASEDTOR(App);
 }
 
 int
 main(int argc, char **argv)
 {
-    mainApp = NEW(Stoneage);
-    mainApp->run(mainApp);
+    mainApp = (App)NEW(Stoneage);
+    mainApp->run(mainApp, argc, argv);
     DELETE(Stoneage, mainApp);
 }
 
