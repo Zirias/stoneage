@@ -3,16 +3,14 @@
 
 #include "common.h"
 
-struct TypeList;
-typedef struct TypeList *TypeList;
+#define CTOR(myclass) myclass myclass##_ctor(myclass this, TypeList types)
+#define DTOR(myclass) void myclass##_dtor(myclass this)
 
 #define CLASS(name) struct name; \
     typedef struct name *name; \
+    extern CTOR(name); \
+    extern DTOR(name); \
     struct name
-
-CLASS(Object) {
-    TypeList types;
-};
 
 #define INHERIT(baseclass) struct baseclass _baseobject
 #define CAST(pointer, type) ((type)GetObjectOf(pointer, CLASS_##type))
@@ -29,11 +27,13 @@ CLASS(Object) {
 
 #define METHOD(myclass) myclass this = CAST(_this, myclass)
 
-#define CTOR(myclass) myclass myclass##_ctor(myclass this, TypeList types)
-#define DTOR(myclass) void myclass##_dtor(myclass this)
 
-extern CTOR(Object);
-extern DTOR(Object);
+struct TypeList;
+typedef struct TypeList *TypeList;
+
+CLASS(Object) {
+    TypeList types;
+};
 
 extern Type GetType(void const *object);
 extern Object GetObject(void const *object);

@@ -17,7 +17,4 @@ CLASS(Stoneage)
 
 extern Stoneage mainApp;
 
-extern CTOR(Stoneage);
-extern DTOR(Stoneage);
-
 #endif
