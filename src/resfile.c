@@ -32,7 +32,7 @@ struct Resfile_impl
     FILE *file;
 };
 
-const char *openmode[2] = { "rb", "rb+" };
+const char *openmode[2] = { "rb", "ab+" };
 
 void
 clearToc(Resfile_toc toc)
@@ -105,7 +105,8 @@ m_open ARG(int writeable)
     if (!this->pimpl->filename) return -1;
 
     this->pimpl->file = fopen(this->pimpl->filename, openmode[writeable]);
-    if (!this->pimpl->file) return 0;
+    if (!this->pimpl->file) return -1;
+    rewind(this->pimpl->file);
 
     toc = &(this->pimpl->toc);
     offset = 0;
@@ -130,6 +131,9 @@ m_open ARG(int writeable)
 	offset = ftell(this->pimpl->file);
     }
     rewind(this->pimpl->file);
+
+    this->pimpl->opened = 1;
+    this->pimpl->writeable = writeable;
 }
 
 void
