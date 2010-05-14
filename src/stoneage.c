@@ -1,7 +1,7 @@
 #include "entity.h"
 #include "stoneage.h"
 
-int
+static int
 m_run ARG(int argc, char **argv)
 {
     METHOD(Stoneage);
@@ -12,9 +12,13 @@ m_run ARG(int argc, char **argv)
 	log_err("Unable to set video mode: %s\n", SDL_GetError());
 	((App)this)->abort(this);
     }
+
+    this->board = NEW(Board);
+    this->board->init(this->board, this->screen, 640, 480);
+    SDL_Delay(2000);
 }
 
-void
+static void
 m_abort ARG()
 {
     METHOD(Stoneage);
@@ -33,6 +37,7 @@ CTOR(Stoneage)
 
 DTOR(Stoneage)
 {
+    DELETE(Board, this->board);
     SDL_Quit();
     BASEDTOR(App);
 }

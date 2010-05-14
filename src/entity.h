@@ -4,16 +4,19 @@
 #include <SDL.h>
 
 #include "common.h"
+#include "board.h"
+#include "resource.h"
 
 CLASS(Entity)
 {
     INHERIT(Object);
     
-    SDL_Surface *tile;
+    const SDL_Surface *tile;
+    Board b;
     int x;
     int y;
 
-    int FUNC(init) ARG();
+    void FUNC(init) ARG(Board b, int x, int y);
 
     /* move around on the board */
     int FUNC(left) ARG();
@@ -21,7 +24,10 @@ CLASS(Entity)
     int FUNC(up) ARG();
     int FUNC(down) ARG();
 
-    int FUNC(draw) ARG();
+    void FUNC(draw) ARG();
+
+    /* virtual destructor */
+    void FUNC(dispose) ARG();
 };
 
 #endif

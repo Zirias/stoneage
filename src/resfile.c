@@ -61,7 +61,7 @@ findEntry(Resfile_toc toc, const char *key)
     return findEntry(toc->next, key);
 }
 
-int
+static int
 m_canRead ARG()
 {
     METHOD(Resfile);
@@ -69,7 +69,7 @@ m_canRead ARG()
     return (this->pimpl->opened);
 }
 
-int
+static int
 m_canWrite ARG()
 {
     METHOD(Resfile);
@@ -77,7 +77,7 @@ m_canWrite ARG()
     return (this->pimpl->opened && this->pimpl->writeable);
 }
 
-int
+static int
 m_setFile ARG(const char *filename)
 {
     METHOD(Resfile);
@@ -89,7 +89,7 @@ m_setFile ARG(const char *filename)
     return 0;
 }
 
-int
+static int
 m_open ARG(int writeable)
 {
     METHOD(Resfile);
@@ -137,7 +137,7 @@ m_open ARG(int writeable)
     return 0;
 }
 
-void
+static void
 m_close ARG()
 {
     METHOD(Resfile);
@@ -148,7 +148,7 @@ m_close ARG()
     this->pimpl->opened = 0;
 }
 
-int
+static int
 m_store ARG(Resource res)
 {
     METHOD(Resfile);
@@ -188,7 +188,7 @@ m_store ARG(Resource res)
     return 0;
 }
 
-int
+static int
 m_load ARG(const char *key, Resource *res)
 {
     METHOD(Resfile);

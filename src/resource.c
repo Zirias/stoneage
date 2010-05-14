@@ -9,7 +9,7 @@ struct Resource_impl
     size_t dataSize;
 };
 
-void
+static void
 m_setName ARG(const char *name)
 {
     METHOD(Resource);
@@ -18,7 +18,7 @@ m_setName ARG(const char *name)
     strcpy(this->pimpl->name, name);
 }
 
-const char *
+static const char *
 m_getName ARG()
 {
     METHOD(Resource);
@@ -26,7 +26,7 @@ m_getName ARG()
     return this->pimpl->name;
 }
 
-int
+static int
 m_giveData ARG(void *data, size_t dataSize)
 {
     METHOD(Resource);
@@ -37,7 +37,7 @@ m_giveData ARG(void *data, size_t dataSize)
     return 0;
 }
 
-int
+static int
 m_copyDataFrom ARG(const void *data, size_t dataSize)
 {
     METHOD(Resource);
@@ -49,7 +49,7 @@ m_copyDataFrom ARG(const void *data, size_t dataSize)
     return 0;
 }
 
-int
+static int
 m_readDataFrom ARG(FILE *file, size_t dataSize)
 {
     METHOD(Resource);
@@ -61,7 +61,7 @@ m_readDataFrom ARG(FILE *file, size_t dataSize)
     return 0;
 }
 
-size_t
+static size_t
 m_getDataSize ARG()
 {
     METHOD(Resource);
@@ -69,7 +69,7 @@ m_getDataSize ARG()
     return this->pimpl->dataSize;
 }
 
-const void *
+static const void *
 m_getData ARG()
 {
     METHOD(Resource);
@@ -77,7 +77,7 @@ m_getData ARG()
     return this->pimpl->data;
 }
 
-void *
+static void *
 m_takeData ARG()
 {
     METHOD(Resource);
@@ -87,7 +87,7 @@ m_takeData ARG()
     return data;
 }
 
-void
+static void
 m_deleteData ARG()
 {
     METHOD(Resource);

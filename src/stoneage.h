@@ -5,13 +5,14 @@
 
 #include "common.h"
 #include "app.h"
+#include "board.h"
 
 CLASS(Stoneage)
 {
     INHERIT(App);
 
     SDL_Surface *screen;
-
+    Board board;
 };
 
 #endif
