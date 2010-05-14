@@ -24,7 +24,4 @@ CLASS(Entity)
     int FUNC(draw) ARG();
 };
 
-extern CTOR(Entity);
-extern DTOR(Entity);
-
 #endif
