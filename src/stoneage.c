@@ -4,37 +4,10 @@
 
 Stoneage mainApp;
 
-// methods:
-void Stoneage_run(void *s);
-void Stoneage_abort(void *s);
-
-
-int
-main(int argc, char **argv)
-{
-    mainApp = NEW(Stoneage);
-    mainApp->run(mainApp);
-    DELETE(Stoneage, mainApp);
-}
-
-Stoneage
-Stoneage_ctor(Stoneage s, TypeList types)
-{
-    OBJECT_INIT(s, Stoneage);
-    s->run = &Stoneage_run;
-    s->abort = &Stoneage_abort;
-}
-
 void
-Stoneage_dtor(Stoneage s)
+m_run ARG()
 {
-    SDL_Quit();
-    Object_dtor((Object)s);
-}
-
-void Stoneage_run(void *s)
-{
-    METHOD(Stoneage, s);
+    METHOD(Stoneage);
 
     this->screen = SDL_SetVideoMode(640, 480, 16, 0);
     if (!this->screen)
@@ -44,11 +17,34 @@ void Stoneage_run(void *s)
     }
 }
 
-void Stoneage_abort(void *s)
+void
+m_abort ARG()
 {
-    METHOD(Stoneage, s);
+    METHOD(Stoneage);
 
     Stoneage_dtor(this);
     exit(-1);
+}
+
+CTOR(Stoneage)
+{
+    BASECTOR(Stoneage, Object);
+    this->run = &m_run;
+    this->abort = &m_abort;
+    return this;
+}
+
+DTOR(Stoneage)
+{
+    SDL_Quit();
+    BASEDTOR(Object);
+}
+
+int
+main(int argc, char **argv)
+{
+    mainApp = NEW(Stoneage);
+    mainApp->run(mainApp);
+    DELETE(Stoneage, mainApp);
 }
 

@@ -1,16 +1,14 @@
 #include "entity.h"
 
-Entity
-Entity_ctor(Entity e, TypeList types)
+CTOR(Entity)
 {
-    OBJECT_INIT(e, Entity);
-    e->tile = NULL;
-    return e;
+    BASECTOR(Entity, Object);
+    this->tile = NULL;
+    return this;
 }
 
-void
-Entity_dtor(Entity e)
+DTOR(Entity)
 {
-    Object_dtor((Object)e);
+    BASEDTOR(Object);
 }
 

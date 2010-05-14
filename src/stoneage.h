@@ -5,22 +5,19 @@
 
 #include "common.h"
 
-struct Stoneage;
-typedef struct Stoneage *Stoneage;
-
-extern Stoneage mainApp;
-
-struct Stoneage
+CLASS(Stoneage)
 {
-    CLASS();
+    INHERIT(Object);
 
     SDL_Surface *screen;
 
-    void (*run)(void *);
-    void (*abort)(void *);
+    void FUNC(run) ARG();
+    void FUNC(abort) ARG();
 };
 
-extern Stoneage Stoneage_ctor(Stoneage s, TypeList types);
-extern void Stoneage_dtor(Stoneage s);
+extern Stoneage mainApp;
+
+extern CTOR(Stoneage);
+extern DTOR(Stoneage);
 
 #endif
