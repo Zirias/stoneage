@@ -2,6 +2,13 @@
 #define STONEAGE_CLASSES_H
 
 enum Type {
+    CLASS_Board,
+    CLASS_EEmpty,
+    CLASS_EEarth,
+    CLASS_EWall,
+    CLASS_ERock,
+    CLASS_ECabbage,
+    CLASS_EWilly,
     CLASS_SaMkres,
     CLASS_Resource,
     CLASS_Resfile,
