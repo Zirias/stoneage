@@ -1,6 +1,15 @@
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 #include <string.h>
+#include <stdint.h>
+#include <errno.h>
 
 #include "resfile.h"
+#include "app.h"
+
+static const char *magic = "SARESV\0\1";
+static struct stat statrec;
 
 struct Resfile_entry;
 typedef struct Resfile_entry *Resfile_entry;
@@ -9,7 +18,7 @@ struct Resfile_entry
 {
     char *key;
     off_t offset;
-    size_t size;
+    uint32_t size;
 };
 
 struct Resfile_toc;
@@ -32,9 +41,42 @@ struct Resfile_impl
     FILE *file;
 };
 
-const char *openmode[2] = { "rb", "ab+" };
+const char *openmode[3] = { "rb", "rb+", "wb+" };
 
-void
+static size_t
+writeUint32(FILE *file, uint32_t val)
+{
+    uint8_t bytes[5];
+    bytes[0] = 0;
+    while (val)
+    {
+	++bytes[0];
+	bytes[bytes[0]] = val & 0xff;
+	val >>= 8;
+    }
+    size_t count = (size_t) bytes[0];
+    fwrite(&bytes[0], 1, count + 1, file);
+    return count;
+}
+
+static size_t
+readUint32(FILE *file, uint32_t *val)
+{
+    uint8_t bytes[5];
+    uint8_t i;
+
+    fread(&bytes[0], 1, 1, file);
+    fread(&bytes[1], (size_t) bytes[0], 1, file);
+    *val = 0;
+    for (i = bytes[0]; i > 0; --i)
+    {
+	*val <<= 8;
+	*val += bytes[i];
+    }
+    return (size_t) bytes[0];
+}
+
+static void
 clearToc(Resfile_toc toc)
 {
     int i;
@@ -48,7 +90,7 @@ clearToc(Resfile_toc toc)
     toc->n = 0;
 }
 
-const Resfile_entry
+static const Resfile_entry
 findEntry(Resfile_toc toc, const char *key)
 {
     int i;
@@ -94,29 +136,67 @@ m_open ARG(int writeable)
 {
     METHOD(Resfile);
     
-    size_t keysize;
-    size_t ressize;
+    char checkMagic[9];
+    uint8_t keysize;
+    uint32_t ressize;
     off_t offset;
     char *key;
+    int ferr;
     Resfile_toc toc;
     Resfile_entry entry;
 
     if (this->pimpl->opened) return -1;
     if (!this->pimpl->filename) return -1;
 
+    if (writeable) writeable = 1;
+    if (stat(this->pimpl->filename, &statrec) < 0)
+    {
+	if (errno == ENOENT && writeable)
+	{
+	    ++writeable;
+	}
+	else
+	{
+	    log_err("Error reading resource file %s: %s\n",
+		    this->pimpl->filename, strerror(errno));
+	    mainApp->abort(mainApp);
+	}
+    }
+    else if (!S_ISREG(statrec.st_mode))
+    {
+	log_err("Resource file %s is not a regular file!\n",
+		this->pimpl->filename);
+	mainApp->abort(mainApp);
+    }
+
     this->pimpl->file = fopen(this->pimpl->filename, openmode[writeable]);
     if (!this->pimpl->file) return -1;
-    rewind(this->pimpl->file);
+
+    if (writeable == 2)
+    {
+	fwrite(magic, sizeof(char), 9, this->pimpl->file);
+    }
+    else
+    {
+	fread(checkMagic, sizeof(char), 9, this->pimpl->file);
+	if (strncmp(checkMagic, magic, 6))
+	{
+	    fclose(this->pimpl->file);
+	    log_err("%s is not a stoneage resource file!\n",
+		    this->pimpl->filename);
+	    mainApp->abort(mainApp);
+	}
+    }
 
     toc = &(this->pimpl->toc);
-    offset = 0;
-    while (fread(&keysize, sizeof(size_t), 1, this->pimpl->file))
+    offset = 9;
+    while (fread(&keysize, sizeof(uint8_t), 1, this->pimpl->file))
     {
 	++(this->pimpl->num_resources);
-	key = XMALLOC(char, keysize + 1);
+	key = XMALLOC(char, (size_t) keysize + 1);
 	key[keysize] = 0;
 	fread(key, keysize * sizeof(char), 1, this->pimpl->file);
-	fread(&ressize, sizeof(size_t), 1, this->pimpl->file);
+	readUint32(this->pimpl->file, &ressize);
 	if (toc->n == 128)
 	{
 	    toc->next = XMALLOC(struct Resfile_toc, 1);
@@ -126,9 +206,16 @@ m_open ARG(int writeable)
 	entry = &(toc->entry[toc->n++]);
 	entry->key = key;
 	entry->offset = offset;
-	entry->size = ressize;
-	fseek(this->pimpl->file, ressize, SEEK_CUR);
+	entry->size = (size_t) ressize;
+	fseek(this->pimpl->file, (long) ressize, SEEK_CUR);
 	offset = ftell(this->pimpl->file);
+    }
+    if ((ferr = ferror(this->pimpl->file)) != 0)
+    {	
+	fclose(this->pimpl->file);
+	log_err("Resource file %s is corrupt: %s\n",
+		this->pimpl->filename, strerror(ferr));
+	mainApp->abort(mainApp);
     }
     rewind(this->pimpl->file);
 
@@ -156,7 +243,7 @@ m_store ARG(Resource res)
     Resfile_toc toc;
     Resfile_entry entry;
     const char *key;
-    size_t keysize;
+    uint8_t keysize;
 
     if (!this->pimpl->opened) return -1;
     if (!this->pimpl->writeable) return -1;
@@ -173,15 +260,16 @@ m_store ARG(Resource res)
 	memset(toc, 0, sizeof(struct Resfile_toc));
     }
     entry = &(toc->entry[toc->n++]);
-    keysize = strlen(key);
-    entry->key = XMALLOC(char, keysize + 1);
+    keysize = (uint8_t) strlen(key);
+    entry->key = XMALLOC(char, (size_t) (keysize + 1));
     strcpy(entry->key, key);
     entry->size = res->getDataSize(res);
     fseek(this->pimpl->file, 0, SEEK_END);
     entry->offset = ftell(this->pimpl->file);
-    fwrite(&keysize, sizeof(size_t), 1, this->pimpl->file);
-    fwrite(entry->key, keysize, 1, this->pimpl->file);
-    fwrite(&(entry->size), sizeof(size_t), 1, this->pimpl->file);
+    fwrite(&keysize, sizeof(uint8_t), 1, this->pimpl->file);
+    fwrite(entry->key, (size_t) keysize, 1, this->pimpl->file);
+    writeUint32(this->pimpl->file, (uint32_t) entry->size);
+    
     fwrite(res->getData(res), entry->size, 1, this->pimpl->file);
     rewind(this->pimpl->file);
     ++(this->pimpl->num_resources);
@@ -194,6 +282,7 @@ m_load ARG(const char *key, Resource *res)
     METHOD(Resfile);
 
     Resfile_entry entry;
+    uint32_t size;
 
     if (!this->pimpl->opened) return -1;
 
@@ -202,8 +291,15 @@ m_load ARG(const char *key, Resource *res)
 
     Resource r = NEW(Resource);
     r->setName(r,key);
-    fseek(this->pimpl->file, entry->offset
-	    + 2*sizeof(size_t) + strlen(key), SEEK_SET);
+    fseek(this->pimpl->file, entry->offset + sizeof(uint8_t)
+	    + strlen(key), SEEK_SET);
+    readUint32(this->pimpl->file, &size);
+    if ((size_t) size != entry->size)
+    {
+	log_err("fatal: corrupted resource file!");
+	this->close(this);
+	mainApp->abort(mainApp);
+    }
     r->readDataFrom(r, this->pimpl->file, entry->size);
     *res = r;
     return 0;

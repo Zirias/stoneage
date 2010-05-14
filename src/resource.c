@@ -14,8 +14,10 @@ m_setName ARG(const char *name)
 {
     METHOD(Resource);
 
-    this->pimpl->name = XREALLOC(char, this->pimpl->name, strlen(name) + 1);
-    strcpy(this->pimpl->name, name);
+    size_t namelen = strlen(name) + 1;
+    if (namelen > 256) namelen = 256;
+    this->pimpl->name = XREALLOC(char, this->pimpl->name, namelen);
+    strncpy(this->pimpl->name, name, namelen);
 }
 
 static const char *
