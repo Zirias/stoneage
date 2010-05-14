@@ -134,6 +134,7 @@ m_open ARG(int writeable)
 
     this->pimpl->opened = 1;
     this->pimpl->writeable = writeable;
+    return 0;
 }
 
 void

@@ -58,8 +58,10 @@ m_run ARG(int argc, char **argv)
     {
 	fprintf(stderr, "Could not store resource %s.\n"
 		"maybe it's already there?\n", argv[3]);
+	DELETE(Resource, r);
 	return -1;
     }
+    DELETE(Resource, r);
     return 0;
 }
 
