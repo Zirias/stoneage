@@ -1,4 +1,4 @@
-#include "eempty.h"
+#include "ewall.h"
 
 static void
 FUNC(parent_init) ARG(Board b, int x, int y);
@@ -6,24 +6,24 @@ FUNC(parent_init) ARG(Board b, int x, int y);
 static void
 m_init ARG(Board b, int x, int y)
 {
-    METHOD(EEmpty);
+    METHOD(EWall);
 
     Entity e = CAST(this, Entity);
     parent_init(e, b, x, y);
 
-    e->getSurface = b->getEmptyTile;
+    e->getSurface = b->getWallTile;
 }
 
 static void
 m_dispose ARG()
 {
-    METHOD(EEmpty);
-    DELETE(EEmpty, this);
+    METHOD(EWall);
+    DELETE(EWall, this);
 }
 
-CTOR(EEmpty)
+CTOR(EWall)
 {
-    BASECTOR(EEmpty, Entity);
+    BASECTOR(EWall, Entity);
     Entity e = CAST(this, Entity);
     parent_init = e->init;
     e->init = &m_init;
@@ -31,7 +31,7 @@ CTOR(EEmpty)
     return this;
 }
 
-DTOR(EEmpty)
+DTOR(EWall)
 {
     BASEDTOR(Entity);
 }

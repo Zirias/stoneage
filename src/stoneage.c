@@ -6,7 +6,7 @@ m_run ARG(int argc, char **argv)
 {
     METHOD(Stoneage);
 
-    this->screen = SDL_SetVideoMode(640, 480, 16, 0);
+    this->screen = SDL_SetVideoMode(1024, 768, 0, 0);
     if (!this->screen)
     {
 	log_err("Unable to set video mode: %s\n", SDL_GetError());
@@ -14,8 +14,7 @@ m_run ARG(int argc, char **argv)
     }
 
     this->board = NEW(Board);
-    this->board->init(this->board, this->screen, 640, 480);
-    SDL_Delay(2000);
+    SDL_Delay(5000);
 }
 
 static void

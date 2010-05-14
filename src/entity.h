@@ -11,10 +11,11 @@ CLASS(Entity)
 {
     INHERIT(Object);
     
-    const SDL_Surface *tile;
     Board b;
     int x;
     int y;
+
+    const SDL_Surface *FUNC(getSurface) ARG();
 
     void FUNC(init) ARG(Board b, int x, int y);
 
@@ -24,7 +25,7 @@ CLASS(Entity)
     int FUNC(up) ARG();
     int FUNC(down) ARG();
 
-    void FUNC(draw) ARG();
+    void FUNC(draw) ARG(int refresh);
 
     /* virtual destructor */
     void FUNC(dispose) ARG();

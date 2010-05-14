@@ -1,4 +1,4 @@
-#include "eempty.h"
+#include "ecabbage.h"
 
 static void
 FUNC(parent_init) ARG(Board b, int x, int y);
@@ -6,24 +6,24 @@ FUNC(parent_init) ARG(Board b, int x, int y);
 static void
 m_init ARG(Board b, int x, int y)
 {
-    METHOD(EEmpty);
+    METHOD(ECabbage);
 
     Entity e = CAST(this, Entity);
     parent_init(e, b, x, y);
 
-    e->getSurface = b->getEmptyTile;
+    e->getSurface = b->getCabbageTile;
 }
 
 static void
 m_dispose ARG()
 {
-    METHOD(EEmpty);
-    DELETE(EEmpty, this);
+    METHOD(ECabbage);
+    DELETE(ECabbage, this);
 }
 
-CTOR(EEmpty)
+CTOR(ECabbage)
 {
-    BASECTOR(EEmpty, Entity);
+    BASECTOR(ECabbage, Entity);
     Entity e = CAST(this, Entity);
     parent_init = e->init;
     e->init = &m_init;
@@ -31,7 +31,7 @@ CTOR(EEmpty)
     return this;
 }
 
-DTOR(EEmpty)
+DTOR(ECabbage)
 {
     BASEDTOR(Entity);
 }
