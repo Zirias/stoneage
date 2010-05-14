@@ -1,4 +1,4 @@
-#include "eempty.h"
+#include "eearth.h"
 
 static void
 FUNC(parent_init) ARG(Board b, int x, int y);
@@ -6,24 +6,24 @@ FUNC(parent_init) ARG(Board b, int x, int y);
 static void
 m_init ARG(Board b, int x, int y)
 {
-    METHOD(EEmpty);
+    METHOD(EEarth);
 
     Entity e = CAST(this, Entity);
     parent_init(e, b, x, y);
 
-    e->getSurface = b->getEmptyTile;
+    e->getSurface = b->getEarthTile;
 }
 
 static void
 m_dispose ARG()
 {
-    METHOD(EEmpty);
-    DELETE(EEmpty, this);
+    METHOD(EEarth);
+    DELETE(EEarth, this);
 }
 
-CTOR(EEmpty)
+CTOR(EEarth)
 {
-    BASECTOR(EEmpty, Entity);
+    BASECTOR(EEarth, Entity);
     Entity e = CAST(this, Entity);
     parent_init = e->init;
     e->init = &m_init;
@@ -31,7 +31,7 @@ CTOR(EEmpty)
     return this;
 }
 
-DTOR(EEmpty)
+DTOR(EEarth)
 {
     BASEDTOR(Entity);
 }

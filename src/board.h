@@ -13,8 +13,9 @@ CLASS(Board)
 
     struct Board_impl *pimpl;
 
-    void FUNC(init) ARG(SDL_Surface *screen, int width, int height);
-    SDL_Surface *FUNC(getScreen) ARG();
+    void FUNC(initVideo) ARG();
+    void FUNC(redraw) ARG();
+
     const SDL_Surface *FUNC(getEmptyTile) ARG();
     const SDL_Surface *FUNC(getEarthTile) ARG();
     const SDL_Surface *FUNC(getWallTile) ARG();

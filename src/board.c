@@ -1,25 +1,35 @@
 #include <SDL_rotozoom.h>
+#include <stdlib.h>
 
 #include "board.h"
 #include "resfile.h"
 #include "app.h"
 
 #include "eempty.h"
-
-Resfile rf;
+#include "eearth.h"
+#include "ewall.h"
+#include "erock.h"
+#include "ecabbage.h"
+#include "ewilly.h"
 
 struct Board_impl
 {
     SDL_Surface *screen;
-    SDL_Surface *tile_empty;
-    SDL_Surface *tile_earth;
-    SDL_Surface *tile_wall;
-    SDL_Surface *tile_rock;
-    SDL_Surface *tile_cabbage;
-    SDL_Surface *tile_willy;
 
-    int width;
-    int height;
+    Resource t_empty;
+    Resource t_earth;
+    Resource t_wall;
+    Resource t_rock;
+    Resource t_cabbage;
+    Resource t_willy;
+
+    SDL_Surface *s_empty;
+    SDL_Surface *s_earth;
+    SDL_Surface *s_wall;
+    SDL_Surface *s_rock;
+    SDL_Surface *s_cabbage;
+    SDL_Surface *s_willy;
+
     int tile_width;
     int tile_height;
 
@@ -41,19 +51,127 @@ createScaledSurface(Resource r, int width, int height)
     return tile;
 }
 
+static void
+m_redraw ARG()
+{
+    METHOD(Board);
+    Entity e;
+    Entity *ep;
+    int i;
+
+    struct Board_impl *b = this->pimpl;
+
+    ep = (Entity *)&(b->entity);
+    for (i=0; i<32*24; ++i)
+    {
+	e = ep[i];
+	if(e) e->draw(e, 0);
+    }
+
+    SDL_UpdateRect(b->screen, 0, 0, b->screen->w, b->screen->h);
+}
 
 static void
-m_init ARG(SDL_Surface *screen, int width, int height)
+m_initVideo ARG()
 {
     METHOD(Board);
 
-    Resource r;
+    struct Board_impl *b = this->pimpl;
 
-    this->pimpl->screen = screen;
-    this->pimpl->width = width;
-    this->pimpl->height = height;
-    this->pimpl->tile_width = width / 32;
-    this->pimpl->tile_height = height / 24;
+    b->screen = SDL_GetVideoSurface();
+    b->tile_width = b->screen->w / 32;
+    b->tile_height = b->screen->h / 24;
+
+    if (b->s_empty) SDL_FreeSurface(b->s_empty);
+    if (b->s_earth) SDL_FreeSurface(b->s_earth);
+    if (b->s_wall) SDL_FreeSurface(b->s_wall);
+    if (b->s_rock) SDL_FreeSurface(b->s_rock);
+    if (b->s_cabbage) SDL_FreeSurface(b->s_cabbage);
+    if (b->s_willy) SDL_FreeSurface(b->s_willy);
+
+    b->s_empty = createScaledSurface(
+	    b->t_empty, b->tile_width, b->tile_height);
+    b->s_earth = createScaledSurface(
+	    b->t_earth, b->tile_width, b->tile_height);
+    b->s_wall = createScaledSurface(
+	    b->t_wall, b->tile_width, b->tile_height);
+    b->s_rock = createScaledSurface(
+	    b->t_rock, b->tile_width, b->tile_height);
+    b->s_cabbage = createScaledSurface(
+	    b->t_cabbage, b->tile_width, b->tile_height);
+    b->s_willy = createScaledSurface(
+	    b->t_willy, b->tile_width, b->tile_height);
+
+    this->redraw(this);
+}
+
+static const SDL_Surface *
+m_getEmptyTile ARG()
+{
+    METHOD(Board);
+
+    return this->pimpl->s_empty;
+}
+
+static const SDL_Surface *
+m_getEarthTile ARG()
+{
+    METHOD(Board);
+
+    return this->pimpl->s_earth;
+}
+
+static const SDL_Surface *
+m_getWallTile ARG()
+{
+    METHOD(Board);
+
+    return this->pimpl->s_wall;
+}
+
+static const SDL_Surface *
+m_getRockTile ARG()
+{
+    METHOD(Board);
+
+    return this->pimpl->s_rock;
+}
+
+static const SDL_Surface *
+m_getCabbageTile ARG()
+{
+    METHOD(Board);
+
+    return this->pimpl->s_cabbage;
+}
+
+static const SDL_Surface *
+m_getWillyTile ARG()
+{
+    METHOD(Board);
+
+    return this->pimpl->s_willy;
+}
+
+CTOR(Board)
+{
+    BASECTOR(Board, Object);
+
+    struct Board_impl *b;
+    Resfile rf;
+
+    b = XMALLOC(struct Board_impl, 1);
+    memset(b, 0, sizeof(struct Board_impl));
+    this->pimpl = b;
+
+    this->initVideo = &m_initVideo;
+    this->redraw = &m_redraw;
+    this->getEmptyTile = &m_getEmptyTile;
+    this->getEarthTile = &m_getEarthTile;
+    this->getWallTile = &m_getWallTile;
+    this->getRockTile = &m_getRockTile;
+    this->getCabbageTile = &m_getCabbageTile;
+    this->getWillyTile = &m_getWillyTile;
 
     rf = NEW(Resfile);
     rf->setFile(rf, "res/tiles.res");
@@ -63,113 +181,41 @@ m_init ARG(SDL_Surface *screen, int width, int height)
 	mainApp->abort(mainApp);
     }
 
-    rf->load(rf, "tile_empty", &r);
-    this->pimpl->tile_empty = createScaledSurface(r,
-	    this->pimpl->tile_width, this->pimpl->tile_height);
-    DELETE(Resource, r);
-    rf->load(rf, "tile_earth", &r);
-    this->pimpl->tile_earth = createScaledSurface(r,
-	    this->pimpl->tile_width, this->pimpl->tile_height);
-    DELETE(Resource, r);
-    rf->load(rf, "tile_wall", &r);
-    this->pimpl->tile_wall = createScaledSurface(r,
-	    this->pimpl->tile_width, this->pimpl->tile_height);
-    DELETE(Resource, r);
-    rf->load(rf, "tile_rock", &r);
-    this->pimpl->tile_rock = createScaledSurface(r,
-	    this->pimpl->tile_width, this->pimpl->tile_height);
-    DELETE(Resource, r);
-    rf->load(rf, "tile_cabbage", &r);
-    this->pimpl->tile_cabbage = createScaledSurface(r,
-	    this->pimpl->tile_width, this->pimpl->tile_height);
-    DELETE(Resource, r);
-    rf->load(rf, "tile_willy", &r);
-    this->pimpl->tile_willy = createScaledSurface(r,
-	    this->pimpl->tile_width, this->pimpl->tile_height);
-    DELETE(Resource, r);
+    rf->load(rf, "tile_empty", &(b->t_empty));
+    rf->load(rf, "tile_earth", &(b->t_earth));
+    rf->load(rf, "tile_wall", &(b->t_wall));
+    rf->load(rf, "tile_rock", &(b->t_rock));
+    rf->load(rf, "tile_cabbage", &(b->t_cabbage));
+    rf->load(rf, "tile_willy", &(b->t_willy));
+    if (!b->t_empty || !b->t_earth || !b->t_wall || !b->t_rock
+	    || !b->t_cabbage || !b->t_willy)
+    {
+	log_err("Error loading tiles.\n");
+	mainApp->abort(mainApp);
+    }
 
-    int x, y;
+    rf->close(rf);
+    DELETE(Resfile, rf);
+
+    int x, y, z;
     Entity e;
     for (x = 0; x < 32; ++x)
 	for (y = 0; y < 24; ++y)
 	{
-	    e = (Entity)NEW(EEmpty);
+	    z = (random() / (RAND_MAX / 5));
+	    switch(z)
+	    {
+		case 0 : e = (Entity)NEW(EEmpty); break;
+		case 1 : e = (Entity)NEW(EEarth); break;
+		case 2 : e = (Entity)NEW(EWall); break;
+		case 3 : e = (Entity)NEW(ERock); break;
+		case 4 : e = (Entity)NEW(ECabbage); break;
+	    }
 	    e->init(e, this, x, y);
-	    this->pimpl->entity[x][y] = e;
-	    e->draw(e);
+	    b->entity[x][y] = e;
 	}
 
-}
-
-static const SDL_Surface *
-m_getEmptyTile ARG()
-{
-    METHOD(Board);
-
-    return this->pimpl->tile_empty;
-}
-
-static const SDL_Surface *
-m_getEarthTile ARG()
-{
-    METHOD(Board);
-
-    return this->pimpl->tile_earth;
-}
-
-static const SDL_Surface *
-m_getWallTile ARG()
-{
-    METHOD(Board);
-
-    return this->pimpl->tile_wall;
-}
-
-static const SDL_Surface *
-m_getRockTile ARG()
-{
-    METHOD(Board);
-
-    return this->pimpl->tile_rock;
-}
-
-static const SDL_Surface *
-m_getCabbageTile ARG()
-{
-    METHOD(Board);
-
-    return this->pimpl->tile_cabbage;
-}
-
-static const SDL_Surface *
-m_getWillyTile ARG()
-{
-    METHOD(Board);
-
-    return this->pimpl->tile_willy;
-}
-
-static SDL_Surface *
-m_getScreen ARG()
-{
-    METHOD(Board);
-
-    return this->pimpl->screen;
-}
-
-CTOR(Board)
-{
-    BASECTOR(Board, Object);
-    this->pimpl = XMALLOC(struct Board_impl, 1);
-    memset(this->pimpl, 0, sizeof(struct Board_impl));
-    this->init = &m_init;
-    this->getEmptyTile = &m_getEmptyTile;
-    this->getEarthTile = &m_getEarthTile;
-    this->getWallTile = &m_getWallTile;
-    this->getRockTile = &m_getRockTile;
-    this->getCabbageTile = &m_getCabbageTile;
-    this->getWillyTile = &m_getWillyTile;
-    this->getScreen = &m_getScreen;
+    this->initVideo(this);
     return this;
 }
 
@@ -179,14 +225,23 @@ DTOR(Board)
     Entity e;
     Entity *ep;
 
-    if (this->pimpl->tile_empty) SDL_FreeSurface(this->pimpl->tile_empty);
-    if (this->pimpl->tile_earth) SDL_FreeSurface(this->pimpl->tile_earth);
-    if (this->pimpl->tile_wall) SDL_FreeSurface(this->pimpl->tile_wall);
-    if (this->pimpl->tile_rock) SDL_FreeSurface(this->pimpl->tile_rock);
-    if (this->pimpl->tile_cabbage) SDL_FreeSurface(this->pimpl->tile_cabbage);
-    if (this->pimpl->tile_willy) SDL_FreeSurface(this->pimpl->tile_willy);
+    struct Board_impl *b = this->pimpl;
 
-    ep = (Entity *)&(this->pimpl->entity);
+    if (b->s_empty) SDL_FreeSurface(b->s_empty);
+    if (b->s_earth) SDL_FreeSurface(b->s_earth);
+    if (b->s_wall) SDL_FreeSurface(b->s_wall);
+    if (b->s_rock) SDL_FreeSurface(b->s_rock);
+    if (b->s_cabbage) SDL_FreeSurface(b->s_cabbage);
+    if (b->s_willy) SDL_FreeSurface(b->s_willy);
+
+    if (b->t_empty) DELETE(Resource, b->t_empty);
+    if (b->t_earth) DELETE(Resource, b->t_earth);
+    if (b->t_wall) DELETE(Resource, b->t_wall);
+    if (b->t_rock) DELETE(Resource, b->t_rock);
+    if (b->t_cabbage) DELETE(Resource, b->t_cabbage);
+    if (b->t_willy) DELETE(Resource, b->t_willy);
+
+    ep = (Entity *)&(b->entity);
     for (i=0; i<32*24; ++i)
     {
 	e = ep[i];

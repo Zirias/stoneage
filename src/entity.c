@@ -13,20 +13,23 @@ m_init ARG(Board b, int x, int y)
 }
 
 static void
-m_draw ARG()
+m_draw ARG(int refresh)
 {
     METHOD(Entity);
 
-    SDL_Surface *screen;
+    SDL_Surface *screen, *tile;
 
-    drawArea.w = this->tile->w;
-    drawArea.h = this->tile->h;
+    tile = this->getSurface(this->b);
+
+    drawArea.w = tile->w;
+    drawArea.h = tile->h;
     drawArea.x = this->x * drawArea.w;
     drawArea.y = this->y * drawArea.h;
 
-    screen = this->b->getScreen(this->b);
-    SDL_BlitSurface(this->tile, NULL, screen, &drawArea);
-    SDL_UpdateRects(screen, 1, &drawArea);
+    screen = SDL_GetVideoSurface();
+
+    SDL_BlitSurface(tile, NULL, screen, &drawArea);
+    if (refresh) SDL_UpdateRects(screen, 1, &drawArea);
 }
 
 static void
@@ -39,7 +42,6 @@ m_dispose ARG()
 CTOR(Entity)
 {
     BASECTOR(Entity, Object);
-    this->tile = NULL;
     this->init = &m_init;
     this->draw = &m_draw;
     this->dispose = &m_dispose;
