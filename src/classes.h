@@ -2,6 +2,8 @@
 #define STONEAGE_CLASSES_H
 
 enum Type {
+    CLASS_Resource,
+    CLASS_Resfile,
     CLASS_Stoneage,
     CLASS_Entity,
     CLASS_Object
