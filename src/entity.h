@@ -16,6 +16,7 @@ CLASS(Entity)
     int y;
 
     const SDL_Surface *FUNC(getSurface) ARG();
+    const SDL_Surface *FUNC(getBaseSurface) ARG();
 
     void FUNC(init) ARG(Board b, int x, int y);
 

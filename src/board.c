@@ -47,7 +47,7 @@ createScaledSurface(Resource r, int width, int height)
     SDL_Surface *tile;
     SDL_Surface *tmp;
 
-    SDL_RWops *rw = SDL_RWFromMem(r->getData(r), r->getDataSize(r));
+    SDL_RWops *rw = SDL_RWFromMem((void *)r->getData(r), r->getDataSize(r));
     tmp = IMG_LoadPNG_RW(rw);
     tile = zoomSurface (tmp, (double)width/64, (double)height/64, SMOOTHING_ON);
     SDL_FreeSurface(tmp);
@@ -74,12 +74,17 @@ m_draw ARG(int x, int y, int refresh)
 
     screen = this->pimpl->screen;
 
-    SDL_BlitSurface(tile, NULL, screen, &drawArea);
     if (e)
     {
+	if (e->getBaseSurface)
+	{
+	    tile = e->getBaseSurface(this);
+	    SDL_BlitSurface((SDL_Surface *)tile, NULL, screen, &drawArea);
+	}
 	tile = e->getSurface(this);
-	SDL_BlitSurface(tile, NULL, screen, &drawArea);
     }
+    SDL_BlitSurface((SDL_Surface *)tile, NULL, screen, &drawArea);
+
     if (refresh) SDL_UpdateRects(screen, 1, &drawArea);
 }
 
