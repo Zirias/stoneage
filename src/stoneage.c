@@ -55,6 +55,15 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 		    break;
 	    }
 	}
+	else if (e->keysym.mod & KMOD_CTRL)
+	{
+	    switch (e->keysym.sym)
+	    {
+		case SDLK_n:
+		    this->board->loadLevel(this->board);
+		    break;
+	    }
+	}
     }
 }
 
@@ -62,20 +71,6 @@ static void
 handleTick(Stoneage this)
 {
     
-}
-
-static void
-handleSaEvent(Stoneage this, void *data)
-{
-    Event e = CAST(data, Event);
-    if (!e) return;
-
-    if (!e->handler || !e->handler->handleEvent)
-    {
-	DELETE(Event, e);
-	return;
-    }
-    e->handler->handleEvent(e->handler, e);
 }
 
 static int
@@ -88,6 +83,7 @@ m_run ARG(int argc, char **argv)
 
     setupVideo(this);
     this->board = NEW(Board);
+    this->board->loadLevel(this->board);
 
     running = 1;
     while (running)
@@ -99,7 +95,7 @@ m_run ARG(int argc, char **argv)
 		if (!event.user.code)
 		    handleTick(this);
 		else
-		    handleSaEvent(this, event.user.data1);
+		    DeliverEvent(CAST(event.user.data1, Event));
 		break;
 	    
 	    case SDL_KEYDOWN:
@@ -157,6 +153,7 @@ CTOR(Stoneage)
     rw = SDL_RWFromMem((void *)r->getData(r), r->getDataSize(r));
     icon = SDL_LoadBMP_RW(rw, 0);
     DELETE(Resource, r);
+    SDL_FreeRW(rw);
     colkey = 0;
     memcpy(&colkey, (char *)icon->pixels, icon->format->BytesPerPixel);
     SDL_SetColorKey(icon, SDL_SRCCOLORKEY, colkey);

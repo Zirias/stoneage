@@ -30,6 +30,11 @@ CLASS(Board)
      */
     void FUNC(initVideo) ARG();
 
+    /** Load and start a level.
+     * STUB
+     */
+    void FUNC(loadLevel) ARG();
+
     /** Redraws the whole Board.
      */
     void FUNC(redraw) ARG();
