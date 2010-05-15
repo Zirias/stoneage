@@ -7,6 +7,9 @@
 CLASS(ERock)
 {
     INHERIT(Entity);
+
+    int falling;
+    void FUNC(fall) ARG();
 };
 
 #endif

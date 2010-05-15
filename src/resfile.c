@@ -6,6 +6,7 @@
 #include <errno.h>
 
 #include "resfile.h"
+#include "resource.h"
 #include "app.h"
 
 static const char *magic = "SARESV\0\1";

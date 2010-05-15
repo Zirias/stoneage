@@ -5,7 +5,8 @@
 
 #include "common.h"
 #include "app.h"
-#include "board.h"
+
+struct Board;
 
 CLASS(Stoneage)
 {
@@ -18,7 +19,9 @@ CLASS(Stoneage)
     int bpp;
     Uint32 modeflags;
 
-    Board board;
+    SDL_TimerID ticker;
+
+    struct Board *board;
 };
 
 #endif

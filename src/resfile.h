@@ -4,7 +4,8 @@
 #include <stdio.h>
 
 #include "common.h"
-#include "resource.h"
+
+struct Resource;
 
 struct Resfile_impl;
 
@@ -20,8 +21,8 @@ CLASS(Resfile)
     int FUNC(open) ARG(int writeable);
     void FUNC(close) ARG();
 
-    int FUNC(store) ARG(Resource res);
-    int FUNC(load) ARG(const char *key, Resource *res);
+    int FUNC(store) ARG(struct Resource *res);
+    int FUNC(load) ARG(const char *key, struct Resource **res);
 };
 
 #endif

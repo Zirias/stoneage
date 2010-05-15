@@ -1,4 +1,5 @@
 #include "entity.h"
+#include "board.h"
 
 static void
 m_init ARG(Board b, int x, int y)
@@ -19,7 +20,7 @@ m_dispose ARG()
 
 CTOR(Entity)
 {
-    BASECTOR(Entity, Object);
+    BASECTOR(Entity, EHandler);
     this->init = &m_init;
     this->dispose = &m_dispose;
     this->getSurface = 0;
@@ -29,6 +30,6 @@ CTOR(Entity)
 
 DTOR(Entity)
 {
-    BASEDTOR(Object);
+    BASEDTOR(EHandler);
 }
 

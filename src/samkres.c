@@ -4,6 +4,8 @@
 #include <unistd.h>
 
 #include "samkres.h"
+#include "resource.h"
+#include "resfile.h"
 
 static void
 m_abort ARG()

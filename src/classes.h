@@ -2,6 +2,8 @@
 #define STONEAGE_CLASSES_H
 
 enum Type {
+    CLASS_Event,
+    CLASS_EHandler,
     CLASS_Board,
     CLASS_EEarth,
     CLASS_EWall,

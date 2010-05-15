@@ -3,13 +3,14 @@
 
 #include "common.h"
 #include "app.h"
-#include "resfile.h"
+
+struct Resfile;
 
 CLASS(SaMkres)
 {
     INHERIT(App);
 
-    Resfile resfile;
+    struct Resfile *resfile;
 };
 
 #endif

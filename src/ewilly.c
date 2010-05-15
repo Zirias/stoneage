@@ -1,4 +1,5 @@
 #include "ewilly.h"
+#include "board.h"
 
 static void
 FUNC(parent_init) ARG(Board b, int x, int y);
