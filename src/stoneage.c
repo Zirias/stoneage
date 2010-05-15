@@ -1,6 +1,25 @@
 #include "stoneage.h"
-#include "entity.h"
+#include "board.h"
 #include "resfile.h"
+#include "resource.h"
+#include "event.h"
+
+Uint32
+createTickerEvent(Uint32 interval, void *param)
+{
+    Stoneage this = CAST(param, Stoneage);
+
+    SDL_Event e;
+    SDL_UserEvent ue;
+    ue.type = SDL_USEREVENT;
+    ue.code = 0;
+    ue.data1 = 0;
+    ue.data2 = 0;
+    e.type = SDL_USEREVENT;
+    e.user = ue;
+    SDL_PushEvent(&e);
+    return interval;
+}
 
 static void
 setupVideo(Stoneage this)
@@ -39,10 +58,31 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
     }
 }
 
+static void
+handleTick(Stoneage this)
+{
+    
+}
+
+static void
+handleSaEvent(Stoneage this, void *data)
+{
+    Event e = CAST(data, Event);
+    if (!e) return;
+
+    if (!e->handler || !e->handler->handleEvent)
+    {
+	DELETE(Event, e);
+	return;
+    }
+    e->handler->handleEvent(e->handler, e);
+}
+
 static int
 m_run ARG(int argc, char **argv)
 {
     METHOD(Stoneage);
+
     SDL_Event event;
     int running;
 
@@ -56,6 +96,10 @@ m_run ARG(int argc, char **argv)
 	switch (event.type)
 	{
 	    case SDL_USEREVENT:
+		if (!event.user.code)
+		    handleTick(this);
+		else
+		    handleSaEvent(this, event.user.data1);
 		break;
 	    
 	    case SDL_KEYDOWN:
@@ -121,12 +165,14 @@ CTOR(Stoneage)
 
     SDL_WM_SetCaption("Stonage 0.1 -- as seen 1988 in AmigaBASIC", "stoneage");
 
+    this->ticker = SDL_AddTimer(1000, &createTickerEvent, this);
     return this;
 }
 
 DTOR(Stoneage)
 {
     DELETE(Board, this->board);
+    SDL_RemoveTimer(this->ticker);
     SDL_Quit();
     BASEDTOR(App);
 }

@@ -4,21 +4,23 @@
 #include <SDL.h>
 
 #include "common.h"
-#include "board.h"
-#include "resource.h"
+#include "ehandler.h"
+
+struct Board;
 
 CLASS(Entity)
 {
-    INHERIT(Object);
+    INHERIT(EHandler);
     
-    Board b;
+    struct Board *b;
     int x;
     int y;
 
     const SDL_Surface *FUNC(getSurface) ARG();
     const SDL_Surface *FUNC(getBaseSurface) ARG();
 
-    void FUNC(init) ARG(Board b, int x, int y);
+    void FUNC(init) ARG(
+	    struct Board *b, int x, int y);
 
     /* move around on the board */
     int FUNC(left) ARG();

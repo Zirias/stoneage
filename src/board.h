@@ -4,18 +4,24 @@
 #include <SDL.h>
 
 #include "common.h"
+#include "ehandler.h"
 
 struct Board_impl;
 
+struct Entity;
+
 CLASS(Board)
 {
-    INHERIT(Object);
+    INHERIT(EHandler);
 
     struct Board_impl *pimpl;
 
     void FUNC(initVideo) ARG();
     void FUNC(redraw) ARG();
     void FUNC(draw) ARG(int x, int y, int refresh);
+    int FUNC(isEmpty) ARG(int x, int y);
+    void FUNC(startMove) ARG(
+	    struct Entity *e, int dir_x, int dir_y);
 
     const SDL_Surface *FUNC(getEmptyTile) ARG();
     const SDL_Surface *FUNC(getEarthTile) ARG();
