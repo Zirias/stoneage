@@ -12,6 +12,11 @@ CLASS(Stoneage)
     INHERIT(App);
 
     SDL_Surface *screen;
+    int res_x;
+    int res_y;
+    int bpp;
+    Uint32 modeflags;
+
     Board board;
 };
 
