@@ -298,6 +298,7 @@ m_load ARG(const char *key, Resource *res)
     if ((size_t) size != entry->size)
     {
 	log_err("fatal: corrupted resource file!");
+	DELETE(Resource, r);
 	this->close(this);
 	mainApp->abort(mainApp);
     }
