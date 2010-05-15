@@ -22,6 +22,8 @@ CTOR(Entity)
     BASECTOR(Entity, Object);
     this->init = &m_init;
     this->dispose = &m_dispose;
+    this->getSurface = 0;
+    this->getBaseSurface = 0;
     return this;
 }
 
