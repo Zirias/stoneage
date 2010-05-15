@@ -1,16 +1,18 @@
 #include <SDL_rotozoom.h>
+#include <SDL_image.h>
 #include <stdlib.h>
 
 #include "board.h"
 #include "resfile.h"
 #include "app.h"
 
-#include "eempty.h"
 #include "eearth.h"
 #include "ewall.h"
 #include "erock.h"
 #include "ecabbage.h"
 #include "ewilly.h"
+
+static SDL_Rect drawArea;
 
 struct Board_impl
 {
@@ -33,6 +35,9 @@ struct Board_impl
     int tile_width;
     int tile_height;
 
+    int willy_x;
+    int willy_y;
+
     Entity entity[32][24];
 };
 
@@ -43,12 +48,39 @@ createScaledSurface(Resource r, int width, int height)
     SDL_Surface *tmp;
 
     SDL_RWops *rw = SDL_RWFromMem(r->getData(r), r->getDataSize(r));
-    tile = SDL_LoadBMP_RW(rw, 1);
-    tmp = zoomSurface (tile, (double)width/64, (double)height/64, SMOOTHING_ON);
-    SDL_FreeSurface(tile);
-    tile = SDL_DisplayFormat(tmp);
+    tmp = IMG_LoadPNG_RW(rw);
+    tile = zoomSurface (tmp, (double)width/64, (double)height/64, SMOOTHING_ON);
     SDL_FreeSurface(tmp);
+    SDL_SetAlpha(tile, SDL_SRCALPHA|SDL_RLEACCEL, SDL_ALPHA_OPAQUE);
     return tile;
+}
+
+static void
+m_draw ARG(int x, int y, int refresh)
+{
+    METHOD(Board);
+
+    SDL_Surface *screen;
+    const SDL_Surface *tile;
+    Entity e;
+
+    e = this->pimpl->entity[x][y];
+    tile = this->getEmptyTile(this);
+
+    drawArea.w = tile->w;
+    drawArea.h = tile->h;
+    drawArea.x = x * drawArea.w;
+    drawArea.y = y * drawArea.h;
+
+    screen = this->pimpl->screen;
+
+    SDL_BlitSurface(tile, NULL, screen, &drawArea);
+    if (e)
+    {
+	tile = e->getSurface(this);
+	SDL_BlitSurface(tile, NULL, screen, &drawArea);
+    }
+    if (refresh) SDL_UpdateRects(screen, 1, &drawArea);
 }
 
 static void
@@ -56,17 +88,13 @@ m_redraw ARG()
 {
     METHOD(Board);
     Entity e;
-    Entity *ep;
-    int i;
+    int x, y;
 
     struct Board_impl *b = this->pimpl;
 
-    ep = (Entity *)&(b->entity);
-    for (i=0; i<32*24; ++i)
-    {
-	e = ep[i];
-	if(e) e->draw(e, 0);
-    }
+    for (x = 0; x < 32; ++x)
+	for (y = 0; y < 24; ++y)
+	    this->draw(this, x, y, 0);
 
     SDL_UpdateRect(b->screen, 0, 0, b->screen->w, b->screen->h);
 }
@@ -160,12 +188,21 @@ CTOR(Board)
     struct Board_impl *b;
     Resfile rf;
 
+    int imgflags = IMG_Init(IMG_INIT_PNG);
+    if (!(imgflags & IMG_INIT_PNG))
+    {
+	log_err("SDL_image library is missing PNG support!\n"
+		"Try installing libpng and zlib.\n");
+	mainApp->abort(mainApp);
+    }
+
     b = XMALLOC(struct Board_impl, 1);
     memset(b, 0, sizeof(struct Board_impl));
     this->pimpl = b;
 
     this->initVideo = &m_initVideo;
     this->redraw = &m_redraw;
+    this->draw = &m_draw;
     this->getEmptyTile = &m_getEmptyTile;
     this->getEarthTile = &m_getEarthTile;
     this->getWallTile = &m_getWallTile;
@@ -174,7 +211,7 @@ CTOR(Board)
     this->getWillyTile = &m_getWillyTile;
 
     rf = NEW(Resfile);
-    rf->setFile(rf, "res/tiles.res");
+    rf->setFile(rf, "res/gfx.sar");
     if (rf->open(rf, 0) < 0)
     {
 	log_err("Error loading tiles.\n");
@@ -197,6 +234,9 @@ CTOR(Board)
     rf->close(rf);
     DELETE(Resfile, rf);
 
+    b->willy_x = -1;
+    b->willy_y = -1;
+
     int x, y, z;
     Entity e;
     for (x = 0; x < 32; ++x)
@@ -205,15 +245,21 @@ CTOR(Board)
 	    z = (random() / (RAND_MAX / 5));
 	    switch(z)
 	    {
-		case 0 : e = (Entity)NEW(EEmpty); break;
+		case 0 : e = 0; break;
 		case 1 : e = (Entity)NEW(EEarth); break;
 		case 2 : e = (Entity)NEW(EWall); break;
 		case 3 : e = (Entity)NEW(ERock); break;
 		case 4 : e = (Entity)NEW(ECabbage); break;
 	    }
-	    e->init(e, this, x, y);
+	    if(e) e->init(e, this, x, y);
 	    b->entity[x][y] = e;
 	}
+    b->willy_x = x = (random() / (RAND_MAX / 32));
+    b->willy_y = y = (random() / (RAND_MAX / 24));
+    e = (Entity)NEW(EWilly);
+    e->init(e, this, x, y);
+    DELETE(Entity, b->entity[x][y]);
+    b->entity[x][y] = e;
 
     this->initVideo(this);
     return this;
@@ -248,6 +294,7 @@ DTOR(Board)
 	if(e) e->dispose(e);
     }
 
+    IMG_Quit();
     XFREE(this->pimpl);
     BASEDTOR(Object);
 }

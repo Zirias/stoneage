@@ -16,6 +16,7 @@ AC_PROG_MAKE_SET
 
 # Checks for libraries.
 PKG_CHECK_MODULES(SDL, [sdl >= 1.2])
+PKG_CHECK_MODULES(SDL_image, [SDL_image >= 1.2])
 PKG_CHECK_MODULES(SDL_gfx, [SDL_gfx >= 2.0])
 
 # Checks for header files.

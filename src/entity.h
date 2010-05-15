@@ -25,8 +25,6 @@ CLASS(Entity)
     int FUNC(up) ARG();
     int FUNC(down) ARG();
 
-    void FUNC(draw) ARG(int refresh);
-
     /* virtual destructor */
     void FUNC(dispose) ARG();
 };
