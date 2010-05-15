@@ -12,7 +12,21 @@
 #include "ecabbage.h"
 #include "ewilly.h"
 
-static SDL_Rect drawArea;
+static SDL_Rect drawArea[3];
+
+struct MoveRecord;
+typedef struct MoveRecord *MoveRecord;
+
+struct MoveRecord
+{
+    Entity e;
+    int dir_x;
+    int dir_y;
+    int off_x;
+    int off_y;
+    MoveRecord prev;
+    MoveRecord next;
+};
 
 struct Board_impl
 {
@@ -32,8 +46,13 @@ struct Board_impl
     SDL_Surface *s_cabbage;
     SDL_Surface *s_willy;
 
+    MoveRecord move;
+
     int tile_width;
     int tile_height;
+
+    int step_x;
+    int step_y;
 
     int willy_x;
     int willy_y;
@@ -56,36 +75,81 @@ createScaledSurface(Resource r, int width, int height)
 }
 
 static void
-m_draw ARG(int x, int y, int refresh)
+internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
 {
-    METHOD(Board);
-
     SDL_Surface *screen;
     const SDL_Surface *tile;
+    const SDL_Surface *base;
     Entity e;
 
-    e = this->pimpl->entity[x][y];
-    tile = this->getEmptyTile(this);
+    if (m) e = m->e;
+    else e = b->pimpl->entity[x][y];
 
-    drawArea.w = tile->w;
-    drawArea.h = tile->h;
-    drawArea.x = x * drawArea.w;
-    drawArea.y = y * drawArea.h;
+    drawArea[0].x = x * drawArea[0].w;
+    drawArea[0].y = y * drawArea[0].h;
 
-    screen = this->pimpl->screen;
+    screen = b->pimpl->screen;
+
+    base = 0;
 
     if (e)
     {
 	if (e->getBaseSurface)
 	{
-	    tile = e->getBaseSurface(this);
-	    SDL_BlitSurface((SDL_Surface *)tile, NULL, screen, &drawArea);
+	    base = e->getBaseSurface(b);
 	}
-	tile = e->getSurface(this);
+	tile = e->getSurface(b);
     }
-    SDL_BlitSurface((SDL_Surface *)tile, NULL, screen, &drawArea);
+    else
+    {
+	tile = b->getEmptyTile(b);
+    }
 
-    if (refresh) SDL_UpdateRects(screen, 1, &drawArea);
+    SDL_BlitSurface((SDL_Surface *)base, 0, screen, &drawArea[0]);
+    if (m)
+    {
+	drawArea[1].x = x + m->dir_x * base->w;
+	drawArea[1].y = y + m->dir_y * base->h;
+	SDL_BlitSurface((SDL_Surface *)base, 0, screen, &drawArea[1]);
+	if (m->dir_x) m->off_x += b->pimpl->step_x;
+	if (m->dir_y) m->off_y += b->pimpl->step_y;
+	if ((base->w - m->off_x < b->pimpl->step_x)
+		|| (base->h - m->off_y < b->pimpl->step_y))
+	{
+	    drawArea[2].x = drawArea[1].x;
+	    drawArea[2].y = drawArea[1].y;
+	    if (m->prev)
+	    {
+		if (m->next)
+		    m->next->prev = m->prev;
+		m->prev->next = m->next;
+	    }
+	    else
+	    {
+		b->pimpl->move = 0;
+	    }
+	    XFREE(m);
+	}
+	else
+	{
+	    drawArea[2].x = drawArea[0].x + m->dir_x * m->off_x;
+	    drawArea[2].y = drawArea[0].y + m->dir_y * m->off_y;
+	}
+	SDL_BlitSurface((SDL_Surface *)tile, 0, screen, &drawArea[2]);
+	if (refresh) SDL_UpdateRects(screen, 2, &drawArea[0]);
+    }
+    else
+    {
+	SDL_BlitSurface((SDL_Surface *)tile, 0, screen, &drawArea[0]);
+	if (refresh) SDL_UpdateRects(screen, 1, &drawArea[0]);
+    }
+}
+
+static void
+m_draw ARG(int x, int y, int refresh)
+{
+    METHOD(Board);
+    internal_draw(this, x, y, 0, refresh);
 }
 
 static void
@@ -114,6 +178,15 @@ m_initVideo ARG()
     b->screen = SDL_GetVideoSurface();
     b->tile_width = b->screen->w / 32;
     b->tile_height = b->screen->h / 24;
+
+    drawArea[0].w = drawArea[1].w = drawArea[2].w = b->tile_width;
+    drawArea[0].h = drawArea[1].h = drawArea[2].h = b->tile_height;
+
+    if (b->tile_width < 8) b->step_x = 1;
+    else b->step_x = b->tile_width / 8;
+
+    if (b->tile_height < 8) b->step_y = 1;
+    else b->step_y = b->tile_height / 8;
 
     if (b->s_empty) SDL_FreeSurface(b->s_empty);
     if (b->s_earth) SDL_FreeSurface(b->s_earth);
