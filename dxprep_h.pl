@@ -24,15 +24,24 @@ use warnings;
 open(HEADER, "<$ARGV[0]");
 while(<HEADER>)
 {
-	if (/CLASS\((.+?)\)/)
+	if (/^CLASS\((.+?)\)/)
 	{
-		print "public class $1 : ";
-		do ($_ = <HEADER>) until (/INHERIT\((.+)\)/);
-		print "$1\n{\n";
+		print "public class $1";
+		$_ = <HEADER> if (!/\{/);
+		$_ = <HEADER>;
+		if (/INHERIT\((.+?)\)/)
+		{
+			print " : $1\n{\npublic:\n";
+		}
+		else
+		{
+			print "\n{\npublic:\n";
+			print;
+		}
 	}
 	elsif (/(\s*)(.*)FUNC\((.+?)\)\s+ARG(.*)/)
 	{
-		print "$1public $2$3$4\n";
+		print "$1$2$3$4\n";
 	}
 	else
 	{
