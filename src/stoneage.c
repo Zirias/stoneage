@@ -1,5 +1,6 @@
-#include "entity.h"
 #include "stoneage.h"
+#include "entity.h"
+#include "resfile.h"
 
 static void
 setupVideo(Stoneage this)
@@ -45,8 +46,6 @@ m_run ARG(int argc, char **argv)
     SDL_Event event;
     int running;
 
-    SDL_WM_SetCaption("Stonage 0.1 -- as seen 1988 in AmigaBASIC", "stoneage");
-
     setupVideo(this);
     this->board = NEW(Board);
 
@@ -84,6 +83,13 @@ m_abort ARG()
 CTOR(Stoneage)
 {
     BASECTOR(Stoneage, App);
+
+    Resfile rf;
+    Resource r;
+    SDL_RWops *rw;
+    SDL_Surface *icon;
+    Uint32 colkey;
+
     ((App)this)->run = &m_run;
     ((App)this)->abort = &m_abort;
     SDL_Init(
@@ -93,6 +99,28 @@ CTOR(Stoneage)
     this->res_y = 768;
     this->bpp = 32;
     this->modeflags = 0;
+
+    rf = NEW(Resfile);
+    rf->setFile(rf, RES_GFX);
+    if (rf->open(rf, 0) < 0)
+    {
+	log_err("Error loading icon.\n");
+	mainApp->abort(mainApp);
+    }
+    rf->load(rf, "mainicon", &r);
+    DELETE(Resfile, rf);
+
+    rw = SDL_RWFromMem((void *)r->getData(r), r->getDataSize(r));
+    icon = SDL_LoadBMP_RW(rw, 0);
+    DELETE(Resource, r);
+    colkey = 0;
+    memcpy(&colkey, (char *)icon->pixels, icon->format->BytesPerPixel);
+    SDL_SetColorKey(icon, SDL_SRCCOLORKEY, colkey);
+    SDL_WM_SetIcon(icon, 0);
+    SDL_FreeSurface(icon);
+
+    SDL_WM_SetCaption("Stonage 0.1 -- as seen 1988 in AmigaBASIC", "stoneage");
+
     return this;
 }
 
