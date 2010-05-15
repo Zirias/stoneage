@@ -15,6 +15,7 @@ CLASS(Board)
 
     void FUNC(initVideo) ARG();
     void FUNC(redraw) ARG();
+    void FUNC(draw) ARG(int x, int y, int refresh);
 
     const SDL_Surface *FUNC(getEmptyTile) ARG();
     const SDL_Surface *FUNC(getEarthTile) ARG();

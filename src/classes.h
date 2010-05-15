@@ -3,7 +3,6 @@
 
 enum Type {
     CLASS_Board,
-    CLASS_EEmpty,
     CLASS_EEarth,
     CLASS_EWall,
     CLASS_ERock,
