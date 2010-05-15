@@ -21,7 +21,9 @@ CLASS(Event)
     void *data;
 };
 
-void extern
-RaiseEvent(Event e);
+void extern RaiseEvent(Event e);
+void extern DeliverEvent(Event e);
+void extern CancelEvent(Event e);
+void extern CancelEventsFor(struct EHandler *h);
 
 #endif

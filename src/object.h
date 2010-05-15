@@ -33,7 +33,8 @@
 struct TypeList;
 typedef struct TypeList *TypeList;
 
-CLASS(Object) {
+CLASS(Object)
+{
     TypeList types;
 };
 

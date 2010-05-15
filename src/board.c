@@ -74,8 +74,8 @@ createMoveTickEvent(Uint32 interval, void *param)
     Board b = CAST(param, Board);
 
     Event e = NEW(Event);
-    e->sender = b;
-    e->handler = b;
+    e->sender = CAST(b, Object);
+    e->handler = CAST(b, EHandler);
     e->type = SAEV_MoveTick;
 
     RaiseEvent(e);
@@ -91,6 +91,7 @@ createScaledSurface(Resource r, int width, int height)
 
     SDL_RWops *rw = SDL_RWFromMem((void *)r->getData(r), r->getDataSize(r));
     tmp = IMG_LoadPNG_RW(rw);
+    SDL_FreeRW(rw);
     tile = zoomSurface (tmp, (double)width/64, (double)height/64, SMOOTHING_ON);
     SDL_FreeSurface(tmp);
     SDL_SetAlpha(tile, SDL_SRCALPHA|SDL_RLEACCEL, SDL_ALPHA_OPAQUE);
@@ -152,13 +153,15 @@ internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
 	    drawArea[2].y = drawArea[1].y;
 	    if (m->prev)
 	    {
-		if (m->next)
-		    m->next->prev = m->prev;
 		m->prev->next = m->next;
 	    }
 	    else
 	    {
-		b->pimpl->move = 0;
+		b->pimpl->move = m->next;
+	    }
+	    if (m->next)
+	    {
+		m->next->prev = m->prev;
 	    }
 	    b->pimpl->entity[m->e->x][m->e->y] = 0;
 	    m->e->x += m->dir_x;
@@ -166,8 +169,8 @@ internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
 	    b->pimpl->entity[m->e->x][m->e->y] = m->e;
 
 	    Event ev = NEW(Event);
-	    ev->sender = b;
-	    ev->handler = m->e;
+	    ev->sender = CAST(b, Object);
+	    ev->handler = CAST(m->e, EHandler);
 	    ev->type = SAEV_MoveFinished;
 	    RaiseEvent(ev);
 
@@ -191,6 +194,75 @@ internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
 }
 
 static void
+randomLevel(Board b)
+{
+    int x, wx, y, wy, z;
+    Entity e;
+
+    b->pimpl->willy_x = wx = (random() / (RAND_MAX / 32));
+    b->pimpl->willy_y = wy = (random() / (RAND_MAX / 24));
+    e = (Entity)NEW(EWilly);
+    e->init(e, b, wx, wy);
+    internal_put(b, wx, wy, e);
+
+    for (x = 0; x < 32; ++x)
+	for (y = 0; y < 24; ++y)
+	{
+	    if ((x==wx)&&(y==wy)) continue;
+	    z = (random() / (RAND_MAX / 5));
+	    switch(z)
+	    {
+		case 0 : e = 0; break;
+		case 1 : e = (Entity)NEW(EEarth); break;
+		case 2 : e = (Entity)NEW(EWall); break;
+		case 3 : e = (Entity)NEW(ERock); break;
+		case 4 : e = (Entity)NEW(ECabbage); break;
+	    }
+	    if(e)
+	    {
+		e->init(e, b, x, y);
+		internal_put(b, x, y, e);
+	    }
+	}
+}
+
+static void
+internal_clear(Board b)
+{
+    MoveRecord m, next;
+    Entity *e;
+    Entity *end = (Entity *)&(b->pimpl->entity) + 32*24;
+    int i;
+
+    if (b->pimpl->moveticker)
+    {
+	SDL_RemoveTimer(b->pimpl->moveticker);
+	b->pimpl->moveticker = 0;
+	CancelEventsFor(CAST(b, EHandler));
+	m = b->pimpl->move;
+	b->pimpl->move = 0;
+	while (m)
+	{
+	    next = m->next;
+	    XFREE(m);
+	    m = next;
+	}
+    }
+
+    for (e = (Entity *) &(b->pimpl->entity); e != end; ++e)
+    {
+	if(*e)
+	{
+	    CancelEventsFor(CAST(*e, EHandler));
+	    (*e)->dispose(*e);
+	}
+	*e = 0;
+    }
+    
+    b->pimpl->num_rocks = 0;
+}
+
+static void
 m_handleEvent ARG(Event e)
 {
     METHOD(Board);
@@ -200,14 +272,14 @@ m_handleEvent ARG(Event e)
 
     if (e->type == SAEV_MoveTick)
     {
-	if (!this->pimpl->move)
+	m = this->pimpl->move;
+	if (!m)
 	{
 	    SDL_RemoveTimer(this->pimpl->moveticker);
 	    this->pimpl->moveticker = 0;
 	}
 	else
 	{
-	    m = this->pimpl->move;
 	    while (m)
 	    {
 		next = m->next;
@@ -216,7 +288,7 @@ m_handleEvent ARG(Event e)
 	    }
 	}
     }
-
+    
     DELETE(Event, e);
 }
 
@@ -248,7 +320,7 @@ m_isEmpty ARG(int x, int y)
 {
     METHOD(Board);
 
-    if ((x<0)||(x>32)||(y<0)||(y>24)) return 0;
+    if ((x<0)||(x>31)||(y<0)||(y>23)) return 0;
     return (this->pimpl->entity[x][y] ? 0 : 1);
 }
 
@@ -256,8 +328,6 @@ static void
 m_startMove ARG(Entity e, int dir_x, int dir_y)
 {
     METHOD(Board);
-
-    MoveRecord last;
 
     MoveRecord m = XMALLOC(struct MoveRecord, 1);
     m->dir_x = dir_x;
@@ -268,17 +338,13 @@ m_startMove ARG(Entity e, int dir_x, int dir_y)
     m->prev = 0;
     m->next = 0;
 
-    if (!this->pimpl->move)
+    if (this->pimpl->move) 
     {
-	this->pimpl->move = m;
+	this->pimpl->move->prev = m;
+	m->next = this->pimpl->move;
     }
-    else
-    {
-	last = this->pimpl->move;
-	while (last->next) last = last->next;
-	m->prev = last;
-	last->next = m;
-    }
+    this->pimpl->move = m;
+
     if (!this->pimpl->moveticker)
     {
 	this->pimpl->moveticker = SDL_AddTimer(
@@ -350,6 +416,17 @@ m_getWillyTile ARG()
 }
 
 static void
+m_loadLevel ARG()
+{
+    METHOD(Board);
+
+    internal_clear(this);
+    randomLevel(this);
+    this->redraw(this);
+    checkRocks(this);
+}
+
+static void
 m_initVideo ARG()
 {
     METHOD(Board);
@@ -414,6 +491,7 @@ CTOR(Board)
 
     ((EHandler)this)->handleEvent = &m_handleEvent;
     this->initVideo = &m_initVideo;
+    this->loadLevel = &m_loadLevel;
     this->redraw = &m_redraw;
     this->draw = &m_draw;
     this->isEmpty = &m_isEmpty;
@@ -452,44 +530,16 @@ CTOR(Board)
     b->willy_x = -1;
     b->willy_y = -1;
 
-    int x, y, z;
-    Entity e;
-    for (x = 0; x < 32; ++x)
-	for (y = 0; y < 24; ++y)
-	{
-	    z = (random() / (RAND_MAX / 5));
-	    switch(z)
-	    {
-		case 0 : e = 0; break;
-		case 1 : e = (Entity)NEW(EEarth); break;
-		case 2 : e = (Entity)NEW(EWall); break;
-		case 3 : e = (Entity)NEW(ERock); break;
-		case 4 : e = (Entity)NEW(ECabbage); break;
-	    }
-	    if(e)
-	    {
-		e->init(e, this, x, y);
-		internal_put(this, x, y, e);
-	    }
-	}
-    b->willy_x = x = (random() / (RAND_MAX / 32));
-    b->willy_y = y = (random() / (RAND_MAX / 24));
-    e = (Entity)NEW(EWilly);
-    e->init(e, this, x, y);
-    DELETE(Entity, b->entity[x][y]);
-    b->entity[x][y] = e;
-
     this->initVideo(this);
+
     return this;
 }
 
 DTOR(Board)
 {
-    int i;
-    Entity e;
-    Entity *ep;
-
     struct Board_impl *b = this->pimpl;
+
+    internal_clear(this);
 
     if (b->s_empty) SDL_FreeSurface(b->s_empty);
     if (b->s_earth) SDL_FreeSurface(b->s_earth);
@@ -504,13 +554,6 @@ DTOR(Board)
     DELETE(Resource, b->t_rock);
     DELETE(Resource, b->t_cabbage);
     DELETE(Resource, b->t_willy);
-
-    ep = (Entity *)&(b->entity);
-    for (i=0; i<32*24; ++i)
-    {
-	e = ep[i];
-	if(e) e->dispose(e);
-    }
 
     IMG_Quit();
     XFREE(this->pimpl);
