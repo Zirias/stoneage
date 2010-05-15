@@ -4,12 +4,14 @@
 AC_PREREQ([2.65])
 AC_INIT([stoneage], [0.01], [felix@palmen-it.de])
 AM_INIT_AUTOMAKE
-AC_CONFIG_SRCDIR([src])
+AM_SILENT_RULES([yes])
+AC_CONFIG_SRCDIR([src/stoneage.c])
 AC_CONFIG_HEADERS([src/config.h])
 
 # Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
@@ -33,6 +35,17 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset strerror])
 
+#optional stuff
+AC_PATH_PROG(XCF2PNG, [xcf2png])
+AC_ARG_VAR(XCF2PNG, [path to xcf2png from xcftools])
+AS_IF([test "x$XCF2PNG" = x],
+      [AC_MSG_WARN([xcf2png not found in your path!])
+      AC_MSG_WARN([cannot build resource files.])
+      AC_MSG_NOTICE([please make sure you have xcftools installed.])],
+      [AC_SUBST(RES_GFX, [gfx.sar])])
+
+#output
 AC_CONFIG_FILES([Makefile
-                 src/Makefile])
+                 src/Makefile
+		 gfx/Makefile])
 AC_OUTPUT
