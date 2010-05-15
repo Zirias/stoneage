@@ -211,7 +211,7 @@ CTOR(Board)
     this->getWillyTile = &m_getWillyTile;
 
     rf = NEW(Resfile);
-    rf->setFile(rf, "res/gfx.sar");
+    rf->setFile(rf, RES_GFX);
     if (rf->open(rf, 0) < 0)
     {
 	log_err("Error loading tiles.\n");
