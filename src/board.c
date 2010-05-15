@@ -280,12 +280,12 @@ DTOR(Board)
     if (b->s_cabbage) SDL_FreeSurface(b->s_cabbage);
     if (b->s_willy) SDL_FreeSurface(b->s_willy);
 
-    if (b->t_empty) DELETE(Resource, b->t_empty);
-    if (b->t_earth) DELETE(Resource, b->t_earth);
-    if (b->t_wall) DELETE(Resource, b->t_wall);
-    if (b->t_rock) DELETE(Resource, b->t_rock);
-    if (b->t_cabbage) DELETE(Resource, b->t_cabbage);
-    if (b->t_willy) DELETE(Resource, b->t_willy);
+    DELETE(Resource, b->t_empty);
+    DELETE(Resource, b->t_earth);
+    DELETE(Resource, b->t_wall);
+    DELETE(Resource, b->t_rock);
+    DELETE(Resource, b->t_cabbage);
+    DELETE(Resource, b->t_willy);
 
     ep = (Entity *)&(b->entity);
     for (i=0; i<32*24; ++i)
