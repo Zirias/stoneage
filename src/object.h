@@ -15,7 +15,9 @@
 #define INHERIT(baseclass) struct baseclass _baseobject
 #define CAST(pointer, type) ((type)GetObjectOf(pointer, CLASS_##type))
 #define NEW(T) T##_ctor((T)XMALLOC(struct T, 1), 0)
-#define DELETE(T, object) T##_dtor((T)object); XFREE(object)
+#define DELETE(T, object) do { if (object) { \
+	T##_dtor((T)object); free(object); object=0; \
+    }} while (0)
 
 #define BASECTOR(myclass, baseclass) \
     types = RegisterType(types, CLASS_##myclass); \
