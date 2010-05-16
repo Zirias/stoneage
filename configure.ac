@@ -5,6 +5,7 @@ AC_PREREQ([2.6])
 AC_INIT([stoneage], [0.01], [felix@palmen-it.de])
 AM_INIT_AUTOMAKE
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/stoneage.c])
 AC_CONFIG_HEADERS([src/config.h])
 
