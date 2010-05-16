@@ -15,6 +15,12 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
+# Misc options
+AC_ARG_ENABLE([debugging],
+	      AC_HELP_STRING([--enable-debugging],
+	[build without optimizations and with debugging symbols]))
+AS_IF([test "x$enable_debugging" != "xno"], [CFLAGS="$CFLAGS -O0 -g3"])
+
 # Checks for libraries.
 PKG_CHECK_MODULES(SDL, [sdl >= 1.2])
 CFLAGS="$CFLAGS $SDL_CFLAGS"
