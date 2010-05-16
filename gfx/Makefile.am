@@ -1,5 +1,5 @@
 t%.png: tiles.xcf
-	$(AM_V_GEN) $(XCF2PNG) -o $@ tiles.xcf $*
+	$(AM_V_GEN) $(XCF2PNG) -A -o $@ tiles.xcf $*
 
 gfx.sar: stoneage.bmp tempty.png tearth.png twall.png trock.png tcabbage.png twilly.png
 	$(AM_V_GEN) rm -f gfx.sar && \
