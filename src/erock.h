@@ -4,11 +4,22 @@
 #include "common.h"
 #include "entity.h"
 
+/** @file erock.h
+ * Includes definition of the ERock class
+ */
+
+/** A class representing a Rock on the game board
+ */
 CLASS(ERock)
 {
     INHERIT(Entity);
 
+    /** indicates whether the rock is in the process of falling down.
+     */
     int falling;
+
+    /** initiate falling down.
+     */
     void FUNC(fall) ARG();
 };
 

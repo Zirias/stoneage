@@ -1,6 +1,10 @@
 #ifndef STONEAGE_COMMON_H
 #define STONEAGE_COMMON_H
 
+/** @file common.h
+ * Includes and defines common to all source files
+ */
+
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
