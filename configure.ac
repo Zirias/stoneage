@@ -18,9 +18,13 @@ AC_PROG_MAKE_SET
 
 # Misc options
 AC_ARG_ENABLE([debugging],
-	      AC_HELP_STRING([--enable-debugging],
+	AC_HELP_STRING([--enable-debugging],
 	[build without optimizations and with debugging symbols]))
-AS_IF([test "x$enable_debugging" != "xno"], [CFLAGS="$CFLAGS -O0 -g3"])
+AS_IF([test "x$enable_debugging" = "xyes"], [CFLAGS="$CFLAGS -O0 -g3"])
+
+AC_ARG_ENABLE([resbuild],
+	AC_HELP_STRING([--enable-resbuild],
+	[generate resource files even if they exist. (for maintainer usage)]))
 
 # Checks for libraries.
 PKG_CHECK_MODULES(SDL, [sdl >= 1.2])
@@ -58,17 +62,25 @@ AC_FUNC_MALLOC
 AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset strerror])
 
-#optional stuff
-AC_PATH_PROG(XCF2PNG, [xcf2png])
-AC_ARG_VAR(XCF2PNG, [path to xcf2png from xcftools])
+# Building options
 
-AS_IF([test "x$XCF2PNG" = x],
-      [AC_MSG_WARN([
+resources_exist="yes"
+AS_IF([test -f gfx/gfx.sar], [], [resources_exist="no"])
+
+build_resources="no"
+AS_IF([test "x$enable_resbuild" = "xyes"], [build_resources="yes"])
+AS_IF([test "x$resources_exist" = "xno"], [build_resources="yes"])
+AM_CONDITIONAL([BUILD_RESOURCES], [test "x$build_resources" = "xyes"])
+
+AS_IF([test "x$build_resources" = "xyes"],
+	[AC_PATH_PROG(XCF2PNG, [xcf2png])
+	AC_ARG_VAR(XCF2PNG, [path to xcf2png from xcftools])
+	AS_IF([test "x$XCF2PNG" = "x"],
+		[AC_MSG_ERROR([
 ** xcf2png not found in your path!
 ** cannot build resource files.
 ** please make sure you have xcftools installed.
-])],
-      [AC_SUBST([RES_GFX], [gfx.sar])])
+])])])
 
 AS_IF([test "x$check_sdl_img_128" = "xno"],
       [AC_MSG_WARN([
