@@ -11,15 +11,31 @@ AC_CONFIG_HEADERS([src/config.h])
 # Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC
-AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 
 # Checks for libraries.
 PKG_CHECK_MODULES(SDL, [sdl >= 1.2])
-PKG_CHECK_MODULES(SDL_image, [SDL_image >= 1.2])
-PKG_CHECK_MODULES(SDL_gfx, [SDL_gfx >= 2.0])
+CFLAGS="$CFLAGS $SDL_CFLAGS"
+PKG_CHECK_MODULES(SDL_image, [SDL_image >= 1.2.8],
+	[check_sdl_img_128="yes"], [check_sdl_img_128="no"])
+PKG_CHECK_MODULES(SDL_gfx, [SDL_gfx >= 2.0],
+	[check_sdl_gfx_20="yes"], [check_sdl_gfx_20="no"])
+
+AS_IF([test "x$check_sdl_img_128" != "xyes"],
+      [AC_CHECK_HEADER([SDL_image.h],
+      [],[AC_MSG_ERROR([SDL_image library could not be detected, giving up!
+Please install SDL_image version 1.2.8 or newer.])],
+      [#include <SDL.h>])
+      ])
+
+AS_IF([test "x$check_sdl_gfx_20" != "xyes"],
+      [AC_CHECK_HEADER([SDL_rotozoom.h],
+      [],[AC_MSG_ERROR([SDL_gfx library could not be detected, giving up!
+Please install SDL_gfx version 2.0 or newer.])],
+      [#include <SDL.h>])
+      ])
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
@@ -38,11 +54,32 @@ AC_CHECK_FUNCS([memset strerror])
 #optional stuff
 AC_PATH_PROG(XCF2PNG, [xcf2png])
 AC_ARG_VAR(XCF2PNG, [path to xcf2png from xcftools])
+
 AS_IF([test "x$XCF2PNG" = x],
-      [AC_MSG_WARN([xcf2png not found in your path!])
-      AC_MSG_WARN([cannot build resource files.])
-      AC_MSG_NOTICE([please make sure you have xcftools installed.])],
-      [AC_SUBST(RES_GFX, [gfx.sar])])
+      [AC_MSG_WARN([
+** xcf2png not found in your path!
+** cannot build resource files.
+** please make sure you have xcftools installed.
+])],
+      [AC_SUBST([RES_GFX], [gfx.sar])])
+
+AS_IF([test "x$check_sdl_img_128" = "xno"],
+      [AC_MSG_WARN([
+** SDL_image >= 1.2.8 could not be found, but there seems to be some older
+** version intalled. The build system will try to compile using this version.
+** THIS COULD RESULT IN AN UNSUCCESSFUL BUILD!
+])
+      AC_DEFINE([SDL_IMG_OLD], [1],
+      [Define to 1 if trying to build with an SDL_image version older than 1.2.8])
+      SDL_image_LIBS=-lSDL_image])
+
+AS_IF([test "x$check_sdl_gfx_20" = "xno"],
+      [AC_MSG_WARN([
+** SDL_gfx >= 2.0 could not be found, but there seems to be some older
+** version installed. The build system will try to compile using this version.
+** THIS COULD RESULT IN AN UNSUCCESSFUL BUILD!
+])
+      SDL_gfx_LIBS=-lSDL_gfx])
 
 #output
 AC_CONFIG_FILES([Makefile

@@ -90,11 +90,12 @@ createScaledSurface(Resource r, int width, int height)
     SDL_Surface *tmp;
 
     SDL_RWops *rw = SDL_RWFromMem((void *)r->getData(r), r->getDataSize(r));
-    tmp = IMG_LoadPNG_RW(rw);
+    tile = IMG_LoadPNG_RW(rw);
     SDL_FreeRW(rw);
-    tile = zoomSurface (tmp, (double)width/64, (double)height/64, SMOOTHING_ON);
+    tmp = zoomSurface (tile, (double)width/64, (double)height/64, SMOOTHING_ON);
+    SDL_FreeSurface(tile);
+    tile = SDL_DisplayFormatAlpha(tmp);
     SDL_FreeSurface(tmp);
-    SDL_SetAlpha(tile, SDL_SRCALPHA|SDL_RLEACCEL, SDL_ALPHA_OPAQUE);
     return tile;
 }
 
@@ -477,6 +478,7 @@ CTOR(Board)
     struct Board_impl *b;
     Resfile rf;
 
+#ifndef SDL_IMG_OLD
     int imgflags = IMG_Init(IMG_INIT_PNG);
     if (!(imgflags & IMG_INIT_PNG))
     {
@@ -484,6 +486,7 @@ CTOR(Board)
 		"Try installing libpng and zlib.\n");
 	mainApp->abort(mainApp);
     }
+#endif
 
     b = XMALLOC(struct Board_impl, 1);
     memset(b, 0, sizeof(struct Board_impl));
@@ -555,7 +558,10 @@ DTOR(Board)
     DELETE(Resource, b->t_cabbage);
     DELETE(Resource, b->t_willy);
 
+#ifndef SDL_IMG_OLD
     IMG_Quit();
+#endif
+
     XFREE(this->pimpl);
     BASEDTOR(EHandler);
 }
