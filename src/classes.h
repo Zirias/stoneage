@@ -1,6 +1,14 @@
 #ifndef STONEAGE_CLASSES_H
 #define STONEAGE_CLASSES_H
 
+/** @file classes.h
+ * Contains CLASS type registry
+ */
+
+/** Enumeration of all CLASS types
+ * Every class must be registered here, this info is needed for
+ * "RTTI" and secure CAST() functionality
+ */
 enum Type {
     CLASS_Event,
     CLASS_EHandler,

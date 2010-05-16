@@ -67,11 +67,34 @@ CLASS(Board)
     void FUNC(startMove) ARG(
 	    struct Entity *e, int dir_x, int dir_y);
 
+    /** Get SDL Surface with "Empty" Tile.
+     * @return SDL Surface
+     */
     const SDL_Surface *FUNC(getEmptyTile) ARG();
+
+    /** Get SDL Surface with "Earth" Tile.
+     * @return SDL Surface
+     */
     const SDL_Surface *FUNC(getEarthTile) ARG();
+
+    /** Get SDL Surface with "Wall" Tile.
+     * @return SDL Surface
+     */
     const SDL_Surface *FUNC(getWallTile) ARG();
+
+    /** Get SDL Surface with "Rock" Tile.
+     * @return SDL Surface
+     */
     const SDL_Surface *FUNC(getRockTile) ARG();
+
+    /** Get SDL Surface with "Cabbage" Tile.
+     * @return SDL Surface
+     */
     const SDL_Surface *FUNC(getCabbageTile) ARG();
+
+    /** Get SDL Surface with "Willy" Tile.
+     * @return SDL Surface
+     */
     const SDL_Surface *FUNC(getWillyTile) ARG();
 };
 

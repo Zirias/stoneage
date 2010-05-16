@@ -4,6 +4,12 @@
 #include "common.h"
 #include "entity.h"
 
+/** @file eearth.h
+ * Includes definition of EEarth class
+ */
+
+/** A class representing a piece of earth.
+ */
 CLASS(EEarth)
 {
     INHERIT(Entity);
