@@ -1,0 +1,56 @@
+STONEAGE -- Build and install instructions
+
+
+1. QUICK INSTALLATION of distributed tarballs
+---------------------------------------------
+
+    tar -xcf stoneage-x.y.z.tar.gz
+    cd stoneage-x.y.z
+    ./configure
+    make
+    make install
+
+
+2. Build from Subversion
+------------------------
+
+This requires GNU autotools installed with autoconf >= 2.6 and automake
+>= 1.1.
+
+It also requires the tool "xcf2png" from the "xcftools" package to
+extract layers from a Gimp xcf file to png format.
+
+    ./autogen.sh
+    ./configure
+    make
+
+3. Custom ./configure options
+-----------------------------
+
+--enable-debugging
+
+    Builds with compiler flags "-O0 -g3" for debugging the result with
+    gdb.
+
+--enable-resbuild
+
+    Attempts to re-create the game's resourcefiles even if they are
+    already there. Don't use this with distributed tarballs, as they
+    don't contain the files the resources are created from.
+
+4. Custom make tagets
+---------------------
+
+make maintainer-clean
+
+    This automake rule is extended, so it also removes any generated
+    *.in files as well as the ./configure script.
+
+make vcs-clean
+
+    Does a maintainer-clean and removes any other generated files, so
+    the directory tree should only contain files suitable for placing in
+    the VCS repository. This includes the doxy directory with the
+    doxygen-generated documentation as well as the game resource files
+    (*.sar)
+
