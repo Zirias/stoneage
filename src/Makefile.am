@@ -1,3 +1,5 @@
+MAINTAINERCLEANFILES = Makefile.in config.h.in
+
 AM_CPPFLAGS = -DDATADIR='$(pkgdatadir)'
 
 bin_PROGRAMS = stoneage
