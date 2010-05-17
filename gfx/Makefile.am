@@ -1,6 +1,7 @@
-dist_pkgdata_DATA = gfx.sar
 CLEANFILES = tempty.png tearth.png twall.png trock.png tcabbage.png twilly.png
-MAINTAINERCLEANFILES = gfx.sar
+MAINTAINERCLEANFILES = gfx.sar Makefile.in
+
+dist_pkgdata_DATA = gfx.sar
 
 if BUILD_RESOURCES
 tempty.png: tiles.xcf
