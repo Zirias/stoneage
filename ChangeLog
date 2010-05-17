@@ -1,0 +1,14 @@
+2010-05-17  Felix Palmen <felix@palmen-it.de>
+
+First release ever: 0.0.1 (alpha)
+This release is just for testing, does nothing but show falling rocks.
+
+* stoneage.c (handleKeyboardEvent): Make CTRL+N restart the randomly
+level, so falling code and memory management issues with creating and
+destroying objects and events can be tested and debugged.
+
+* README: Initial content, describes versioning scheme and some basic
+policies
+
+* INSTALL: Initial content, describes custom ./configure-options
+

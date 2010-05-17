@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.6])
-AC_INIT([stoneage], [0.01], [felix@palmen-it.de])
+AC_INIT([stoneage], [0.0.1], [felix@palmen-it.de])
 AM_INIT_AUTOMAKE
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AM_MAINTAINER_MODE
