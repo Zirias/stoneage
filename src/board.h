@@ -67,10 +67,15 @@ CLASS(Board)
     void FUNC(startMove) ARG(
 	    struct Entity *e, int dir_x, int dir_y);
 
-    /** Get SDL Surface with "Empty" Tile.
+    /** Get SDL Surface with "Empty" Tile suitable for the given position.
      * @return SDL Surface
      */
-    const SDL_Surface *FUNC(getEmptyTile) ARG();
+    const SDL_Surface *FUNC(getEmptyTile) ARG(int x, int y);
+
+    /** Get SDL Surface with "Earth" Tile suitable for the given position.
+     * @return SDL Surface
+     */
+    const SDL_Surface *FUNC(getEarthBaseTile) ARG(int x, int y);
 
     /** Get SDL Surface with "Earth" Tile.
      * @return SDL Surface

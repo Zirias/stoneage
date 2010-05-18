@@ -13,7 +13,7 @@ m_init ARG(Board b, int x, int y)
     parent_init(e, b, x, y);
 
     e->getSurface = b->getCabbageTile;
-    e->getBaseSurface = b->getEarthTile;
+    e->getBaseSurface = b->getEarthBaseTile;
 }
 
 static void
