@@ -143,9 +143,9 @@ scaleSurface(SDL_Surface *s, int width, int height, int rot)
 
     if (rot)
     {
-	tile = rotateSurface(s, rot);
-	tmp = zoomSurface (tile, (double)width/64,
+	tile = zoomSurface (s, (double)width/64,
 		(double)height/64, SMOOTHING_ON);
+	tmp = rotateSurface(tile, rot);
 	SDL_FreeSurface(tile);
     }
     else
@@ -589,9 +589,9 @@ m_initVideo ARG()
     b->s_empty[8|1] = scaleSurface(
 	    png, b->tile_width, b->tile_height, 0);
     b->s_empty[2|1] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 1);
-    b->s_empty[4|2] = scaleSurface(
 	    png, b->tile_width, b->tile_height, 2);
+    b->s_empty[4|2] = scaleSurface(
+	    png, b->tile_width, b->tile_height, 1);
     b->s_empty[8|4] = scaleSurface(
 	    png, b->tile_width, b->tile_height, 3);
     SDL_FreeSurface(png);
