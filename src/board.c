@@ -279,8 +279,8 @@ randomLevel(Board b)
 {
     Level l = NEW(Level);
     l->random(l);
-    l->createEntities(b, (Entity *)&b->pimpl->entity);
-    DELETE(l);
+    l->createEntities(l, b, (Entity *)&b->pimpl->entity);
+    DELETE(Level, l);
 }
 
 static void
