@@ -13,6 +13,7 @@ enum Type {
     CLASS_Event,
     CLASS_EHandler,
     CLASS_Board,
+    CLASS_Level,
     CLASS_EEarth,
     CLASS_EWall,
     CLASS_ERock,

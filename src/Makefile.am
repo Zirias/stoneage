@@ -14,6 +14,7 @@ stoneage_SOURCES = common.h classes.h \
 	event.h event.c \
 	ehandler.h ehandler.c \
 	board.h board.c \
+	level.h level.c \
 	entity.h entity.c \
 	eearth.h eearth.c \
 	ewall.h ewall.c \

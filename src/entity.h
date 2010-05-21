@@ -33,8 +33,10 @@ CLASS(Entity)
      * For partially transparent entities, this points to one of the
      * Board's methods for getting a surface containing the default
      * background tile this entity should blend over
+     * @param x x coordinate on the board
+     * @param y y coordinate on the board
      */
-    const SDL_Surface *FUNC(getBaseSurface) ARG();
+    const SDL_Surface *FUNC(getBaseSurface) ARG(int x, int y);
 
     /** Initialize the entity.
      * Sets the important properties and is called by the Board class
