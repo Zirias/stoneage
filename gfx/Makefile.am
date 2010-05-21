@@ -1,7 +1,8 @@
 CLEANFILES = tempty.png tempty_1.png tempty_2a.png tempty_2f.png tempty_3.png tempty_4.png tearth.png twall.png trock.png tcabbage.png twilly.png
-MAINTAINERCLEANFILES = gfx.sar Makefile.in
+MAINTAINERCLEANFILES = gfx.sar stoneage.ico stoneage.bmp Makefile.in
 
 dist_pkgdata_DATA = gfx.sar
+dist_noinst_DATA = stoneage.ico stoneage.bmp
 
 if BUILD_RESOURCES
 tempty.png: tiles.xcf
@@ -39,6 +40,14 @@ tcabbage.png: tiles.xcf
 
 twilly.png: tiles.xcf
 	$(AM_V_GEN) $(XCF2PNG) -A -o twilly.png tiles.xcf willy
+
+stoneage.ico: twilly.png
+	$(AM_V_GEN) $(CONVERT) twilly.png \
+		-trim +repage -resize 32x32\! stoneage.ico
+
+stoneage.bmp: twilly.png
+	$(AM_V_GEN) $(CONVERT) twilly.png \
+		-trim +repage -resize 32x32\! stoneage.bmp
 
 gfx.sar: stoneage.bmp tempty.png tempty_1.png tempty_2f.png tempty_2a.png tempty_3.png tempty_4.png tcorner.png tearth.png twall.png trock.png tcabbage.png twilly.png
 	$(AM_V_GEN) rm -f gfx.sar && \
