@@ -118,7 +118,7 @@ rotateSurface(SDL_Surface *s, int rot)
     uint32_t *dstpix = (uint32_t *)dest->pixels;
     if (rot == 1)
     {
-	for (x=0;x<dest->w;++x) for (y=0;y<dest->h;++y)
+	for (x=dest->w-1;x>=0;--x) for (y=0;y<dest->h;++y)
 	    dstpix[y*dest->w+x] = *srcpix++;
     }
     else if (rot == 2)
@@ -128,7 +128,7 @@ rotateSurface(SDL_Surface *s, int rot)
     }
     else
     {
-	for (x=dest->w-1;x>=0;--x) for (y=dest->h-1;y>=0;--y)
+	for (x=0;x<dest->w;++x) for (y=dest->h-1;y>=0;--y)
 	    dstpix[y*dest->w+x] = *srcpix++;
     }
     SDL_UnlockSurface(s);
@@ -563,11 +563,11 @@ m_initVideo ARG()
     b->s_empty[0] = createScaledSurface(
 	    b->t_empty, b->tile_width, b->tile_height);
     png = loadPngSurface(b->t_empty_1);
-    b->s_empty[4] = scaleSurface(
+    b->s_empty[1] = scaleSurface(
 	    png, b->tile_width, b->tile_height, 3);
     b->s_empty[2] = scaleSurface(
 	    png, b->tile_width, b->tile_height, 2);
-    b->s_empty[1] = scaleSurface(
+    b->s_empty[4] = scaleSurface(
 	    png, b->tile_width, b->tile_height, 1);
     b->s_empty[8] = scaleSurface(
 	    png, b->tile_width, b->tile_height, 0);
