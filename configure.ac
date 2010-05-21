@@ -17,7 +17,7 @@ AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
 
-# Misc options
+# Misc options.
 AC_ARG_ENABLE([debugging],
 	AC_HELP_STRING([--enable-debugging],
 	[build without optimizations and with debugging symbols]))
@@ -26,6 +26,16 @@ AS_IF([test "x$enable_debugging" = "xyes"], [CFLAGS="$CFLAGS -O0 -g3"])
 AC_ARG_ENABLE([resbuild],
 	AC_HELP_STRING([--enable-resbuild],
 	[generate resource files even if they exist. (for maintainer usage)]))
+
+# Checks for platforms.
+AC_MSG_CHECKING([for Win32])
+AS_CASE([$host],[*-mingw*],[os_win32="yes"],[os_win32="no"])
+AC_MSG_RESULT([$os_win32])
+AS_IF([test "x$os_win32" = "xyes"], [
+       AC_DEFINE([WIN32], [1],
+		 [Define to 1 if building for the Win32 platform]
+		 )
+       ])
 
 # Checks for libraries.
 PKG_CHECK_MODULES(SDL, [sdl >= 1.2])
