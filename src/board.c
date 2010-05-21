@@ -17,6 +17,9 @@
 
 static SDL_Rect drawArea[3];
 
+struct BlitSequence;
+typedef struct BlitSequence *BlitSequence;
+
 struct BlitSequence
 {
     int n;
@@ -201,10 +204,12 @@ internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
 {
     SDL_Surface *screen;
     const SDL_Surface *tile;
-    const SDL_Surface *base;
-    const SDL_Surface *base2;
+    struct BlitSequence base1;
+    struct BlitSequence base2;
+    int drawBase;
     Entity e;
     Event ev;
+    int i;
 
     if (m) e = m->e;
     else e = b->pimpl->entity[y][x];
@@ -214,32 +219,38 @@ internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
 
     screen = b->pimpl->screen;
 
-    base = 0;
+    drawBase = 0;
+    tile = 0;
 
     if (e)
     {
 	if (e->getBaseSurface)
 	{
-	    base = e->getBaseSurface(b, x, y);
+	    e->getBaseSurface(b, x, y, &base1);
+	    drawBase = 1;
 	}
 	tile = e->getSurface(b);
     }
     else
     {
-	tile = b->getEmptyTile(b, x, y);
+	b->getEmptyTile(b, x, y, &base1);
+	drawBase = 1;
     }
 
-    if(base) SDL_BlitSurface((SDL_Surface *)base, 0, screen, &drawArea[0]);
+    if (drawBase) for (i=0; i<base1.n; ++i)
+	SDL_BlitSurface(base1.blits[i], 0, screen, &drawArea[0]);
+
     if (m)
     {
-	drawArea[1].x = drawArea[0].x + m->dir_x * base->w;
-	drawArea[1].y = drawArea[0].y + m->dir_y * base->h;
-	base2 = e->getBaseSurface(b, x + m->dir_x, y + m->dir_y);
-	SDL_BlitSurface((SDL_Surface *)base2, 0, screen, &drawArea[1]);
+	drawArea[1].x = drawArea[0].x + m->dir_x * tile->w;
+	drawArea[1].y = drawArea[0].y + m->dir_y * tile->h;
+	e->getBaseSurface(b, x + m->dir_x, y + m->dir_y, &base2);
+	for (i=0; i<base2.n; ++i)
+	    SDL_BlitSurface(base2.blits[i], 0, screen, &drawArea[1]);
 	if (m->dir_x) m->off_x += b->pimpl->step_x;
 	if (m->dir_y) m->off_y += b->pimpl->step_y;
-	if ((base->w - m->off_x < b->pimpl->step_x)
-		|| (base->h - m->off_y < b->pimpl->step_y))
+	if ((tile->w - m->off_x < b->pimpl->step_x)
+		|| (tile->h - m->off_y < b->pimpl->step_y))
 	{
 	    drawArea[2].x = drawArea[1].x;
 	    drawArea[2].y = drawArea[1].y;
@@ -280,7 +291,7 @@ internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
     }
     else
     {
-	SDL_BlitSurface((SDL_Surface *)tile, 0, screen, &drawArea[0]);
+	if (tile) SDL_BlitSurface((SDL_Surface *)tile, 0, screen, &drawArea[0]);
 	if (refresh) SDL_UpdateRects(screen, 1, &drawArea[0]);
     }
 }
@@ -458,21 +469,25 @@ calculateNeighbors(Board this, int x, int y)
     return neighbors;
 }
 
-static const SDL_Surface *
-m_getEmptyTile ARG(int x, int y)
+static void
+m_getEmptyTile ARG(int x, int y, void *buf)
 {
     METHOD(Board);
     
+    BlitSequence bs = (BlitSequence)buf;
     unsigned int n = calculateNeighbors(this, x, y);
-    return this->pimpl->s_empty[n];
+    bs->n = 0;
+    bs->blits[bs->n++] = this->pimpl->s_empty[n];
 }
 
-static const SDL_Surface *
-m_getEarthBaseTile ARG(int x, int y)
+static void
+m_getEarthBaseTile ARG(int x, int y, void *buf)
 {
     METHOD(Board);
 
-    return this->pimpl->s_earth;
+    BlitSequence bs = (BlitSequence)buf;
+    bs->n = 1;
+    bs->blits[0] = this->pimpl->s_earth;
 }
 
 static const SDL_Surface *
