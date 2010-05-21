@@ -172,11 +172,17 @@ createScaledSurface(Resource r, int width, int height)
 }
 
 static void
-internal_put(Board b, int x, int y, Entity e)
+findRocks(Board b)
 {
-    ERock rock = CAST(e, ERock);
-    if (rock) b->pimpl->rock[b->pimpl->num_rocks++] = rock;
-    b->pimpl->entity[y][x] = e;
+    int x, y;
+    ERock r;
+
+    b->pimpl->num_rocks = 0;
+    for (y=0; y<24; ++y) for (x=0; x<32; ++x)
+    {
+	r = CAST(b->pimpl->entity[y][x], ERock);
+	if (r) b->pimpl->rock[b->pimpl->num_rocks++] = r;
+    }
 }
 
 static void
@@ -273,7 +279,8 @@ randomLevel(Board b)
 {
     Level l = NEW(Level);
     l->random(l);
-    l->createEntities(b, (Entity *)&b->pimpl->entity)
+    l->createEntities(b, (Entity *)&b->pimpl->entity);
+    DELETE(l);
 }
 
 static void
@@ -504,6 +511,7 @@ m_loadLevel ARG()
 
     internal_clear(this);
     randomLevel(this);
+    findRocks(this);
     this->redraw(this);
     checkRocks(this);
 }
