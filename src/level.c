@@ -94,10 +94,15 @@ m_random ARG()
 {
     METHOD(Level);
     
-    int x, y;
+    int x, y, r;
 
     for (y=0; y<24; ++y) for (x=0; x<32; ++x)
-	this->pimpl->data[y][x] = (random() / (RAND_MAX / 5));
+    {
+	r = random() / (RAND_MAX / 10);
+	if (r < 3) this->pimpl->data[y][x] = N;
+	else if (r < 6) this->pimpl->data[y][x] = E;
+	else this->pimpl->data[y][x] = r-5;
+    }
     x = random() / (RAND_MAX / 32);
     y = random() / (RAND_MAX / 24);
     this->pimpl->data[y][x] = H;
