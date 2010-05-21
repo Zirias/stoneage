@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.6])
 AC_INIT([stoneage], [0.0.1], [felix@palmen-it.de])
-AM_INIT_AUTOMAKE
+AM_INIT_AUTOMAKE([subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AM_MAINTAINER_MODE
 AC_CONFIG_SRCDIR([src/stoneage.c])
@@ -12,6 +12,7 @@ AC_CONFIG_HEADERS([src/config.h])
 # Checks for programs.
 AC_PROG_AWK
 AC_PROG_CC
+AC_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
@@ -76,22 +77,45 @@ AC_CHECK_FUNCS([memset strerror])
 # Building options
 
 resources_exist="yes"
-AS_IF([test -f gfx/gfx.sar], [], [resources_exist="no"])
+AS_IF([test -f bin/gfx.sar], [], [resources_exist="no"])
+AS_IF([test -f bin/stoneage.ico], [], [resources_exist="no"])
+AS_IF([test -f src/icondat.h], [], [resources_exist="no"])
 
 build_resources="no"
 AS_IF([test "x$enable_resbuild" = "xyes"], [build_resources="yes"])
 AS_IF([test "x$resources_exist" = "xno"], [build_resources="yes"])
-AM_CONDITIONAL([BUILD_RESOURCES], [test "x$build_resources" = "xyes"])
 
 AS_IF([test "x$build_resources" = "xyes"],
 	[AC_PATH_PROG(XCF2PNG, [xcf2png])
 	AC_ARG_VAR(XCF2PNG, [path to xcf2png from xcftools])
 	AS_IF([test "x$XCF2PNG" = "x"],
-		[AC_MSG_ERROR([
+	      [AC_MSG_ERROR([
 ** xcf2png not found in your path!
 ** cannot build resource files.
 ** please make sure you have xcftools installed.
-])])])
+])
+	      ])
+	AC_PATH_PROG(CONVERT, [convert])
+	AC_ARG_VAR(CONVERT, [path to convert from imagemagick])
+	AS_IF([test "x$CONVERT" = "x"],
+	      [AC_MSG_ERROR([
+** convert not found in your path!
+** cannot build resource files.
+** please make sure you have imagemagick installed.
+])
+	      ])
+	AC_PATH_PROG(XXD, [xxd])
+	AC_ARG_VAR(CONVERT, [path to xxd utility from vim])
+	AS_IF([test "x$CONVERT" = "x"],
+	      [AC_MSG_ERROR([
+** xxd not found in your path!
+** cannot build resource files.
+** please make sure you have vim installed.
+])
+	      ])
+	AS_MKDIR_P([resbuild])
+	AS_MKDIR_P([bin])
+	])
 
 AS_IF([test "x$check_sdl_img_128" = "xno"],
       [AC_MSG_WARN([
@@ -112,7 +136,7 @@ AS_IF([test "x$check_sdl_gfx_20" = "xno"],
       SDL_gfx_LIBS=-lSDL_gfx])
 
 #output
-AC_CONFIG_FILES([Makefile
-                 src/Makefile
-		 gfx/Makefile])
+AM_CONDITIONAL([WIN32], [test "x$os_win32" = "xyes"])
+AM_CONDITIONAL([BUILD_RESOURCES], [test "x$build_resources" = "xyes"])
+AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

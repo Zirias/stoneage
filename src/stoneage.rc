@@ -1,0 +1,25 @@
+1 VERSIONINFO
+FILEVERSION	0,0,1,0
+PRODUCTVERSION	0,0,1,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", "Palmen IT"
+      VALUE "FileDescription", "Stoneage - a port of an old AmigaBASIC Game"
+      VALUE "FileVersion", "0.0.1"
+      VALUE "InternalName", "stoneage"
+      VALUE "LegalCopyright", "Felix Palmen <felix@palmen-it.de>"
+      VALUE "OriginalFilename", "stoneage.exe"
+      VALUE "ProductName", "Stoneage"
+      VALUE "ProductVersion", "0.0.1"
+    END
+  END
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END
+SAICO ICON "../bin/stoneage.ico"
+
