@@ -7,6 +7,7 @@
 #include "resource.h"
 #include "app.h"
 #include "event.h"
+#include "level.h"
 
 #include "eearth.h"
 #include "ewall.h"
@@ -66,7 +67,7 @@ struct Board_impl
     int willy_x;
     int willy_y;
 
-    Entity entity[32][24];
+    Entity entity[24][32];
     int num_rocks;
     ERock rock[32*24];
 };
@@ -175,7 +176,7 @@ internal_put(Board b, int x, int y, Entity e)
 {
     ERock rock = CAST(e, ERock);
     if (rock) b->pimpl->rock[b->pimpl->num_rocks++] = rock;
-    b->pimpl->entity[x][y] = e;
+    b->pimpl->entity[y][x] = e;
 }
 
 static void
@@ -189,7 +190,7 @@ internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
     Event ev;
 
     if (m) e = m->e;
-    else e = b->pimpl->entity[x][y];
+    else e = b->pimpl->entity[y][x];
 
     drawArea[0].x = x * drawArea[0].w;
     drawArea[0].y = y * drawArea[0].h;
@@ -237,10 +238,10 @@ internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
 	    {
 		m->next->prev = m->prev;
 	    }
-	    b->pimpl->entity[m->e->x][m->e->y] = 0;
+	    b->pimpl->entity[m->e->y][m->e->x] = 0;
 	    m->e->x += m->dir_x;
 	    m->e->y += m->dir_y;
-	    b->pimpl->entity[m->e->x][m->e->y] = m->e;
+	    b->pimpl->entity[m->e->y][m->e->x] = m->e;
 
 	    Event ev = NEW(Event);
 	    ev->sender = CAST(b, Object);
@@ -270,34 +271,9 @@ internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
 static void
 randomLevel(Board b)
 {
-    int x, wx, y, wy, z;
-    Entity e;
-
-    b->pimpl->willy_x = wx = (random() / (RAND_MAX / 32));
-    b->pimpl->willy_y = wy = (random() / (RAND_MAX / 24));
-    e = (Entity)NEW(EWilly);
-    e->init(e, b, wx, wy);
-    internal_put(b, wx, wy, e);
-
-    for (x = 0; x < 32; ++x)
-	for (y = 0; y < 24; ++y)
-	{
-	    if ((x==wx)&&(y==wy)) continue;
-	    z = (random() / (RAND_MAX / 5));
-	    switch(z)
-	    {
-		case 0 : e = 0; break;
-		case 1 : e = (Entity)NEW(EEarth); break;
-		case 2 : e = (Entity)NEW(EWall); break;
-		case 3 : e = (Entity)NEW(ERock); break;
-		case 4 : e = (Entity)NEW(ECabbage); break;
-	    }
-	    if(e)
-	    {
-		e->init(e, b, x, y);
-		internal_put(b, x, y, e);
-	    }
-	}
+    Level l = NEW(Level);
+    l->random(l);
+    l->createEntities(b, (Entity *)&b->pimpl->entity)
 }
 
 static void
@@ -382,8 +358,8 @@ m_redraw ARG()
 
     struct Board_impl *b = this->pimpl;
 
-    for (x = 0; x < 32; ++x)
-	for (y = 0; y < 24; ++y)
+    for (y = 0; y < 24; ++y)
+	for (x = 0; x < 32; ++x)
 	    this->draw(this, x, y, 0);
 
     SDL_UpdateRect(b->screen, 0, 0, b->screen->w, b->screen->h);
@@ -395,7 +371,7 @@ m_isEmpty ARG(int x, int y)
     METHOD(Board);
 
     if ((x<0)||(x>31)||(y<0)||(y>23)) return 0;
-    return (this->pimpl->entity[x][y] ? 0 : 1);
+    return (this->pimpl->entity[y][x] ? 0 : 1);
 }
 
 static void
@@ -444,7 +420,7 @@ checkRocks(Board b)
 static int
 isSolidTile(Board this, int x, int y)
 {
-    Entity e = this->pimpl->entity[x][y];
+    Entity e = this->pimpl->entity[y][x];
     if (!e) return 0;
     if (CAST(e, ECabbage)) return 1;
     if (CAST(e, EEarth)) return 1;
