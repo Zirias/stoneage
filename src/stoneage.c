@@ -135,8 +135,8 @@ CTOR(Stoneage)
     SDL_Init(
 	    SDL_INIT_TIMER | SDL_INIT_VIDEO
 	    );
-    this->res_x = 1280;
-    this->res_y = 960;
+    this->res_x = 1024;
+    this->res_y = 768;
     this->bpp = 32;
     this->modeflags = 0;
 
