@@ -1,9 +1,13 @@
-CLEANFILES = autoscan.log configure.scan
+CLEANFILES = autoscan.log configure.scan src/stoneage.res
 MAINTAINERCLEANFILES = Makefile.in configure config.guess config.sub src/config.h.in src/icondat.h
 
 V_X2P = $(V_X2P_$(V))
 V_X2P_ = $(V_X2P_$(AM_DEFAULT_VERBOSITY))
 V_X2P_0 = @echo "  XCF   " $@;
+
+V_RES = $(V_RES_$(V))
+V_RES_ = $(V_RES_$(AM_DEFAULT_VERBOSITY))
+V_RES_0 = @echo "  RES   " $@;
 
 vcs-clean: maintainer-clean
 	rm -fr autom4te.cache
@@ -17,7 +21,7 @@ maintainer-clean-local:
 	rm -fr resbuild bin
 
 dist_pkgdata_DATA = bin/gfx.sar
-EXTRA_DIST = bin/stoneage.ico src/icon.h src/icon.c src/icondat.h
+EXTRA_DIST = bin/stoneage.ico src/icon.h src/icon.c src/icondat.h src/stoneage.rc
 
 if BUILD_RESOURCES
 
@@ -59,7 +63,17 @@ resbuild/twilly.png: gfx/tiles.xcf
 
 bin/stoneage.ico: resbuild/twilly.png
 	$(AM_V_GEN)$(CONVERT) resbuild/twilly.png \
-		-trim +repage -resize 32x32\! bin/stoneage.ico
+		-trim +repage -resize 48x48\! resbuild/stoneage48.bmp && \
+		$(CONVERT) resbuild/twilly.png \
+		-trim +repage -resize 32x32\! resbuild/stoneage32.bmp && \
+		$(CONVERT) resbuild/twilly.png \
+		-trim +repage -resize 16x16\! resbuild/stoneage16.bmp && \
+		$(CONVERT) resbuild/stoneage16.bmp resbuild/stoneage32.bmp \
+		resbuild/stoneage48.bmp bin/stoneage.ico && \
+		rm -f resbuild/stoneage48.png && \
+		rm -f resbuild/stoneage32.png && \
+		rm -f resbuild/stoneage16.png
+
 
 resbuild/stoneage.bmp: resbuild/twilly.png
 	$(AM_V_GEN)$(CONVERT) resbuild/twilly.png \
@@ -87,13 +101,14 @@ bin/gfx.sar: bin/samkres$(EXEEXT) resbuild/tempty.png resbuild/tempty_1.png resb
 
 endif
 
-AM_CPPFLAGS = -DDATADIR='$(pkgdatadir)'
+AM_CPPFLAGS = -DSA_PKGDATADIR='$(pkgdatadir)'
 
 bin_PROGRAMS = bin/stoneage
 
 bin_stoneage_LDFLAGS = $(SDL_LIBS) $(SDL_image_LIBS) $(SDL_gfx_LIBS)
 bin_stoneage_SOURCES = src/common.h src/classes.h \
 	src/stoneage.h src/stoneage.c \
+	src/icon.h src/icon.c \
 	src/log.h src/log.c \
 	src/mm.h src/mm.c \
 	src/object.h src/object.c \
@@ -111,9 +126,7 @@ bin_stoneage_SOURCES = src/common.h src/classes.h \
 	src/resource.h src/resource.c \
 	src/resfile.h src/resfile.c
 
-EXTRA_stoneage_SOURCES = src/icondat.h src/icon.h src/icon.c
-
-bin_stoneage_DEPENDENCIES = bin/stoneage.ico
+bin/stoneage.$(OBJEXT): src/icondat.h bin/stoneage.ico
 
 noinst_PROGRAMS = bin/samkres
 
@@ -128,10 +141,11 @@ bin_samkres_SOURCES = src/common.h src/classes.h \
 
 if WIN32
 
-else
+src/stoneage.res:
+	$(V_RES) windres src/stoneage.rc -O coff -o src/stoneage.res
 
-src/icon.$(OBJEXT): src/icondat.h
-bin_stoneage_SOURCES += src/icon.h src/icon.c
+bin_stoneage_DEPENDENCIES = src/stoneage.res
+bin_stoneage_LDADD = src/stoneage.res
 
 endif
 

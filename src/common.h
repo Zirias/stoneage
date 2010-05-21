@@ -19,9 +19,8 @@
 #  undef malloc
 #  undef realloc
 #  define random rand
-#  define setupSdlApplicationIcon()
 #else
-#  define RES_GFX QUOTEME(DATADIR) "/gfx.sar"
+#  define RES_GFX QUOTEME(SA_PKGDATADIR) "/gfx.sar"
 #  include "icon.h"
 #endif
 
