@@ -17,6 +17,12 @@
 
 static SDL_Rect drawArea[3];
 
+struct BlitSequence
+{
+    int n;
+    SDL_Surface *blits[16];
+};
+
 struct MoveRecord;
 typedef struct MoveRecord *MoveRecord;
 
@@ -41,6 +47,7 @@ struct Board_impl
     Resource t_empty_2f;
     Resource t_empty_3;
     Resource t_empty_4;
+    Resource t_corner;
     Resource t_earth;
     Resource t_wall;
     Resource t_rock;
@@ -48,6 +55,7 @@ struct Board_impl
     Resource t_willy;
 
     SDL_Surface *s_empty[16];
+    SDL_Surface *s_corner[4];
     SDL_Surface *s_earth;
     SDL_Surface *s_wall;
     SDL_Surface *s_rock;
@@ -523,12 +531,15 @@ static void
 freeSdlSurfaces(Board this)
 {
     struct Board_impl *b = this->pimpl;
-    SDL_Surface **pempty;
-    SDL_Surface **pempty_end;
+    SDL_Surface **p;
+    SDL_Surface **p_end;
 
-    pempty_end = (SDL_Surface **)b->s_empty + 16;
-    for (pempty = (SDL_Surface **)b->s_empty; pempty != pempty_end; ++pempty)
-	if (*pempty) SDL_FreeSurface(*pempty);
+    p_end = (SDL_Surface **)b->s_empty + 16;
+    for (p = (SDL_Surface **)b->s_empty; p != p_end; ++p)
+	if (*p) SDL_FreeSurface(*p);
+    p_end = (SDL_Surface **)b->s_corner + 4;
+    for (p = (SDL_Surface **)b->s_corner; p != p_end; ++p)
+	if (*p) SDL_FreeSurface(*p);
     if (b->s_earth) SDL_FreeSurface(b->s_earth);
     if (b->s_wall) SDL_FreeSurface(b->s_wall);
     if (b->s_rock) SDL_FreeSurface(b->s_rock);
@@ -542,6 +553,7 @@ m_initVideo ARG()
     METHOD(Board);
 
     SDL_Surface *png;
+    int i;
 
     struct Board_impl *b = this->pimpl;
 
@@ -560,6 +572,7 @@ m_initVideo ARG()
 
     freeSdlSurfaces(this);
 
+    /* "empty" tiles with different edges and rotations */
     b->s_empty[0] = createScaledSurface(
 	    b->t_empty, b->tile_width, b->tile_height);
     png = loadPngSurface(b->t_empty_1);
@@ -600,6 +613,15 @@ m_initVideo ARG()
     SDL_FreeSurface(png);
     b->s_empty[8|4|2|1] = createScaledSurface(
 	    b->t_empty_4, b->tile_width, b->tile_height);
+
+    /* the four corners */
+    png = loadPngSurface(b->t_corner);
+    for (i=0; i<4; ++i)
+	b->s_corner[i] = scaleSurface(
+		png, b->tile_width, b->tile_height, i);
+    SDL_FreeSurface(png);
+
+    /* tiles for the items on the board */
     b->s_earth = createScaledSurface(
 	    b->t_earth, b->tile_width, b->tile_height);
     b->s_wall = createScaledSurface(
@@ -665,6 +687,7 @@ CTOR(Board)
     rf->load(rf, "tile_empty_2f", &(b->t_empty_2f));
     rf->load(rf, "tile_empty_3", &(b->t_empty_3));
     rf->load(rf, "tile_empty_4", &(b->t_empty_4));
+    rf->load(rf, "tile_corner", &(b->t_corner));
     rf->load(rf, "tile_earth", &(b->t_earth));
     rf->load(rf, "tile_wall", &(b->t_wall));
     rf->load(rf, "tile_rock", &(b->t_rock));
@@ -702,6 +725,7 @@ DTOR(Board)
     DELETE(Resource, b->t_empty_2f);
     DELETE(Resource, b->t_empty_3);
     DELETE(Resource, b->t_empty_4);
+    DELETE(Resource, b->t_corner);
     DELETE(Resource, b->t_earth);
     DELETE(Resource, b->t_wall);
     DELETE(Resource, b->t_rock);
