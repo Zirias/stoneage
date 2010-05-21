@@ -175,12 +175,15 @@ static void
 findRocks(Board b)
 {
     int x, y;
+    Entity e;
     ERock r;
 
     b->pimpl->num_rocks = 0;
     for (y=0; y<24; ++y) for (x=0; x<32; ++x)
     {
-	r = CAST(b->pimpl->entity[y][x], ERock);
+	e = b->pimpl->entity[y][x];
+	if (!e) continue;
+	r = CAST(e, ERock);
 	if (r) b->pimpl->rock[b->pimpl->num_rocks++] = r;
     }
 }
@@ -385,7 +388,7 @@ static void
 m_startMove ARG(Entity e, int dir_x, int dir_y)
 {
     METHOD(Board);
-    return;
+
     MoveRecord m = XMALLOC(struct MoveRecord, 1);
     m->dir_x = dir_x;
     m->dir_y = dir_y;
