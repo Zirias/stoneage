@@ -12,7 +12,16 @@
 #define QUOTEME_(x) #x
 #define QUOTEME(x) QUOTEME_(x)
 
-#define RES_GFX QUOTEME(DATADIR) "/gfx.sar"
+#ifdef WIN32
+#  define RES_GFX "gfx.sar"
+#  define HAVE_MALLOC 1
+#  define HAVE_REALLOC 1
+#  undef malloc
+#  undef realloc
+#  define random rand
+#else
+#  define RES_GFX QUOTEME(DATADIR) "/gfx.sar"
+#endif
 
 #include "classes.h"
 #include "log.h"
