@@ -3,6 +3,7 @@
 
 #include "level.h"
 #include "resource.h"
+#include "board.h"
 
 #include "entity.h"
 #include "eearth.h"
@@ -58,7 +59,9 @@ m_createEntities ARG(Board b, Entity *buffer)
 {
     METHOD(Level);
 
+    int x, y;
     Entity e;
+
     for (y=0; y<24; ++y) for (x=0; x<32; ++x)
     {
 	switch(this->pimpl->data[y][x])
