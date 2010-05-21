@@ -70,12 +70,12 @@ CLASS(Board)
     /** Get SDL Surface with "Empty" Tile suitable for the given position.
      * @return SDL Surface
      */
-    const SDL_Surface *FUNC(getEmptyTile) ARG(int x, int y);
+    void FUNC(getEmptyTile) ARG(int x, int y, void *buf);
 
     /** Get SDL Surface with "Earth" Tile suitable for the given position.
      * @return SDL Surface
      */
-    const SDL_Surface *FUNC(getEarthBaseTile) ARG(int x, int y);
+    void FUNC(getEarthBaseTile) ARG(int x, int y, void *buf);
 
     /** Get SDL Surface with "Earth" Tile.
      * @return SDL Surface

@@ -36,7 +36,7 @@ CLASS(Entity)
      * @param x x coordinate on the board
      * @param y y coordinate on the board
      */
-    const SDL_Surface *FUNC(getBaseSurface) ARG(int x, int y);
+    void FUNC(getBaseSurface) ARG(int x, int y, void *buf);
 
     /** Initialize the entity.
      * Sets the important properties and is called by the Board class
