@@ -478,6 +478,14 @@ m_getEmptyTile ARG(int x, int y, void *buf)
     unsigned int n = calculateNeighbors(this, x, y);
     bs->n = 0;
     bs->blits[bs->n++] = this->pimpl->s_empty[n];
+    if (!(n&(8|4)) && (y>0) && (x<31) && isSolidTile(this, x+1, y-1))
+	bs->blits[bs->n++] = this->pimpl->s_corner[0];
+    if (!(n&(4|2)) && (y<23) && (x<31) && isSolidTile(this, x+1, y+1))
+	bs->blits[bs->n++] = this->pimpl->s_corner[1];
+    if (!(n&(2|1)) && (y<23) && (x>0) && isSolidTile(this, x-1, y+1))
+	bs->blits[bs->n++] = this->pimpl->s_corner[2];
+    if (!(n&(8|1)) && (y>0) && (x>0) && isSolidTile(this, x-1, y-1))
+	bs->blits[bs->n++] = this->pimpl->s_corner[3];
 }
 
 static void
