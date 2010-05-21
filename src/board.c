@@ -17,6 +17,15 @@
 
 static SDL_Rect drawArea[3];
 
+struct BlitSequence;
+typedef struct BlitSequence *BlitSequence;
+
+struct BlitSequence
+{
+    int n;
+    SDL_Surface *blits[16];
+};
+
 struct MoveRecord;
 typedef struct MoveRecord *MoveRecord;
 
@@ -41,6 +50,7 @@ struct Board_impl
     Resource t_empty_2f;
     Resource t_empty_3;
     Resource t_empty_4;
+    Resource t_corner;
     Resource t_earth;
     Resource t_wall;
     Resource t_rock;
@@ -48,6 +58,7 @@ struct Board_impl
     Resource t_willy;
 
     SDL_Surface *s_empty[16];
+    SDL_Surface *s_corner[4];
     SDL_Surface *s_earth;
     SDL_Surface *s_wall;
     SDL_Surface *s_rock;
@@ -193,10 +204,12 @@ internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
 {
     SDL_Surface *screen;
     const SDL_Surface *tile;
-    const SDL_Surface *base;
-    const SDL_Surface *base2;
+    struct BlitSequence base1;
+    struct BlitSequence base2;
+    int drawBase;
     Entity e;
     Event ev;
+    int i;
 
     if (m) e = m->e;
     else e = b->pimpl->entity[y][x];
@@ -206,32 +219,38 @@ internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
 
     screen = b->pimpl->screen;
 
-    base = 0;
+    drawBase = 0;
+    tile = 0;
 
     if (e)
     {
 	if (e->getBaseSurface)
 	{
-	    base = e->getBaseSurface(b, x, y);
+	    e->getBaseSurface(b, x, y, &base1);
+	    drawBase = 1;
 	}
 	tile = e->getSurface(b);
     }
     else
     {
-	tile = b->getEmptyTile(b, x, y);
+	b->getEmptyTile(b, x, y, &base1);
+	drawBase = 1;
     }
 
-    if(base) SDL_BlitSurface((SDL_Surface *)base, 0, screen, &drawArea[0]);
+    if (drawBase) for (i=0; i<base1.n; ++i)
+	SDL_BlitSurface(base1.blits[i], 0, screen, &drawArea[0]);
+
     if (m)
     {
-	drawArea[1].x = drawArea[0].x + m->dir_x * base->w;
-	drawArea[1].y = drawArea[0].y + m->dir_y * base->h;
-	base2 = e->getBaseSurface(b, x + m->dir_x, y + m->dir_y);
-	SDL_BlitSurface((SDL_Surface *)base2, 0, screen, &drawArea[1]);
+	drawArea[1].x = drawArea[0].x + m->dir_x * tile->w;
+	drawArea[1].y = drawArea[0].y + m->dir_y * tile->h;
+	e->getBaseSurface(b, x + m->dir_x, y + m->dir_y, &base2);
+	for (i=0; i<base2.n; ++i)
+	    SDL_BlitSurface(base2.blits[i], 0, screen, &drawArea[1]);
 	if (m->dir_x) m->off_x += b->pimpl->step_x;
 	if (m->dir_y) m->off_y += b->pimpl->step_y;
-	if ((base->w - m->off_x < b->pimpl->step_x)
-		|| (base->h - m->off_y < b->pimpl->step_y))
+	if ((tile->w - m->off_x < b->pimpl->step_x)
+		|| (tile->h - m->off_y < b->pimpl->step_y))
 	{
 	    drawArea[2].x = drawArea[1].x;
 	    drawArea[2].y = drawArea[1].y;
@@ -272,7 +291,7 @@ internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
     }
     else
     {
-	SDL_BlitSurface((SDL_Surface *)tile, 0, screen, &drawArea[0]);
+	if (tile) SDL_BlitSurface((SDL_Surface *)tile, 0, screen, &drawArea[0]);
 	if (refresh) SDL_UpdateRects(screen, 1, &drawArea[0]);
     }
 }
@@ -450,21 +469,33 @@ calculateNeighbors(Board this, int x, int y)
     return neighbors;
 }
 
-static const SDL_Surface *
-m_getEmptyTile ARG(int x, int y)
+static void
+m_getEmptyTile ARG(int x, int y, void *buf)
 {
     METHOD(Board);
     
+    BlitSequence bs = (BlitSequence)buf;
     unsigned int n = calculateNeighbors(this, x, y);
-    return this->pimpl->s_empty[n];
+    bs->n = 0;
+    bs->blits[bs->n++] = this->pimpl->s_empty[n];
+    if (!(n&(8|4)) && (y>0) && (x<31) && isSolidTile(this, x+1, y-1))
+	bs->blits[bs->n++] = this->pimpl->s_corner[0];
+    if (!(n&(4|2)) && (y<23) && (x<31) && isSolidTile(this, x+1, y+1))
+	bs->blits[bs->n++] = this->pimpl->s_corner[1];
+    if (!(n&(2|1)) && (y<23) && (x>0) && isSolidTile(this, x-1, y+1))
+	bs->blits[bs->n++] = this->pimpl->s_corner[2];
+    if (!(n&(8|1)) && (y>0) && (x>0) && isSolidTile(this, x-1, y-1))
+	bs->blits[bs->n++] = this->pimpl->s_corner[3];
 }
 
-static const SDL_Surface *
-m_getEarthBaseTile ARG(int x, int y)
+static void
+m_getEarthBaseTile ARG(int x, int y, void *buf)
 {
     METHOD(Board);
 
-    return this->pimpl->s_earth;
+    BlitSequence bs = (BlitSequence)buf;
+    bs->n = 1;
+    bs->blits[0] = this->pimpl->s_earth;
 }
 
 static const SDL_Surface *
@@ -523,12 +554,15 @@ static void
 freeSdlSurfaces(Board this)
 {
     struct Board_impl *b = this->pimpl;
-    SDL_Surface **pempty;
-    SDL_Surface **pempty_end;
+    SDL_Surface **p;
+    SDL_Surface **p_end;
 
-    pempty_end = (SDL_Surface **)b->s_empty + 16;
-    for (pempty = (SDL_Surface **)b->s_empty; pempty != pempty_end; ++pempty)
-	if (*pempty) SDL_FreeSurface(*pempty);
+    p_end = (SDL_Surface **)b->s_empty + 16;
+    for (p = (SDL_Surface **)b->s_empty; p != p_end; ++p)
+	if (*p) SDL_FreeSurface(*p);
+    p_end = (SDL_Surface **)b->s_corner + 4;
+    for (p = (SDL_Surface **)b->s_corner; p != p_end; ++p)
+	if (*p) SDL_FreeSurface(*p);
     if (b->s_earth) SDL_FreeSurface(b->s_earth);
     if (b->s_wall) SDL_FreeSurface(b->s_wall);
     if (b->s_rock) SDL_FreeSurface(b->s_rock);
@@ -542,6 +576,7 @@ m_initVideo ARG()
     METHOD(Board);
 
     SDL_Surface *png;
+    int i;
 
     struct Board_impl *b = this->pimpl;
 
@@ -560,6 +595,7 @@ m_initVideo ARG()
 
     freeSdlSurfaces(this);
 
+    /* "empty" tiles with different edges and rotations */
     b->s_empty[0] = createScaledSurface(
 	    b->t_empty, b->tile_width, b->tile_height);
     png = loadPngSurface(b->t_empty_1);
@@ -600,6 +636,15 @@ m_initVideo ARG()
     SDL_FreeSurface(png);
     b->s_empty[8|4|2|1] = createScaledSurface(
 	    b->t_empty_4, b->tile_width, b->tile_height);
+
+    /* the four corners */
+    png = loadPngSurface(b->t_corner);
+    for (i=0; i<4; ++i)
+	b->s_corner[i] = scaleSurface(
+		png, b->tile_width, b->tile_height, i);
+    SDL_FreeSurface(png);
+
+    /* tiles for the items on the board */
     b->s_earth = createScaledSurface(
 	    b->t_earth, b->tile_width, b->tile_height);
     b->s_wall = createScaledSurface(
@@ -665,6 +710,7 @@ CTOR(Board)
     rf->load(rf, "tile_empty_2f", &(b->t_empty_2f));
     rf->load(rf, "tile_empty_3", &(b->t_empty_3));
     rf->load(rf, "tile_empty_4", &(b->t_empty_4));
+    rf->load(rf, "tile_corner", &(b->t_corner));
     rf->load(rf, "tile_earth", &(b->t_earth));
     rf->load(rf, "tile_wall", &(b->t_wall));
     rf->load(rf, "tile_rock", &(b->t_rock));
@@ -702,6 +748,7 @@ DTOR(Board)
     DELETE(Resource, b->t_empty_2f);
     DELETE(Resource, b->t_empty_3);
     DELETE(Resource, b->t_empty_4);
+    DELETE(Resource, b->t_corner);
     DELETE(Resource, b->t_earth);
     DELETE(Resource, b->t_wall);
     DELETE(Resource, b->t_rock);
