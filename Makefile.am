@@ -126,7 +126,7 @@ bin_stoneage_SOURCES = src/common.h src/classes.h \
 	src/resource.h src/resource.c \
 	src/resfile.h src/resfile.c
 
-bin/stoneage.$(OBJEXT): src/icondat.h bin/stoneage.ico
+src/stoneage.$(OBJEXT): src/icondat.h bin/stoneage.ico
 
 noinst_PROGRAMS = bin/samkres
 
