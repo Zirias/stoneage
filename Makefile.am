@@ -1,18 +1,20 @@
-CLEANFILES = autoscan.log configure.scan src/stoneage.res
-MAINTAINERCLEANFILES = Makefile.in configure config.guess config.sub src/config.h.in src/icondat.h
+CLEANFILES = autoscan.log configure.scan src/stoneage.res src/config.h.in~
+MAINTAINERCLEANFILES = src/icondat.h
+VCSCLEANFILES = config.guess config.sub aclocal.m4 compile depcomp install-sh ltmain.sh missing version.inc configure Makefile.in src/config.h.in
 
 V_X2P = $(V_X2P_$(V))
-V_X2P_ = $(V_X2P_$(AM_DEFAULT_VERBOSITY))
+V_X2P_ = $(V_X2P__$(AM_DEFAULT_VERBOSITY))
+V_X2P__0 = $(V_X2P_0)
 V_X2P_0 = @echo "  XCF   " $@;
 
 V_RES = $(V_RES_$(V))
-V_RES_ = $(V_RES_$(AM_DEFAULT_VERBOSITY))
+V_RES_ = $(V_RES__$(AM_DEFAULT_VERBOSITY))
+V_RES__0 = $(V_RES_0)
 V_RES_0 = @echo "  RES   " $@;
 
 vcs-clean: maintainer-clean
-	rm -fr autom4te.cache
-	rm -fr doxy
-	rm -f aclocal.m4 compile depcomp install-sh ltmain.sh missing
+	rm -fr autom4te.cache doxy
+	rm -f $(VCSCLEANFILES)
 
 clean-local:
 	rm -f resbuild/*
@@ -21,7 +23,7 @@ maintainer-clean-local:
 	rm -fr resbuild bin
 
 dist_pkgdata_DATA = bin/gfx.sar
-EXTRA_DIST = bin/stoneage.ico src/icon.h src/icon.c src/icondat.h src/stoneage.rc
+EXTRA_DIST = VERSION bin/stoneage.ico src/icon.h src/icon.c src/icondat.h src/stoneage.rc
 
 if BUILD_RESOURCES
 
@@ -106,6 +108,7 @@ AM_CPPFLAGS = -DSA_PKGDATADIR='$(pkgdatadir)'
 bin_PROGRAMS = bin/stoneage
 
 bin_stoneage_LDFLAGS = $(SDL_LIBS) $(SDL_image_LIBS) $(SDL_gfx_LIBS)
+bin_stoneage_CFLAGS = $(SDL_CFLAGS)
 bin_stoneage_SOURCES = src/common.h src/classes.h \
 	src/stoneage.h src/stoneage.c \
 	src/icon.h src/icon.c \
@@ -126,7 +129,8 @@ bin_stoneage_SOURCES = src/common.h src/classes.h \
 	src/resource.h src/resource.c \
 	src/resfile.h src/resfile.c
 
-src/stoneage.$(OBJEXT): src/icondat.h bin/stoneage.ico
+bin_stoneage_DEPENDENCIES = src/icondat.h bin/stoneage.ico
+BUILT_SOURCES = src/icondat.h bin/stoneage.ico
 
 noinst_PROGRAMS = bin/samkres
 
@@ -144,7 +148,8 @@ if WIN32
 src/stoneage.res:
 	$(V_RES) windres src/stoneage.rc -O coff -o src/stoneage.res
 
-bin_stoneage_DEPENDENCIES = src/stoneage.res
+bin_stoneage_DEPENDENCIES += src/stoneage.res
+BUILT_SOURCES += src/stoneage.res
 bin_stoneage_LDADD = src/stoneage.res
 
 endif

@@ -1070,6 +1070,13 @@ initialize ( ) {
 # 	rm -f aclocal.m4
 #     fi
 
+    ###################################################
+    # write version string for configure.ac inclusion #
+    ###################################################
+    if test -f VERSION ; then
+	. ./VERSION
+	echo "$stoneage_major.$stoneage_minor.$stoneage_release" >version.inc
+    fi
 } # end of initialize()
 
 

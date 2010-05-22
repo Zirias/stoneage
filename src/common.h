@@ -6,6 +6,8 @@
  */
 
 #ifdef HAVE_CONFIG_H
+#undef HAVE_MALLOC
+#undef HAVE_REALLOC
 #include "config.h"
 #endif
 

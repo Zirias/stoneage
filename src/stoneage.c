@@ -1,7 +1,5 @@
 #include "stoneage.h"
 #include "board.h"
-#include "resfile.h"
-#include "resource.h"
 #include "event.h"
 
 Uint32
@@ -135,7 +133,8 @@ CTOR(Stoneage)
     this->modeflags = 0;
 
     setupSdlApplicationIcon();
-    SDL_WM_SetCaption("Stonage 0.1 -- as seen 1988 in AmigaBASIC", "stoneage");
+    SDL_WM_SetCaption("Stonage " VERSION
+	    " -- as seen 1988 in AmigaBASIC", "stoneage");
 
     this->ticker = SDL_AddTimer(1000, &createTickerEvent, this);
     return this;
