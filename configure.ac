@@ -48,6 +48,7 @@ AS_IF([test "x$os_win32" = "xyes"], [
 
 # Checks for libraries.
 PKG_CHECK_MODULES(SDL, [sdl >= 1.2])
+tmp_CFLAGS="$CFLAGS"
 CFLAGS="$CFLAGS $SDL_CFLAGS"
 PKG_CHECK_MODULES(SDL_image, [SDL_image >= 1.2.8],
 	[check_sdl_img_128="yes"], [check_sdl_img_128="no"])
@@ -67,6 +68,7 @@ AS_IF([test "x$check_sdl_gfx_20" != "xyes"],
 Please install SDL_gfx version 2.0 or newer.])],
       [#include <SDL.h>])
       ])
+CFLAGS="$tmp_CFLAGS"
 
 # Checks for header files.
 AC_CHECK_HEADERS([stdlib.h string.h unistd.h])
