@@ -7,6 +7,7 @@
 #include "ehandler.h"
 
 struct Board;
+struct Move;
 
 /** @file entity.h
  * Includes definition of the Entity class
@@ -20,6 +21,7 @@ CLASS(Entity)
     INHERIT(EHandler);
     
     struct Board *b;	/**< The game board to interact with */
+    struct Move *m;	/**< Current move, 0 if not moving */
     int x;		/**< x coordinate of this entity on the board */
     int y;		/**< y coordinate of this entity on the board */
 
