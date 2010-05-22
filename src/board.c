@@ -396,12 +396,13 @@ m_coordinatesToPixel ARG(int x, int y, int *px, int *py)
 }
 
 static int
-m_isEmpty ARG(int x, int y)
+m_entity ARG(int x, int y, Entity *e)
 {
     METHOD(Board);
 
-    if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return 0;
-    return (this->pimpl->entity[y][x] ? 0 : 1);
+    if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return -1;
+    *e = this->pimpl->entity[y][x];
+    return 0;
 }
 
 static void
@@ -434,7 +435,7 @@ checkRocks(Board b)
     {
 	r = b->pimpl->rock[i];
 	e = CAST(r, Entity);
-	if (m_isEmpty(b, e->x, e->y + 1)) r->fall(r);
+	if (e->y<LVL_ROWS-1 && !b->pimpl->entity[e->y+1][e->x]) r->fall(r);
     }
 }
 
@@ -678,7 +679,7 @@ CTOR(Board)
     this->redraw = &m_redraw;
     this->draw = &m_draw;
     this->coordinatesToPixel = &m_coordinatesToPixel;
-    this->isEmpty = &m_isEmpty;
+    this->entity = &m_entity;
     this->startMove = &m_startMove;
     this->getEmptyTile = &m_getEmptyTile;
     this->getEarthBaseTile = &m_getEarthBaseTile;

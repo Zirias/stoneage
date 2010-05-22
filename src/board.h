@@ -61,13 +61,13 @@ CLASS(Board)
      */
     int FUNC(coordinatesToPixel) ARG(int x, int y, int *px, int *py);
 
-    /** Check for entity at a given position.
-     * Checks the given position for an entity.
+    /** Get entity at given position.
      * @param x x-coordinate on the board
      * @param y y-coordinate on the board
-     * @return 1 if the given position is found empty, 0 otherwise
+     * @param e store the Entity (or 0 if the given position is empty) here
+     * @return non-zero if the coordinates are invalid
      */
-    int FUNC(isEmpty) ARG(int x, int y);
+    int FUNC(entity) ARG(int x, int y, struct Entity **e);
 
     /** Start a moving operation.
      * Start movement described by a given Move object
