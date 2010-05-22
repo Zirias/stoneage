@@ -1,7 +1,5 @@
 #include "stoneage.h"
 #include "board.h"
-#include "resfile.h"
-#include "resource.h"
 #include "event.h"
 
 Uint32
