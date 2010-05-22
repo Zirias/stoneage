@@ -78,9 +78,9 @@ struct Board_impl
     int willy_x;
     int willy_y;
 
-    Entity entity[24][32];
+    Entity entity[LVL_ROWS][LVL_COLS];
     int num_rocks;
-    ERock rock[32*24];
+    ERock rock[LVL_ROWS * LVL_COLS];
 };
 
 static void checkRocks(Board b);
@@ -190,7 +190,7 @@ findRocks(Board b)
     ERock r;
 
     b->pimpl->num_rocks = 0;
-    for (y=0; y<24; ++y) for (x=0; x<32; ++x)
+    for (y=0; y<LVL_ROWS; ++y) for (x=0; x<LVL_COLS; ++x)
     {
 	e = b->pimpl->entity[y][x];
 	if (!e) continue;
@@ -310,7 +310,7 @@ internal_clear(Board b)
 {
     MoveRecord m, next;
     Entity *e;
-    Entity *end = (Entity *)&(b->pimpl->entity) + 32*24;
+    Entity *end = (Entity *)&(b->pimpl->entity) + LVL_COLS*LVL_ROWS;
     int i;
 
     if (b->pimpl->moveticker)
@@ -387,8 +387,8 @@ m_redraw ARG()
 
     struct Board_impl *b = this->pimpl;
 
-    for (y = 0; y < 24; ++y)
-	for (x = 0; x < 32; ++x)
+    for (y = 0; y < LVL_ROWS; ++y)
+	for (x = 0; x < LVL_COLS; ++x)
 	    this->draw(this, x, y, 0);
 
     SDL_UpdateRect(b->screen, 0, 0, b->screen->w, b->screen->h);
@@ -399,7 +399,7 @@ m_isEmpty ARG(int x, int y)
 {
     METHOD(Board);
 
-    if ((x<0)||(x>31)||(y<0)||(y>23)) return 0;
+    if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return 0;
     return (this->pimpl->entity[y][x] ? 0 : 1);
 }
 
@@ -463,8 +463,8 @@ calculateNeighbors(Board this, int x, int y)
 
     unsigned int neighbors = 0;
     if ((y > 0) && isSolidTile(this, x, y-1)) neighbors += 8;
-    if ((x < 31) && isSolidTile(this, x+1, y)) neighbors += 4;
-    if ((y < 23) && isSolidTile(this, x, y+1)) neighbors += 2;
+    if ((x < LVL_COLS-1) && isSolidTile(this, x+1, y)) neighbors += 4;
+    if ((y < LVL_ROWS-1) && isSolidTile(this, x, y+1)) neighbors += 2;
     if ((x > 0) && isSolidTile(this, x-1, y)) neighbors += 1;
     return neighbors;
 }
@@ -478,13 +478,17 @@ m_getEmptyTile ARG(int x, int y, void *buf)
     unsigned int n = calculateNeighbors(this, x, y);
     bs->n = 0;
     bs->blits[bs->n++] = this->pimpl->s_empty[n];
-    if (!(n&(8|4)) && (y>0) && (x<31) && isSolidTile(this, x+1, y-1))
+    if (!(n&(8|4)) && (y>0) && (x<LVL_COLS-1)
+	    && isSolidTile(this, x+1, y-1))
 	bs->blits[bs->n++] = this->pimpl->s_corner[0];
-    if (!(n&(4|2)) && (y<23) && (x<31) && isSolidTile(this, x+1, y+1))
+    if (!(n&(4|2)) && (y<LVL_ROWS-1) && (x<LVL_COLS-1)
+	    && isSolidTile(this, x+1, y+1))
 	bs->blits[bs->n++] = this->pimpl->s_corner[1];
-    if (!(n&(2|1)) && (y<23) && (x>0) && isSolidTile(this, x-1, y+1))
+    if (!(n&(2|1)) && (y<LVL_ROWS-1) && (x>0)
+	    && isSolidTile(this, x-1, y+1))
 	bs->blits[bs->n++] = this->pimpl->s_corner[2];
-    if (!(n&(8|1)) && (y>0) && (x>0) && isSolidTile(this, x-1, y-1))
+    if (!(n&(8|1)) && (y>0) && (x>0)
+	    && isSolidTile(this, x-1, y-1))
 	bs->blits[bs->n++] = this->pimpl->s_corner[3];
 }
 
@@ -581,8 +585,8 @@ m_initVideo ARG()
     struct Board_impl *b = this->pimpl;
 
     b->screen = SDL_GetVideoSurface();
-    b->tile_width = b->screen->w / 32;
-    b->tile_height = b->screen->h / 24;
+    b->tile_width = b->screen->w / LVL_COLS;
+    b->tile_height = b->screen->h / LVL_ROWS;
 
     drawArea[0].w = drawArea[1].w = drawArea[2].w = b->tile_width;
     drawArea[0].h = drawArea[1].h = drawArea[2].h = b->tile_height;

@@ -19,7 +19,7 @@
 #define C 4	/* cabbage */
 #define H 5	/* hero (aka willy) */
 
-static const uint8_t lvl_debug[1][24][32] =
+static const uint8_t lvl_debug[][LVL_ROWS][LVL_COLS] =
 {
     {
 	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
@@ -51,7 +51,7 @@ static const uint8_t lvl_debug[1][24][32] =
 
 struct Level_impl
 {
-    uint8_t data[24][32];
+    uint8_t data[LVL_ROWS][LVL_COLS];
 };
 
 static void
@@ -62,7 +62,7 @@ m_createEntities ARG(Board b, Entity *buffer)
     int x, y;
     Entity e;
 
-    for (y=0; y<24; ++y) for (x=0; x<32; ++x)
+    for (y=0; y<LVL_ROWS; ++y) for (x=0; x<LVL_COLS; ++x)
     {
 	switch(this->pimpl->data[y][x])
 	{
@@ -96,15 +96,15 @@ m_random ARG()
     
     int x, y, r;
 
-    for (y=0; y<24; ++y) for (x=0; x<32; ++x)
+    for (y=0; y<LVL_ROWS; ++y) for (x=0; x<LVL_COLS; ++x)
     {
 	r = random() / (RAND_MAX / 10);
 	if (r < 3) this->pimpl->data[y][x] = N;
 	else if (r < 6) this->pimpl->data[y][x] = E;
 	else this->pimpl->data[y][x] = r-5;
     }
-    x = random() / (RAND_MAX / 32);
-    y = random() / (RAND_MAX / 24);
+    x = random() / (RAND_MAX / LVL_COLS);
+    y = random() / (RAND_MAX / LVL_ROWS);
     this->pimpl->data[y][x] = H;
 }
 
@@ -113,7 +113,8 @@ m_debug ARG(int num)
 {
     METHOD(Level);
 
-    memcpy(this->pimpl->data, lvl_debug[num], 32*24*sizeof(uint8_t));
+    memcpy(this->pimpl->data, lvl_debug[num],
+	    LVL_ROWS * LVL_COLS * sizeof(uint8_t));
 }
 
 CTOR(Level)
