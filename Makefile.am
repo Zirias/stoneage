@@ -2,11 +2,13 @@ CLEANFILES = autoscan.log configure.scan src/stoneage.res
 MAINTAINERCLEANFILES = Makefile.in configure config.guess config.sub src/config.h.in src/icondat.h
 
 V_X2P = $(V_X2P_$(V))
-V_X2P_ = $(V_X2P_$(AM_DEFAULT_VERBOSITY))
+V_X2P_ = $(V_X2P__$(AM_DEFAULT_VERBOSITY))
+V_X2P__0 = $(V_X2P_0)
 V_X2P_0 = @echo "  XCF   " $@;
 
 V_RES = $(V_RES_$(V))
-V_RES_ = $(V_RES_$(AM_DEFAULT_VERBOSITY))
+V_RES_ = $(V_RES__$(AM_DEFAULT_VERBOSITY))
+V_RES__0 = $(V_RES_0)
 V_RES_0 = @echo "  RES   " $@;
 
 vcs-clean: maintainer-clean
