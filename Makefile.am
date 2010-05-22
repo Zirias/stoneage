@@ -1,5 +1,6 @@
-CLEANFILES = autoscan.log configure.scan src/stoneage.res
-MAINTAINERCLEANFILES = Makefile.in configure config.guess config.sub src/config.h.in src/icondat.h
+CLEANFILES = autoscan.log configure.scan src/stoneage.res src/config.h.in~
+MAINTAINERCLEANFILES = src/icondat.h
+VCSCLEANFILES = config.guess config.sub aclocal.m4 compile depcomp install-sh ltmain.sh missing version.inc configure Makefile.in src/config.h.in
 
 V_X2P = $(V_X2P_$(V))
 V_X2P_ = $(V_X2P__$(AM_DEFAULT_VERBOSITY))
@@ -12,9 +13,8 @@ V_RES__0 = $(V_RES_0)
 V_RES_0 = @echo "  RES   " $@;
 
 vcs-clean: maintainer-clean
-	rm -fr autom4te.cache
-	rm -fr doxy
-	rm -f aclocal.m4 compile depcomp install-sh ltmain.sh missing
+	rm -fr autom4te.cache doxy
+	rm -f $(VCSCLEANFILES)
 
 clean-local:
 	rm -f resbuild/*

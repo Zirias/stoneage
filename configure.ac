@@ -3,15 +3,13 @@
 
 
 AC_PREREQ([2.6])
-AC_INIT(
-	[Stoneage],
+AC_INIT([Stoneage],
 	m4_normalize(m4_include([version.inc])),
 	[felix@palmen-it.de],
 	[stoneage],
-	[http://sekrit.de/stoneage/]
-	)
+	[http://sekrit.de/stoneage/])
 
-AS_IF([test -f VERSION],[[. VERSION]])
+AS_IF([test -f VERSION],[. ./VERSION])
 
 AM_INIT_AUTOMAKE([subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
