@@ -108,6 +108,7 @@ AM_CPPFLAGS = -DSA_PKGDATADIR='$(pkgdatadir)'
 bin_PROGRAMS = bin/stoneage
 
 bin_stoneage_LDFLAGS = $(SDL_LIBS) $(SDL_image_LIBS) $(SDL_gfx_LIBS)
+bin_stoneage_CFLAGS = $(SDL_CFLAGS)
 bin_stoneage_SOURCES = src/common.h src/classes.h \
 	src/stoneage.h src/stoneage.c \
 	src/icon.h src/icon.c \
@@ -128,7 +129,8 @@ bin_stoneage_SOURCES = src/common.h src/classes.h \
 	src/resource.h src/resource.c \
 	src/resfile.h src/resfile.c
 
-src/stoneage.$(OBJEXT): src/icondat.h bin/stoneage.ico
+bin_stoneage_DEPENDENCIES = src/icondat.h bin/stoneage.ico
+BUILT_SOURCES = src/icondat.h bin/stoneage.ico
 
 noinst_PROGRAMS = bin/samkres
 
@@ -146,7 +148,8 @@ if WIN32
 src/stoneage.res:
 	$(V_RES) windres src/stoneage.rc -O coff -o src/stoneage.res
 
-bin_stoneage_DEPENDENCIES = src/stoneage.res
+bin_stoneage_DEPENDENCIES += src/stoneage.res
+BUILT_SOURCES += src/stoneage.res
 bin_stoneage_LDADD = src/stoneage.res
 
 endif
