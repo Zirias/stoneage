@@ -3,6 +3,8 @@
 
 #include "common.h"
 
+#include <SDL.h>
+
 struct Entity;
 
 typedef enum
@@ -20,9 +22,15 @@ CLASS(Move)
     struct Move_impl *pimpl;
     Move next;
     Move prev;
+    int dx;
+    int dy;
 
     void FUNC(init) ARG(struct Entity *e, int dx, int dy, Trajectory t);
-    int FUNC(step) ARG(int *x, int *y);
+    struct Entity *FUNC(entity) ARG();
+    int FUNC(step) ARG(Uint16 *x, Uint16 *y);
 };
+
+extern void
+computeTrajectories(int tile_width, int tile_height);
 
 #endif

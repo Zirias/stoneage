@@ -1,5 +1,6 @@
 #include "erock.h"
 #include "board.h"
+#include "move.h"
 #include "event.h"
 #include "ehandler.h"
 
@@ -15,8 +16,7 @@ m_handleEvent ARG(Event ev)
 
     if (ev->type == SAEV_MoveFinished)
     {
-	this->falling = 0;
-	e = ((Entity)this);
+	e = CAST(this, Entity);
 	if (e->b->isEmpty(e->b, e->x, e->y+1)) this->fall(this);
     }
 
@@ -47,10 +47,11 @@ m_fall ARG()
 {
     METHOD(ERock);
 
-    if (this->falling) return;
-    this->falling = 1;
     Entity e = CAST(this, Entity);
-    e->b->startMove(e->b, e, 0, 1);
+    if (e->m) return;
+    e->m = NEW(Move);
+    e->m->init(e->m, e, 0, 1, TR_Linear);
+    e->b->startMove(e->b, e->m);
 }
 
 CTOR(ERock)
@@ -61,7 +62,6 @@ CTOR(ERock)
     parent_init = e->init;
     e->init = &m_init;
     e->dispose = &m_dispose;
-    this->falling = 0;
     this->fall = &m_fall;
     return this;
 }

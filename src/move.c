@@ -30,18 +30,22 @@ static const double tTables[Trajectory_count][7][2] = {
 
 static int pTables[Trajectory_count][7][2];
 
-static int tile_width;
-static int tile_height;
+static int tr_tile_width;
+static int tr_tile_height;
 
-static void
-computePixelTrajectories(void)
+void
+computeTrajectories(int tile_width, int tile_height)
 {
     int i, j;
-
-    for (i=0; i<Trajectory_count; ++i) for (j=0; j<7; ++j)
+    if ((tr_tile_height != tile_height) || (tr_tile_width != tile_width))
     {
-	pTables[i][j][0] = (int) tile_width * tTables[i][j][0];
-	pTables[i][j][1] = (int) tile_height * tTables[i][j][1];
+	tr_tile_height = tile_height;
+	tr_tile_width = tile_width;
+	for (i=0; i<Trajectory_count; ++i) for (j=0; j<7; ++j)
+	{
+	    pTables[i][j][0] = (int) tile_width * tTables[i][j][0];
+	    pTables[i][j][1] = (int) tile_height * tTables[i][j][1];
+	}
     }
 }
 
@@ -56,22 +60,24 @@ m_init ARG(Entity e, int dx, int dy, Trajectory t)
     e->b->coordinatesToPixel(e->b, e->x, e->y, &p->x, &p->y);
     e->b->coordinatesToPixel(e->b, e->x + dx, e->y + dy, &p->tx, &p->ty);
 
-    int w = abs(p->tx-p->x);
-    int h = abs(p->ty-p->y);
-
-    if ((tile_height != h) || (tile_width != w))
-    {
-	tile_height = h;
-	tile_width = w;
-	computePixelTrajectories();
-    }
-
     p->step = 0;
     p->t = &(pTables[t]);
+
+    this->dx = dx;
+    this->dy = dy;
+    this->next = 0;
+    this->prev = 0;
+}
+
+static Entity
+m_entity ARG()
+{
+    METHOD(Move);
+    return this->pimpl->e;
 }
 
 static int
-m_step ARG(int *x, int *y)
+m_step ARG(Uint16 *x, Uint16 *y)
 {
     METHOD(Move);
 
@@ -88,8 +94,12 @@ m_step ARG(int *x, int *y)
     
     dx = p->tx - p->x;
     dy = p->ty - p->y;
-    *x = p->x + (int) dx * (*p->t)[p->step][0];
-    *y = p->y + (int) dy * (*p->t)[p->step][1];
+    if (dx>0) *x = p->x + (*p->t)[p->step][0];
+    else if (dx<0) *x = p->x - (*p->t)[p->step][0];
+    else *x = p->x;
+    if (dy>0) *y = p->y + (*p->t)[p->step][1];
+    else if (dy<0) *y = p->y - (*p->t)[p->step][1];
+    else *y = p->y;
     p->step++;
 
     return 0;
@@ -100,6 +110,7 @@ CTOR(Move)
     BASECTOR(Move, Object);
     this->pimpl = XMALLOC(struct Move_impl, 1);
     this->init = &m_init;
+    this->entity = &m_entity;
     this->step = &m_step;
     return this;
 }
