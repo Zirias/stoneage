@@ -9,6 +9,7 @@
 struct Board_impl;
 
 struct Entity;
+struct Move;
 
 /** @file board.h
  * Includes definition of class Board
@@ -69,14 +70,10 @@ CLASS(Board)
     int FUNC(isEmpty) ARG(int x, int y);
 
     /** Start a moving operation.
-     * Start movement of a given entity on the board in dir_x, dir_y
-     * direction.
-     * @param e the Entity to move
-     * @param dir_x x direction, valid values -1, 0 or 1
-     * @param dir_y y direction, valid values -1, 0 or 1
+     * Start movement described by a given Move object
+     * @param m a Move object describing the motion.
      */
-    void FUNC(startMove) ARG(
-	    struct Entity *e, int dir_x, int dir_y);
+    void FUNC(startMove) ARG(struct Move *m);
 
     /** Get SDL Surface with "Empty" Tile suitable for the given position.
      * @return SDL Surface

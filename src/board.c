@@ -8,6 +8,7 @@
 #include "app.h"
 #include "event.h"
 #include "level.h"
+#include "move.h"
 
 #include "eearth.h"
 #include "ewall.h"
@@ -15,7 +16,7 @@
 #include "ecabbage.h"
 #include "ewilly.h"
 
-static SDL_Rect drawArea[3];
+static SDL_Rect drawArea;
 
 struct BlitSequence;
 typedef struct BlitSequence *BlitSequence;
@@ -24,20 +25,6 @@ struct BlitSequence
 {
     int n;
     SDL_Surface *blits[16];
-};
-
-struct MoveRecord;
-typedef struct MoveRecord *MoveRecord;
-
-struct MoveRecord
-{
-    Entity e;
-    int dir_x;
-    int dir_y;
-    int off_x;
-    int off_y;
-    MoveRecord prev;
-    MoveRecord next;
 };
 
 struct Board_impl
@@ -65,15 +52,12 @@ struct Board_impl
     SDL_Surface *s_cabbage;
     SDL_Surface *s_willy;
 
-    MoveRecord move;
+    Move movelist;
 
     SDL_TimerID moveticker;
 
     int tile_width;
     int tile_height;
-
-    int step_x;
-    int step_y;
 
     int willy_x;
     int willy_y;
@@ -200,99 +184,64 @@ findRocks(Board b)
 }
 
 static void
-internal_draw(Board b, int x, int y, MoveRecord m, int refresh)
+moveStep(Board b, Move m)
 {
-    SDL_Surface *screen;
-    const SDL_Surface *tile;
-    struct BlitSequence base1;
-    struct BlitSequence base2;
-    int drawBase;
-    Entity e;
+    int done;
     Event ev;
-    int i;
 
-    if (m) e = m->e;
-    else e = b->pimpl->entity[y][x];
-
-    drawArea[0].x = x * drawArea[0].w;
-    drawArea[0].y = y * drawArea[0].h;
-
-    screen = b->pimpl->screen;
-
-    drawBase = 0;
-    tile = 0;
-
-    if (e)
+    Entity e = m->entity(m);
+    int tw = b->pimpl->tile_width;
+    int th = b->pimpl->tile_height;
+    SDL_Rect dirty = { e->x * tw, e->y * th, tw, th };
+    b->draw(b, e->x, e->y, 0);
+    if (m->dx)
     {
-	if (e->getBaseSurface)
-	{
-	    e->getBaseSurface(b, x, y, &base1);
-	    drawBase = 1;
-	}
-	tile = e->getSurface(b);
+	b->draw(b, e->x + m->dx, e->y, 0);
+	if (m->dx < 0) dirty.x -= tw;
+	dirty.w += tw;
     }
-    else
+    if (m->dy)
     {
-	b->getEmptyTile(b, x, y, &base1);
-	drawBase = 1;
+	b->draw(b, e->x, e->y + m->dy, 0);
+	if (m->dy < 0) dirty.y -= th;
+	dirty.h += th;
     }
+    if (m->dx && m->dy) b->draw(b, e->x + m->dx, e->y + m->dy, 0);
 
-    if (drawBase) for (i=0; i<base1.n; ++i)
-	SDL_BlitSurface(base1.blits[i], 0, screen, &drawArea[0]);
+    done = m->step(m, &drawArea.x, &drawArea.y);
+    SDL_BlitSurface((SDL_Surface *)e->getSurface(b),
+	    0, b->pimpl->screen, &drawArea);
+    SDL_UpdateRects(b->pimpl->screen, 1, &dirty);
 
-    if (m)
+    if (done)
     {
-	drawArea[1].x = drawArea[0].x + m->dir_x * tile->w;
-	drawArea[1].y = drawArea[0].y + m->dir_y * tile->h;
-	e->getBaseSurface(b, x + m->dir_x, y + m->dir_y, &base2);
-	for (i=0; i<base2.n; ++i)
-	    SDL_BlitSurface(base2.blits[i], 0, screen, &drawArea[1]);
-	if (m->dir_x) m->off_x += b->pimpl->step_x;
-	if (m->dir_y) m->off_y += b->pimpl->step_y;
-	if ((tile->w - m->off_x < b->pimpl->step_x)
-		|| (tile->h - m->off_y < b->pimpl->step_y))
+	if (m->prev)
 	{
-	    drawArea[2].x = drawArea[1].x;
-	    drawArea[2].y = drawArea[1].y;
-	    if (m->prev)
-	    {
-		m->prev->next = m->next;
-	    }
-	    else
-	    {
-		b->pimpl->move = m->next;
-	    }
-	    if (m->next)
-	    {
-		m->next->prev = m->prev;
-	    }
-	    b->pimpl->entity[m->e->y][m->e->x] = 0;
-	    m->e->x += m->dir_x;
-	    m->e->y += m->dir_y;
-	    b->pimpl->entity[m->e->y][m->e->x] = m->e;
-
-	    Event ev = NEW(Event);
-	    ev->sender = CAST(b, Object);
-	    ev->handler = CAST(m->e, EHandler);
-	    ev->type = SAEV_MoveFinished;
-	    RaiseEvent(ev);
-
-	    XFREE(m);
-
-	    checkRocks(b);
+	    m->prev->next = m->next;
 	}
 	else
 	{
-	    drawArea[2].x = drawArea[0].x + m->dir_x * m->off_x;
-	    drawArea[2].y = drawArea[0].y + m->dir_y * m->off_y;
+	    b->pimpl->movelist = m->next;
 	}
-	SDL_BlitSurface((SDL_Surface *)tile, 0, screen, &drawArea[2]);
-	if (refresh) SDL_UpdateRects(screen, 2, &drawArea[0]);
-    }
-    else
-    {
-	if (tile) SDL_BlitSurface((SDL_Surface *)tile, 0, screen, &drawArea[0]);
-	if (refresh) SDL_UpdateRects(screen, 1, &drawArea[0]);
+	if (m->next)
+	{
+	    m->next->prev = m->prev;
+	}
+	b->pimpl->entity[e->y][e->x] = 0;
+	e->x += m->dx;
+	e->y += m->dy;
+	e->m = 0;
+	b->pimpl->entity[e->y][e->x] = e;
+
+	ev = NEW(Event);
+	ev->sender = CAST(b, Object);
+	ev->handler = CAST(e, EHandler);
+	ev->type = SAEV_MoveFinished;
+	RaiseEvent(ev);
+
+	DELETE(Move, m);
+
+	checkRocks(b);
     }
 }
 
@@ -308,7 +257,7 @@ randomLevel(Board b)
 static void
 internal_clear(Board b)
 {
-    MoveRecord m, next;
+    Move m, next;
     Entity *e;
     Entity *end = (Entity *)&(b->pimpl->entity) + LVL_COLS*LVL_ROWS;
     int i;
@@ -318,12 +267,12 @@ internal_clear(Board b)
 	SDL_RemoveTimer(b->pimpl->moveticker);
 	b->pimpl->moveticker = 0;
 	CancelEventsFor(CAST(b, EHandler));
-	m = b->pimpl->move;
-	b->pimpl->move = 0;
+	m = b->pimpl->movelist;
+	b->pimpl->movelist = 0;
 	while (m)
 	{
 	    next = m->next;
-	    XFREE(m);
+	    DELETE(Move, m);
 	    m = next;
 	}
     }
@@ -346,12 +295,12 @@ m_handleEvent ARG(Event e)
 {
     METHOD(Board);
 
-    MoveRecord m;
-    MoveRecord next;
+    Move m;
+    Move next;
 
     if (e->type == SAEV_MoveTick)
     {
-	m = this->pimpl->move;
+	m = this->pimpl->movelist;
 	if (!m)
 	{
 	    SDL_RemoveTimer(this->pimpl->moveticker);
@@ -362,7 +311,7 @@ m_handleEvent ARG(Event e)
 	    while (m)
 	    {
 		next = m->next;
-		internal_draw(this, m->e->x, m->e->y, m, 1);
+		moveStep(this, m);
 		m = next;
 	    }
 	}
@@ -375,7 +324,48 @@ static void
 m_draw ARG(int x, int y, int refresh)
 {
     METHOD(Board);
-    internal_draw(this, x, y, 0, refresh);
+
+    SDL_Surface *screen;
+    const SDL_Surface *tile;
+    struct BlitSequence base;
+    int drawBase;
+    Entity e;
+    int i;
+
+    e = this->pimpl->entity[y][x];
+
+    drawArea.x = x * drawArea.w;
+    drawArea.y = y * drawArea.h;
+
+    screen = this->pimpl->screen;
+
+    drawBase = 0;
+    tile = 0;
+
+    if (e)
+    {
+	if (e->getBaseSurface)
+	{
+	    e->getBaseSurface(this, x, y, &base);
+	    drawBase = 1;
+	}
+	tile = e->getSurface(this);
+    }
+    else
+    {
+	this->getEmptyTile(this, x, y, &base);
+	drawBase = 1;
+    }
+
+    if (drawBase) for (i=0; i<base.n; ++i)
+	SDL_BlitSurface(base.blits[i], 0, screen, &drawArea);
+
+
+    if (tile && !e->m)
+	SDL_BlitSurface((SDL_Surface *)tile, 0, screen, &drawArea);
+
+    if (refresh)
+	SDL_UpdateRects(screen, 1, &drawArea);
 }
 
 static void
@@ -415,30 +405,21 @@ m_isEmpty ARG(int x, int y)
 }
 
 static void
-m_startMove ARG(Entity e, int dir_x, int dir_y)
+m_startMove ARG(Move m)
 {
     METHOD(Board);
 
-    MoveRecord m = XMALLOC(struct MoveRecord, 1);
-    m->dir_x = dir_x;
-    m->dir_y = dir_y;
-    m->off_x = 0;
-    m->off_y = 0;
-    m->e = e;
-    m->prev = 0;
-    m->next = 0;
-
-    if (this->pimpl->move) 
+    if (this->pimpl->movelist) 
     {
-	this->pimpl->move->prev = m;
-	m->next = this->pimpl->move;
+	this->pimpl->movelist->prev = m;
+	m->next = this->pimpl->movelist;
     }
-    this->pimpl->move = m;
+    this->pimpl->movelist = m;
 
     if (!this->pimpl->moveticker)
     {
 	this->pimpl->moveticker = SDL_AddTimer(
-		30, &createMoveTickEvent, this);
+		10, &createMoveTickEvent, this);
     }
 }
 
@@ -598,15 +579,10 @@ m_initVideo ARG()
     b->screen = SDL_GetVideoSurface();
     b->tile_width = b->screen->w / LVL_COLS;
     b->tile_height = b->screen->h / LVL_ROWS;
+    computeTrajectories(b->tile_width, b->tile_height);
 
-    drawArea[0].w = drawArea[1].w = drawArea[2].w = b->tile_width;
-    drawArea[0].h = drawArea[1].h = drawArea[2].h = b->tile_height;
-
-    if (b->tile_width < 4) b->step_x = 1;
-    else b->step_x = b->tile_width / 4;
-
-    if (b->tile_height < 4) b->step_y = 1;
-    else b->step_y = b->tile_height / 4;
+    drawArea.w = b->tile_width;
+    drawArea.h = b->tile_height;
 
     freeSdlSurfaces(this);
 
