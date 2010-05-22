@@ -3,6 +3,9 @@
 
 #include "common.h"
 
+#define LVL_ROWS 24
+#define LVL_COLS 32
+
 struct Board;
 struct Entity;
 struct Resource;
