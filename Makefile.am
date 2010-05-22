@@ -23,7 +23,7 @@ maintainer-clean-local:
 	rm -fr resbuild bin
 
 dist_pkgdata_DATA = bin/gfx.sar
-EXTRA_DIST = bin/stoneage.ico src/icon.h src/icon.c src/icondat.h src/stoneage.rc
+EXTRA_DIST = VERSION bin/stoneage.ico src/icon.h src/icon.c src/icondat.h src/stoneage.rc
 
 if BUILD_RESOURCES
 
