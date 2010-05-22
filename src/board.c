@@ -395,6 +395,17 @@ m_redraw ARG()
 }
 
 static int
+m_coordinatesToPixel ARG(int x, int y, int *px, int *py)
+{
+    METHOD(Board);
+
+    if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return -1;
+    *px = this->pimpl->tile_width * x;
+    *py = this->pimpl->tile_height * y;
+    return 0;
+}
+
+static int
 m_isEmpty ARG(int x, int y)
 {
     METHOD(Board);
@@ -690,6 +701,7 @@ CTOR(Board)
     this->loadLevel = &m_loadLevel;
     this->redraw = &m_redraw;
     this->draw = &m_draw;
+    this->coordinatesToPixel = &m_coordinatesToPixel;
     this->isEmpty = &m_isEmpty;
     this->startMove = &m_startMove;
     this->getEmptyTile = &m_getEmptyTile;

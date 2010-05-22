@@ -49,6 +49,17 @@ CLASS(Board)
      */
     void FUNC(draw) ARG(int x, int y, int refresh);
 
+    /** Get real pixel position for a given coordinate.
+     * This function gives the upper left edge of a board coordinate in
+     * real pixels.
+     * @param x x-coordinate on the board
+     * @param y y-coordinate on the board
+     * @param px x component of pixel position
+     * @param py y component of pixel position
+     * @return non-zero on error (coordinate out of board range)
+     */
+    int FUNC(coordinatesToPixel) ARG(int x, int y, int *px, int *py);
+
     /** Check for entity at a given position.
      * Checks the given position for an entity.
      * @param x x-coordinate on the board
