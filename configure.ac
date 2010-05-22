@@ -1,8 +1,18 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 
+
 AC_PREREQ([2.6])
-AC_INIT([stoneage], [0.0.1], [felix@palmen-it.de])
+AC_INIT(
+	[Stoneage],
+	m4_normalize(m4_include([version.inc])),
+	[felix@palmen-it.de],
+	[stoneage],
+	[http://sekrit.de/stoneage/]
+	)
+
+AS_IF([test -f VERSION],[[. VERSION]])
+
 AM_INIT_AUTOMAKE([subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 AM_MAINTAINER_MODE
@@ -136,7 +146,13 @@ AS_IF([test "x$check_sdl_gfx_20" = "xno"],
       SDL_gfx_LIBS=-lSDL_gfx])
 
 #output
+AC_SUBST([stoneage_major])
+AC_SUBST([stoneage_minor])
+AC_SUBST([stoneage_release])
+AC_DEFINE_UNQUOTED([STONEAGE_MAJOR],["$stoneage_major"],[Major version])
+AC_DEFINE_UNQUOTED([STONEAGE_MINOR],["$stoneage_minor"],[Minor version])
+AC_DEFINE_UNQUOTED([STONEAGE_RELEASE],["$stoneage_release"],[Release number])
 AM_CONDITIONAL([WIN32], [test "x$os_win32" = "xyes"])
 AM_CONDITIONAL([BUILD_RESOURCES], [test "x$build_resources" = "xyes"])
-AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([Makefile src/stoneage.rc])
 AC_OUTPUT

@@ -1,6 +1,6 @@
 1 VERSIONINFO
-FILEVERSION	0,0,1,0
-PRODUCTVERSION	0,0,1,0
+FILEVERSION	@stoneage_major@,@stoneage_minor@,@stoneage_release@,0
+PRODUCTVERSION	@stoneage_major@,@stoneage_minor@,@stoneage_release@,0
 BEGIN
   BLOCK "StringFileInfo"
   BEGIN
@@ -8,12 +8,12 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Palmen IT"
       VALUE "FileDescription", "Stoneage - a port of an old AmigaBASIC Game"
-      VALUE "FileVersion", "0.0.1"
+      VALUE "FileVersion", "@stoneage_major@.@stoneage_minor@.@stoneage_release@"
       VALUE "InternalName", "stoneage"
       VALUE "LegalCopyright", "Felix Palmen <felix@palmen-it.de>"
       VALUE "OriginalFilename", "stoneage.exe"
       VALUE "ProductName", "Stoneage"
-      VALUE "ProductVersion", "0.0.1"
+      VALUE "ProductVersion", "@stoneage_major@.@stoneage_minor@.@stoneage_release@"
     END
   END
   BLOCK "VarFileInfo"

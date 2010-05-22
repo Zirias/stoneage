@@ -6,16 +6,15 @@ description will follow later.
 
 VERSIONING SCHEME:
 
-n.m.x: alpha version aimed at beta version (n+1).(m+1)
+n.m.x: alpha/beta version aimed at minor release version n.(m+1).0
 
-n.x: beta version aimed at release version (n+1).0
+n.x.0: minor release version
 
-n.0: Release version n.
-
+x.0.0: major version x.
 
 SCM-POLICIES:
 
 - use GNU autotools
 - keep any autotools-generated files out of the VCS
 - use doxygen to document AT LEAST the header files
-
+- The only place to configure the version number is the VERSION file
