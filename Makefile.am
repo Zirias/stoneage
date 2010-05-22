@@ -119,6 +119,7 @@ bin_stoneage_SOURCES = src/common.h src/classes.h \
 	src/event.h src/event.c \
 	src/ehandler.h src/ehandler.c \
 	src/board.h src/board.c \
+	src/move.h src/move.c \
 	src/level.h src/level.c \
 	src/entity.h src/entity.c \
 	src/eearth.h src/eearth.c \

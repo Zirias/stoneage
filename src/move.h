@@ -19,7 +19,7 @@ CLASS(Move)
     Move next;
     Move prev;
 
-    void FUNC(init) ARG(int x, int y, int dx, int dy, Trajectory t);
+    void FUNC(init) ARG(int x, int y, int tx, int ty, Trajectory t);
     int FUNC(step) ARG(int *x, int *y);
 };
 
