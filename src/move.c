@@ -2,8 +2,12 @@
 
 #include <stdlib.h>
 
+#include "entity.h"
+#include "board.h"
+
 struct Move_impl
 {
+    Entity e;
     int x;
     int y;
     int tx;
@@ -42,12 +46,18 @@ computePixelTrajectories(void)
 }
 
 static void
-m_init ARG(int x, int y, int tx, int ty, Trajectory t)
+m_init ARG(Entity e, int dx, int dy, Trajectory t)
 {
     METHOD(Move);
 
-    int w = abs(tx-x);
-    int h = abs(ty-y);
+    struct Move_impl *p = this->pimpl;
+
+    p->e = e;
+    e->b->coordinatesToPixel(e->b, e->x, e->y, &p->x, &p->y);
+    e->b->coordinatesToPixel(e->b, e->x + dx, e->y + dy, &p->tx, &p->ty);
+
+    int w = abs(p->tx-p->x);
+    int h = abs(p->ty-p->y);
 
     if ((tile_height != h) || (tile_width != w))
     {
@@ -56,11 +66,6 @@ m_init ARG(int x, int y, int tx, int ty, Trajectory t)
 	computePixelTrajectories();
     }
 
-    struct Move_impl *p = this->pimpl;
-    p->x = x;
-    p->y = y;
-    p->tx = tx;
-    p->ty = ty;
     p->step = 0;
     p->t = &(pTables[t]);
 }

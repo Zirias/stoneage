@@ -3,6 +3,8 @@
 
 #include "common.h"
 
+struct Entity;
+
 typedef enum
 {
     TR_Linear = 0,
@@ -19,7 +21,7 @@ CLASS(Move)
     Move next;
     Move prev;
 
-    void FUNC(init) ARG(int x, int y, int tx, int ty, Trajectory t);
+    void FUNC(init) ARG(struct Entity *e, int dx, int dy, Trajectory t);
     int FUNC(step) ARG(int *x, int *y);
 };
 

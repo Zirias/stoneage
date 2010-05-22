@@ -9,6 +9,7 @@ m_init ARG(Board b, int x, int y)
     this->b = b;
     this->x = x;
     this->y = y;
+    this->m = 0;
 }
 
 static void
