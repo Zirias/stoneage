@@ -10,6 +10,7 @@ struct Entity;
 typedef enum
 {
     TR_Linear = 0,
+    TR_CircleX,
     Trajectory_count
 } Trajectory;
 

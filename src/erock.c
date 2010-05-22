@@ -12,14 +12,42 @@ m_handleEvent ARG(Event ev)
 {
     METHOD(ERock);
 
-    Entity e;
+    Entity e, n;
 
     if (ev->type == SAEV_MoveFinished)
     {
 	e = CAST(this, Entity);
-	if (e->b->isEmpty(e->b, e->x, e->y+1)) this->fall(this);
+	e->m = 0;
+
+	if (e->b->entity(e->b, e->x, e->y+1, &n) < 0) goto m_handleEvent_done;
+	if (!n) {
+	    this->fall(this);
+	    goto m_handleEvent_done;
+	}
+	if (!CAST(n, ERock)) goto m_handleEvent_done;
+	if ((e->b->entity(e->b, e->x+1, e->y+1, &n) == 0) && (!n))
+	{
+	    e->b->entity(e->b, e->x+1, e->y, &n);
+	    if (!n)
+	    {
+		e->m = NEW(Move);
+		e->m->init(e->m, e, 1, 1, TR_CircleX);
+	    }
+	}
+	else if ((e->b->entity(e->b, e->x-1, e->y+1, &n) == 0) && (!n))
+	{
+	    e->b->entity(e->b, e->x-1, e->y, &n);
+	    if (!n)
+	    {
+		e->m = NEW(Move);
+		e->m->init(e->m, e, -1, 1, TR_CircleX);
+	    }
+	}
+	if (e->m)
+	    e->b->startMove(e->b, e->m);
     }
 
+m_handleEvent_done:
     DELETE(Event, ev);
 }
 
