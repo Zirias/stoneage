@@ -1074,7 +1074,7 @@ initialize ( ) {
     # write version string for configure.ac inclusion #
     ###################################################
     if test -f VERSION ; then
-	. VERSION
+	. ./VERSION
 	echo "$stoneage_major.$stoneage_minor.$stoneage_release" >version.inc
     fi
 } # end of initialize()
@@ -1573,11 +1573,6 @@ config_ac="`locate_configure_template`"
 config="`echo $config_ac | sed 's/\.ac$//' | sed 's/\.in$//'`"
 if [ "x$config" = "x" ] ; then
     $VERBOSE_ECHO "Could not locate the configure template (from `pwd`)"
-fi
-
-# remove version.inc
-if test -f version.inc ; then
-    rm -f version.inc
 fi
 
 # summarize
