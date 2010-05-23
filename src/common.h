@@ -6,8 +6,6 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#undef HAVE_MALLOC
-#undef HAVE_REALLOC
 #include "config.h"
 #endif
 
@@ -16,11 +14,6 @@
 
 #ifdef WIN32
 #  define RES_GFX "gfx.sar"
-#  define HAVE_MALLOC 1
-#  define HAVE_REALLOC 1
-#  undef malloc
-#  undef realloc
-#  define random rand
 #else
 #  define RES_GFX QUOTEME(SA_PKGDATADIR) "/gfx.sar"
 #  include "icon.h"
