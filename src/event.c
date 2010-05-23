@@ -130,5 +130,6 @@ CTOR(Event)
 
 DTOR(Event)
 {
+    XFREE(this->data);
     BASEDTOR(Object);
 }

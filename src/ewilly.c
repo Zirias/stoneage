@@ -1,8 +1,57 @@
 #include "ewilly.h"
 #include "board.h"
+#include "move.h"
+#include "event.h"
+#include "ewall.h"
+#include "eearth.h"
+#include "ecabbage.h"
+
+static EWilly instance;
 
 static void
 FUNC(parent_init)(THIS, Board b, int x, int y);
+
+static void
+m_handleEvent(THIS, Event ev)
+{
+    METHOD(EWilly);
+
+    Entity e, d, d1, d2;
+    MoveData md;
+
+    if (ev->type == SAEV_Move)
+    {
+	e = CAST(this, Entity);
+	if (e->m) goto m_handleEvent_done; /* already moving */
+	md = (MoveData) ev->data;
+
+	/* check destination coordinates */
+	if (e->b->entity(e->b, e->x+md->x, e->y+md->y, &d) < 0)
+	    goto m_handleEvent_done;
+
+	/* check diagonal neighbors if necessary */
+	if (md->x && md->y)
+	{
+	    e->b->entity(e->b, e->x+md->x, e->y, &d1);
+	    e->b->entity(e->b, e->x, e->y+md->y, &d2);
+
+	    /* both are walls? -> no move possible */
+	    if (d1 && d2 && CAST(d1, EWall) && CAST(d2, EWall))
+		goto m_handleEvent_done;
+	}
+
+	/* check destination field */
+	if (!d || CAST(d, EEarth) || CAST(d, ECabbage))
+	{
+	    e->m = NEW(Move);
+	    e->m->init(e->m, e, md->x, md->y, TR_Linear);
+	    e->b->startMove(e->b, e->m);
+	}
+    }
+
+m_handleEvent_done:
+    DELETE(Event, ev);
+}
 
 static void
 m_init(THIS, Board b, int x, int y)
@@ -14,6 +63,7 @@ m_init(THIS, Board b, int x, int y)
 
     e->getSurface = b->getWillyTile;
     e->getBaseSurface = b->getEmptyTile;
+    instance = this;
 }
 
 static void
@@ -29,6 +79,7 @@ CTOR(EWilly)
 
     BASECTOR(EWilly, Entity);
 
+    ((EHandler)this)->handleEvent = &m_handleEvent;
     e = CAST(this, Entity);
     parent_init = e->init;
     e->init = &m_init;
@@ -39,5 +90,11 @@ CTOR(EWilly)
 DTOR(EWilly)
 {
     BASEDTOR(Entity);
+}
+
+EWilly
+getWilly(void)
+{
+    return instance;
 }
 
