@@ -22,6 +22,15 @@ typedef enum
     Trajectory_count
 } Trajectory;
 
+/** Relationship of two moves.
+ */
+typedef enum
+{
+    MR_None,	    /**< does not relate to another move */
+    MR_Master,	    /**< tells Board not to draw destination background */
+    MR_Slave	    /**< tells Board not to draw origin background */
+} MoveRel;
+
 struct Move_impl;
 
 CLASS(Move)
@@ -33,6 +42,7 @@ CLASS(Move)
     Move prev;	    /**< pointer to previous Move in list, used by Board. */
     int dx;	    /**< x-direction of the Move (-1, 0, 1) */
     int dy;	    /**< y-direction of the Move (-1, 0, 1) */
+    MoveRel rel;	    /**< relationship to other Move */
 
     /** Initialize a new Move.
      * Initializes a new Move for a given Entity with directions and trajectory.
