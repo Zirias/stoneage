@@ -1,5 +1,6 @@
 #include "erock.h"
 #include "board.h"
+#include "move.h"
 #include "event.h"
 #include "ehandler.h"
 
@@ -11,15 +12,42 @@ m_handleEvent ARG(Event ev)
 {
     METHOD(ERock);
 
-    Entity e;
+    Entity e, n;
 
     if (ev->type == SAEV_MoveFinished)
     {
-	this->falling = 0;
-	e = ((Entity)this);
-	if (e->b->isEmpty(e->b, e->x, e->y+1)) this->fall(this);
+	e = CAST(this, Entity);
+	if (e->m) return; /* new move already started */
+
+	if (e->b->entity(e->b, e->x, e->y+1, &n) < 0) goto m_handleEvent_done;
+	if (!n) {
+	    this->fall(this);
+	    goto m_handleEvent_done;
+	}
+	if (!CAST(n, ERock)) goto m_handleEvent_done;
+	if ((e->b->entity(e->b, e->x+1, e->y+1, &n) == 0) && (!n))
+	{
+	    e->b->entity(e->b, e->x+1, e->y, &n);
+	    if (!n)
+	    {
+		e->m = NEW(Move);
+		e->m->init(e->m, e, 1, 1, TR_CircleX);
+	    }
+	}
+	else if ((e->b->entity(e->b, e->x-1, e->y+1, &n) == 0) && (!n))
+	{
+	    e->b->entity(e->b, e->x-1, e->y, &n);
+	    if (!n)
+	    {
+		e->m = NEW(Move);
+		e->m->init(e->m, e, -1, 1, TR_CircleX);
+	    }
+	}
+	if (e->m)
+	    e->b->startMove(e->b, e->m);
     }
 
+m_handleEvent_done:
     DELETE(Event, ev);
 }
 
@@ -47,10 +75,11 @@ m_fall ARG()
 {
     METHOD(ERock);
 
-    if (this->falling) return;
-    this->falling = 1;
     Entity e = CAST(this, Entity);
-    e->b->startMove(e->b, e, 0, 1);
+    if (e->m) return;
+    e->m = NEW(Move);
+    e->m->init(e->m, e, 0, 1, TR_Linear);
+    e->b->startMove(e->b, e->m);
 }
 
 CTOR(ERock)
@@ -61,7 +90,6 @@ CTOR(ERock)
     parent_init = e->init;
     e->init = &m_init;
     e->dispose = &m_dispose;
-    this->falling = 0;
     this->fall = &m_fall;
     return this;
 }

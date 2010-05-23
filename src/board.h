@@ -9,6 +9,7 @@
 struct Board_impl;
 
 struct Entity;
+struct Move;
 
 /** @file board.h
  * Includes definition of class Board
@@ -49,23 +50,30 @@ CLASS(Board)
      */
     void FUNC(draw) ARG(int x, int y, int refresh);
 
-    /** Check for entity at a given position.
-     * Checks the given position for an entity.
+    /** Get real pixel position for a given coordinate.
+     * This function gives the upper left edge of a board coordinate in
+     * real pixels.
      * @param x x-coordinate on the board
      * @param y y-coordinate on the board
-     * @return 1 if the given position is found empty, 0 otherwise
+     * @param px x component of pixel position
+     * @param py y component of pixel position
+     * @return non-zero on error (coordinate out of board range)
      */
-    int FUNC(isEmpty) ARG(int x, int y);
+    int FUNC(coordinatesToPixel) ARG(int x, int y, int *px, int *py);
+
+    /** Get entity at given position.
+     * @param x x-coordinate on the board
+     * @param y y-coordinate on the board
+     * @param e store the Entity (or 0 if the given position is empty) here
+     * @return non-zero if the coordinates are invalid
+     */
+    int FUNC(entity) ARG(int x, int y, struct Entity **e);
 
     /** Start a moving operation.
-     * Start movement of a given entity on the board in dir_x, dir_y
-     * direction.
-     * @param e the Entity to move
-     * @param dir_x x direction, valid values -1, 0 or 1
-     * @param dir_y y direction, valid values -1, 0 or 1
+     * Start movement described by a given Move object
+     * @param m a Move object describing the motion.
      */
-    void FUNC(startMove) ARG(
-	    struct Entity *e, int dir_x, int dir_y);
+    void FUNC(startMove) ARG(struct Move *m);
 
     /** Get SDL Surface with "Empty" Tile suitable for the given position.
      * @return SDL Surface

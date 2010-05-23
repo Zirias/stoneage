@@ -100,7 +100,7 @@ m_random ARG()
     {
 	r = random() / (RAND_MAX / 10);
 	if (r < 3) this->pimpl->data[y][x] = N;
-	else if (r < 6) this->pimpl->data[y][x] = E;
+	else if (r < 7) this->pimpl->data[y][x] = E;
 	else this->pimpl->data[y][x] = r-5;
     }
     x = random() / (RAND_MAX / LVL_COLS);

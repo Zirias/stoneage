@@ -14,10 +14,6 @@ CLASS(ERock)
 {
     INHERIT(Entity);
 
-    /** indicates whether the rock is in the process of falling down.
-     */
-    int falling;
-
     /** initiate falling down.
      */
     void FUNC(fall) ARG();
