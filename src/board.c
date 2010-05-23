@@ -59,9 +59,6 @@ struct Board_impl
     int tile_width;
     int tile_height;
 
-    int willy_x;
-    int willy_y;
-
     Entity entity[LVL_ROWS][LVL_COLS];
     int num_rocks;
     ERock rock[LVL_ROWS * LVL_COLS];
@@ -201,20 +198,24 @@ moveStep(Board b, Move m)
     dirty.w = tw;
     dirty.h = th;
 
-    b->draw(b, e->x, e->y, 0);
-    if (m->dx)
+    if (m->rel != MR_Slave)
+	b->draw(b, e->x, e->y, 0);
+    if (m->rel != MR_Master)
     {
-	b->draw(b, e->x + m->dx, e->y, 0);
-	if (m->dx < 0) dirty.x -= tw;
-	dirty.w += tw;
+	if (m->dx)
+	{
+	    b->draw(b, e->x + m->dx, e->y, 0);
+	    if (m->dx < 0) dirty.x -= tw;
+	    dirty.w += tw;
+	}
+	if (m->dy)
+	{
+	    b->draw(b, e->x, e->y + m->dy, 0);
+	    if (m->dy < 0) dirty.y -= th;
+	    dirty.h += th;
+	}
+	if (m->dx && m->dy) b->draw(b, e->x + m->dx, e->y + m->dy, 0);
     }
-    if (m->dy)
-    {
-	b->draw(b, e->x, e->y + m->dy, 0);
-	if (m->dy < 0) dirty.y -= th;
-	dirty.h += th;
-    }
-    if (m->dx && m->dy) b->draw(b, e->x + m->dx, e->y + m->dy, 0);
 
     done = m->step(m, &drawArea.x, &drawArea.y);
     SDL_BlitSurface((SDL_Surface *)e->getSurface(b),
@@ -241,15 +242,26 @@ moveStep(Board b, Move m)
 	e->m = 0;
 	b->pimpl->entity[e->y][e->x] = e;
 
-	ev = NEW(Event);
-	ev->sender = CAST(b, Object);
-	ev->handler = CAST(e, EHandler);
-	ev->type = SAEV_MoveFinished;
-	RaiseEvent(ev);
+	if (m->rel != MR_Slave)
+	{
+	    /* don't give the slave of a move any events */
+
+	    ev = NEW(Event);
+	    ev->sender = CAST(b, Object);
+	    ev->handler = CAST(e, EHandler);
+	    ev->type = SAEV_MoveFinished;
+	    RaiseEvent(ev);
+	}
 
 	DELETE(Move, m);
 
 	checkRocks(b);
+
+	if (!b->pimpl->movelist)
+	{
+	    /* all moves finished, unfreeze willy */
+	    getWilly()->moveLock = 0;
+	}
     }
 }
 
@@ -339,6 +351,8 @@ m_draw(THIS, int x, int y, int refresh)
     int drawBase;
     Entity e;
     int i;
+
+    if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return;
 
     e = this->pimpl->entity[y][x];
 
@@ -443,7 +457,12 @@ checkRocks(Board b)
     {
 	r = b->pimpl->rock[i];
 	e = CAST(r, Entity);
-	if (e->y<LVL_ROWS-1 && !b->pimpl->entity[e->y+1][e->x]) r->fall(r);
+	if (e->y<LVL_ROWS-1 && !b->pimpl->entity[e->y+1][e->x])
+	{
+	    /* freeze willy and let rock fall */
+	    getWilly()->moveLock = 1;
+	    r->fall(r);
+	}
     }
 }
 
@@ -729,9 +748,6 @@ CTOR(Board)
 
     rf->close(rf);
     DELETE(Resfile, rf);
-
-    b->willy_x = -1;
-    b->willy_y = -1;
 
     this->initVideo(this);
 

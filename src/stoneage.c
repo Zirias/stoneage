@@ -1,6 +1,13 @@
 #include "stoneage.h"
 #include "board.h"
 #include "event.h"
+#include "ewilly.h"
+
+typedef enum
+{
+    TT_None,
+    TT_KeyCombine
+} TickerType;
 
 Uint32
 createTickerEvent(Uint32 interval, void *param)
@@ -12,7 +19,7 @@ createTickerEvent(Uint32 interval, void *param)
     ue.type = SDL_USEREVENT;
     ue.code = 0;
     ue.data1 = 0;
-    ue.data2 = 0;
+    ue.data2 = (void *)TT_None;
     e.type = SDL_USEREVENT;
     e.user = ue;
     SDL_PushEvent(&e);
@@ -40,6 +47,59 @@ toggleFullscreen(Stoneage this)
 }
 
 static void
+moveWilly(Stoneage this, int x, int y)
+{
+    Event ev;
+    MoveData md;
+
+    md = XMALLOC(struct MoveData, 1);
+    md->x = x;
+    md->y = y;
+    ev = NEW(Event);
+    ev->type = SAEV_Move;
+    ev->sender = CAST(this, Object);
+    ev->handler = CAST(getWilly(), EHandler);
+    ev->data = md;
+    RaiseEvent(ev);
+}
+
+Uint32
+combineKey(Uint32 interval, void *param)
+{
+    Stoneage this = CAST(param, Stoneage);
+
+    SDL_Event e;
+    SDL_UserEvent ue;
+    ue.type = SDL_USEREVENT;
+    ue.code = 0;
+    ue.data1 = 0;
+    ue.data2 = (void *)TT_KeyCombine;
+    e.type = SDL_USEREVENT;
+    e.user = ue;
+    SDL_PushEvent(&e);
+    return interval;
+}
+
+static void
+checkKeys(Stoneage this)
+{
+    int x, y;
+    int numKeys;
+    Uint8 *keyState;
+
+    keyState = SDL_GetKeyState(&numKeys);
+    x = keyState[SDLK_RIGHT] - keyState[SDLK_LEFT];
+    y = keyState[SDLK_DOWN] - keyState[SDLK_UP];
+    if (x||y)
+	moveWilly(this, x, y);
+    else
+    {
+	SDL_RemoveTimer(this->keyCheck);
+	this->keyCheck = 0;
+    }
+}
+
+static void
 handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 {
     if (e->state == SDL_PRESSED)
@@ -59,6 +119,19 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 	    {
 		case SDLK_n:
 		    this->board->loadLevel(this->board);
+		    break;
+	    }
+	}
+	else
+	{
+	    switch (e->keysym.sym)
+	    {
+		case SDLK_UP:
+		case SDLK_DOWN:
+		case SDLK_LEFT:
+		case SDLK_RIGHT:
+		    if (!this->keyCheck)
+			this->keyCheck = SDL_AddTimer(20, &combineKey, this);
 		    break;
 	    }
 	}
@@ -91,7 +164,15 @@ m_run(THIS, int argc, char **argv)
 	{
 	    case SDL_USEREVENT:
 		if (!event.user.code)
-		    handleTick(this);
+		    switch ((TickerType)event.user.data2)
+		    {
+			case TT_None:
+			    handleTick(this);
+			    break;
+			case TT_KeyCombine:
+			    checkKeys(this);
+			    break;
+		    }
 		else
 		    DeliverEvent(CAST(event.user.data1, Event));
 		break;

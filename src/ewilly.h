@@ -7,6 +7,17 @@
 CLASS(EWilly)
 {
     INHERIT(Entity);
+
+    int moveLock;
 };
+
+/** get current instance of Willy
+ * @relates EWilly
+ * Gets the last created instance of Willy. This should always be the
+ * only instance in existence.
+ * @return Willy :)
+ */
+extern EWilly
+getWilly(void);
 
 #endif
