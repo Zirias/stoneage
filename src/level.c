@@ -55,7 +55,7 @@ struct Level_impl
 };
 
 static void
-m_createEntities ARG(Board b, Entity *buffer)
+m_createEntities(THIS, Board b, Entity *buffer)
 {
     METHOD(Level);
 
@@ -90,7 +90,7 @@ m_createEntities ARG(Board b, Entity *buffer)
 }
 
 static void
-m_random ARG()
+m_random(THIS)
 {
     METHOD(Level);
     
@@ -98,18 +98,18 @@ m_random ARG()
 
     for (y=0; y<LVL_ROWS; ++y) for (x=0; x<LVL_COLS; ++x)
     {
-	r = random() / (RAND_MAX / 10);
+	r = rand() / (RAND_MAX / 10);
 	if (r < 3) this->pimpl->data[y][x] = N;
 	else if (r < 7) this->pimpl->data[y][x] = E;
 	else this->pimpl->data[y][x] = r-5;
     }
-    x = random() / (RAND_MAX / LVL_COLS);
-    y = random() / (RAND_MAX / LVL_ROWS);
+    x = rand() / (RAND_MAX / LVL_COLS);
+    y = rand() / (RAND_MAX / LVL_ROWS);
     this->pimpl->data[y][x] = H;
 }
 
 static void
-m_debug ARG(int num)
+m_debug(THIS, int num)
 {
     METHOD(Level);
 

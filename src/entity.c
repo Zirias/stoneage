@@ -2,7 +2,7 @@
 #include "board.h"
 
 static void
-m_init ARG(Board b, int x, int y)
+m_init(THIS, Board b, int x, int y)
 {
     METHOD(Entity);
 
@@ -13,7 +13,7 @@ m_init ARG(Board b, int x, int y)
 }
 
 static void
-m_dispose ARG()
+m_dispose(THIS)
 {
     METHOD(Entity);
     DELETE(Entity, this);

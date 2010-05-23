@@ -98,6 +98,7 @@ SDL_Surface *
 rotateSurface(SDL_Surface *s, int rot)
 {
     int x,y;
+    uint32_t *srcpix, *dstpix;
 
     SDL_Surface *dest = SDL_CreateRGBSurface(SDL_SWSURFACE,
 	    (rot % 2) ? s->w : s->h,
@@ -109,8 +110,8 @@ rotateSurface(SDL_Surface *s, int rot)
 	    s->format->Amask);
     SDL_LockSurface(s);
     SDL_LockSurface(dest);
-    uint32_t *srcpix = (uint32_t *)s->pixels;
-    uint32_t *dstpix = (uint32_t *)dest->pixels;
+    srcpix = (uint32_t *)s->pixels;
+    dstpix = (uint32_t *)dest->pixels;
     if (rot == 1)
     {
 	for (x=dest->w-1;x>=0;--x) for (y=0;y<dest->h;++y)
@@ -187,12 +188,19 @@ static void
 moveStep(Board b, Move m)
 {
     int done;
+    int tw, th;
+    SDL_Rect dirty;
+    Entity e;
     Event ev;
 
-    Entity e = m->entity(m);
-    int tw = b->pimpl->tile_width;
-    int th = b->pimpl->tile_height;
-    SDL_Rect dirty = { e->x * tw, e->y * th, tw, th };
+    e = m->entity(m);
+    tw = b->pimpl->tile_width;
+    th = b->pimpl->tile_height;
+    dirty.x = e->x * tw;
+    dirty.y = e->y * th;
+    dirty.w = tw;
+    dirty.h = th;
+
     b->draw(b, e->x, e->y, 0);
     if (m->dx)
     {
@@ -291,7 +299,7 @@ internal_clear(Board b)
 }
 
 static void
-m_handleEvent ARG(Event e)
+m_handleEvent(THIS, Event e)
 {
     METHOD(Board);
 
@@ -321,7 +329,7 @@ m_handleEvent ARG(Event e)
 }
 
 static void
-m_draw ARG(int x, int y, int refresh)
+m_draw(THIS, int x, int y, int refresh)
 {
     METHOD(Board);
 
@@ -369,7 +377,7 @@ m_draw ARG(int x, int y, int refresh)
 }
 
 static void
-m_redraw ARG()
+m_redraw(THIS)
 {
     METHOD(Board);
     Entity e;
@@ -385,7 +393,7 @@ m_redraw ARG()
 }
 
 static int
-m_coordinatesToPixel ARG(int x, int y, int *px, int *py)
+m_coordinatesToPixel(THIS, int x, int y, int *px, int *py)
 {
     METHOD(Board);
 
@@ -396,7 +404,7 @@ m_coordinatesToPixel ARG(int x, int y, int *px, int *py)
 }
 
 static int
-m_entity ARG(int x, int y, Entity *e)
+m_entity(THIS, int x, int y, Entity *e)
 {
     METHOD(Board);
 
@@ -406,7 +414,7 @@ m_entity ARG(int x, int y, Entity *e)
 }
 
 static void
-m_startMove ARG(Move m)
+m_startMove(THIS, Move m)
 {
     METHOD(Board);
 
@@ -463,7 +471,7 @@ calculateNeighbors(Board this, int x, int y)
 }
 
 static void
-m_getEmptyTile ARG(int x, int y, void *buf)
+m_getEmptyTile(THIS, int x, int y, void *buf)
 {
     METHOD(Board);
     
@@ -486,7 +494,7 @@ m_getEmptyTile ARG(int x, int y, void *buf)
 }
 
 static void
-m_getEarthBaseTile ARG(int x, int y, void *buf)
+m_getEarthBaseTile(THIS, int x, int y, void *buf)
 {
     METHOD(Board);
 
@@ -496,7 +504,7 @@ m_getEarthBaseTile ARG(int x, int y, void *buf)
 }
 
 static const SDL_Surface *
-m_getEarthTile ARG()
+m_getEarthTile(THIS)
 {
     METHOD(Board);
 
@@ -504,7 +512,7 @@ m_getEarthTile ARG()
 }
 
 static const SDL_Surface *
-m_getWallTile ARG()
+m_getWallTile(THIS)
 {
     METHOD(Board);
 
@@ -512,7 +520,7 @@ m_getWallTile ARG()
 }
 
 static const SDL_Surface *
-m_getRockTile ARG()
+m_getRockTile(THIS)
 {
     METHOD(Board);
 
@@ -520,7 +528,7 @@ m_getRockTile ARG()
 }
 
 static const SDL_Surface *
-m_getCabbageTile ARG()
+m_getCabbageTile(THIS)
 {
     METHOD(Board);
 
@@ -528,7 +536,7 @@ m_getCabbageTile ARG()
 }
 
 static const SDL_Surface *
-m_getWillyTile ARG()
+m_getWillyTile(THIS)
 {
     METHOD(Board);
 
@@ -536,7 +544,7 @@ m_getWillyTile ARG()
 }
 
 static void
-m_loadLevel ARG()
+m_loadLevel(THIS)
 {
     METHOD(Board);
 
@@ -568,7 +576,7 @@ freeSdlSurfaces(Board this)
 }
 
 static void
-m_initVideo ARG()
+m_initVideo(THIS)
 {
     METHOD(Board);
 
@@ -654,13 +662,16 @@ m_initVideo ARG()
 
 CTOR(Board)
 {
-    BASECTOR(Board, EHandler);
-
     struct Board_impl *b;
     Resfile rf;
+#ifndef SDL_IMG_OLD
+    int imgflags;
+#endif
+
+    BASECTOR(Board, EHandler);
 
 #ifndef SDL_IMG_OLD
-    int imgflags = IMG_Init(IMG_INIT_PNG);
+    imgflags = IMG_Init(IMG_INIT_PNG);
     if (!(imgflags & IMG_INIT_PNG))
     {
 	log_err("SDL_image library is missing PNG support!\n"

@@ -10,7 +10,7 @@ struct Resource_impl
 };
 
 static void
-m_setName ARG(const char *name)
+m_setName(THIS, const char *name)
 {
     METHOD(Resource);
 
@@ -21,7 +21,7 @@ m_setName ARG(const char *name)
 }
 
 static const char *
-m_getName ARG()
+m_getName(THIS)
 {
     METHOD(Resource);
 
@@ -29,7 +29,7 @@ m_getName ARG()
 }
 
 static int
-m_giveData ARG(void *data, size_t dataSize)
+m_giveData(THIS, void *data, size_t dataSize)
 {
     METHOD(Resource);
 
@@ -40,31 +40,31 @@ m_giveData ARG(void *data, size_t dataSize)
 }
 
 static int
-m_copyDataFrom ARG(const void *data, size_t dataSize)
+m_copyDataFrom(THIS, const void *data, size_t dataSize)
 {
     METHOD(Resource);
 
     if (this->pimpl->data) return -1;
-    this->pimpl->data = XMALLOC(void, dataSize);
+    this->pimpl->data = xmalloc(dataSize);
     memcpy(this->pimpl->data, data, dataSize);
     this->pimpl->dataSize = dataSize;
     return 0;
 }
 
 static int
-m_readDataFrom ARG(FILE *file, size_t dataSize)
+m_readDataFrom(THIS, FILE *file, size_t dataSize)
 {
     METHOD(Resource);
 
     if(this->pimpl->data) return -1;
-    this->pimpl->data = XMALLOC(void, dataSize);
+    this->pimpl->data = xmalloc(dataSize);
     fread(this->pimpl->data, dataSize, 1, file);
     this->pimpl->dataSize = dataSize;
     return 0;
 }
 
 static size_t
-m_getDataSize ARG()
+m_getDataSize(THIS)
 {
     METHOD(Resource);
 
@@ -72,7 +72,7 @@ m_getDataSize ARG()
 }
 
 static const void *
-m_getData ARG()
+m_getData(THIS)
 {
     METHOD(Resource);
 
@@ -80,7 +80,7 @@ m_getData ARG()
 }
 
 static void *
-m_takeData ARG()
+m_takeData(THIS)
 {
     METHOD(Resource);
 
@@ -90,7 +90,7 @@ m_takeData ARG()
 }
 
 static void
-m_deleteData ARG()
+m_deleteData(THIS)
 {
     METHOD(Resource);
 
