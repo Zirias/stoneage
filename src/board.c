@@ -198,20 +198,24 @@ moveStep(Board b, Move m)
     dirty.w = tw;
     dirty.h = th;
 
-    b->draw(b, e->x, e->y, 0);
-    if (m->dx)
+    if (m->rel != MR_Slave)
+	b->draw(b, e->x, e->y, 0);
+    if (m->rel != MR_Master)
     {
-	b->draw(b, e->x + m->dx, e->y, 0);
-	if (m->dx < 0) dirty.x -= tw;
-	dirty.w += tw;
+	if (m->dx)
+	{
+	    b->draw(b, e->x + m->dx, e->y, 0);
+	    if (m->dx < 0) dirty.x -= tw;
+	    dirty.w += tw;
+	}
+	if (m->dy)
+	{
+	    b->draw(b, e->x, e->y + m->dy, 0);
+	    if (m->dy < 0) dirty.y -= th;
+	    dirty.h += th;
+	}
+	if (m->dx && m->dy) b->draw(b, e->x + m->dx, e->y + m->dy, 0);
     }
-    if (m->dy)
-    {
-	b->draw(b, e->x, e->y + m->dy, 0);
-	if (m->dy < 0) dirty.y -= th;
-	dirty.h += th;
-    }
-    if (m->dx && m->dy) b->draw(b, e->x + m->dx, e->y + m->dy, 0);
 
     done = m->step(m, &drawArea.x, &drawArea.y);
     SDL_BlitSurface((SDL_Surface *)e->getSurface(b),
@@ -238,11 +242,16 @@ moveStep(Board b, Move m)
 	e->m = 0;
 	b->pimpl->entity[e->y][e->x] = e;
 
-	ev = NEW(Event);
-	ev->sender = CAST(b, Object);
-	ev->handler = CAST(e, EHandler);
-	ev->type = SAEV_MoveFinished;
-	RaiseEvent(ev);
+	if (m->rel != MR_Slave)
+	{
+	    /* don't give the slave of a move any events */
+
+	    ev = NEW(Event);
+	    ev->sender = CAST(b, Object);
+	    ev->handler = CAST(e, EHandler);
+	    ev->type = SAEV_MoveFinished;
+	    RaiseEvent(ev);
+	}
 
 	DELETE(Move, m);
 

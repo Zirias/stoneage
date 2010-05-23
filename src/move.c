@@ -76,6 +76,7 @@ m_init(THIS, Entity e, int dx, int dy, Trajectory t)
     this->dy = dy;
     this->next = 0;
     this->prev = 0;
+    this->rel = MR_None;
 }
 
 static Entity

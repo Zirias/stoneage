@@ -5,6 +5,7 @@
 #include "ewall.h"
 #include "eearth.h"
 #include "ecabbage.h"
+#include "erock.h"
 
 static EWilly instance;
 
@@ -49,6 +50,24 @@ m_handleEvent(THIS, Event ev)
 	    e->m = NEW(Move);
 	    e->m->init(e->m, e, md->x, md->y, TR_Linear);
 	    e->b->startMove(e->b, e->m);
+	}
+
+	/* special case: pushing a rock */
+	else if (!md->y && CAST(d, ERock) && !(d->m))
+	{
+	    if (e->b->entity(e->b, e->x+2*md->x, e->y, &d1) < 0)
+		goto m_handleEvent_done;
+	    if (!d1)
+	    {
+		e->m = NEW(Move);
+		e->m->init(e->m, e, md->x, 0, TR_Linear);
+		e->m->rel = MR_Master;
+		e->b->startMove(e->b, e->m);
+		d->m = NEW(Move);
+		d->m->init(d->m, d, md->x, 0, TR_Linear);
+		d->m->rel = MR_Slave;
+		e->b->startMove(e->b, d->m);
+	    }
 	}
     }
     else if (ev->type == SAEV_MoveFinished)
