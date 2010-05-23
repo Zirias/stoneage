@@ -7,6 +7,8 @@
 CLASS(EWilly)
 {
     INHERIT(Entity);
+
+    int moveLock;
 };
 
 /** get current instance of Willy
