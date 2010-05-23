@@ -48,6 +48,8 @@ static size_t
 writeUint32(FILE *file, uint32_t val)
 {
     uint8_t bytes[5];
+    size_t count;
+
     bytes[0] = 0;
     while (val)
     {
@@ -55,7 +57,7 @@ writeUint32(FILE *file, uint32_t val)
 	bytes[bytes[0]] = val & 0xff;
 	val >>= 8;
     }
-    size_t count = (size_t) bytes[0];
+    count = (size_t) bytes[0];
     fwrite(&bytes[0], 1, count + 1, file);
     return count;
 }
@@ -105,7 +107,7 @@ findEntry(Resfile_toc toc, const char *key)
 }
 
 static int
-m_canRead ARG()
+m_canRead(THIS)
 {
     METHOD(Resfile);
 
@@ -113,7 +115,7 @@ m_canRead ARG()
 }
 
 static int
-m_canWrite ARG()
+m_canWrite(THIS)
 {
     METHOD(Resfile);
 
@@ -121,7 +123,7 @@ m_canWrite ARG()
 }
 
 static int
-m_setFile ARG(const char *filename)
+m_setFile(THIS, const char *filename)
 {
     METHOD(Resfile);
 
@@ -133,7 +135,7 @@ m_setFile ARG(const char *filename)
 }
 
 static int
-m_open ARG(int writeable)
+m_open(THIS, int writeable)
 {
     METHOD(Resfile);
     
@@ -226,7 +228,7 @@ m_open ARG(int writeable)
 }
 
 static void
-m_close ARG()
+m_close(THIS)
 {
     METHOD(Resfile);
 
@@ -237,7 +239,7 @@ m_close ARG()
 }
 
 static int
-m_store ARG(Resource res)
+m_store(THIS, Resource res)
 {
     METHOD(Resfile);
 
@@ -278,11 +280,12 @@ m_store ARG(Resource res)
 }
 
 static int
-m_load ARG(const char *key, Resource *res)
+m_load(THIS, const char *key, Resource *res)
 {
     METHOD(Resfile);
 
     Resfile_entry entry;
+    Resource r;
     uint32_t size;
 
     if (!this->pimpl->opened) return -1;
@@ -290,7 +293,7 @@ m_load ARG(const char *key, Resource *res)
     entry = findEntry(&(this->pimpl->toc), key);
     if (!entry) return -1;
 
-    Resource r = NEW(Resource);
+    r = NEW(Resource);
     r->setName(r,key);
     fseek(this->pimpl->file, entry->offset + sizeof(uint8_t)
 	    + strlen(key), SEEK_SET);

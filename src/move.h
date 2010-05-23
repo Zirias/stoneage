@@ -41,12 +41,12 @@ CLASS(Move)
      * @param dy y-direction of the Move (-1, 0, 1)
      * @param t Trajectory of the Move
      */
-    void FUNC(init) ARG(struct Entity *e, int dx, int dy, Trajectory t);
+    void FUNC(init)(THIS, struct Entity *e, int dx, int dy, Trajectory t);
 
     /** Get the moved Entity.
      * @return the Entity that is moved
      */
-    struct Entity *FUNC(entity) ARG();
+    struct Entity *FUNC(entity)(THIS);
 
     /** Get the next movement step.
      * Gets the next step in pixel coordinates for the move.
@@ -54,7 +54,7 @@ CLASS(Move)
      * @param y story pixel y coordinate here
      * @return 1 when this is the final step, 0 otherwise
      */
-    int FUNC(step) ARG(Uint16 *x, Uint16 *y);
+    int FUNC(step)(THIS, Sint16 *x, Sint16 *y);
 };
 
 /** Compute Trajectories in real pixel offsets.

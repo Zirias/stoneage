@@ -20,7 +20,7 @@ CLASS(EHandler)
     /** Handle an Event.
      * @param e the event to handle
      */
-    void FUNC(handleEvent) ARG(struct Event *e);
+    void FUNC(handleEvent)(THIS, struct Event *e);
 };
 
 #endif

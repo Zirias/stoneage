@@ -15,7 +15,7 @@ struct EHandler;
 enum EventType
 {
     SAEV_MoveTick,
-    SAEV_MoveFinished,
+    SAEV_MoveFinished
 };
 
 /** Class representing an Event.

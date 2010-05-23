@@ -19,14 +19,14 @@ CLASS(App)
      * @param argv pointer to the command line arguments
      * @return exit code
      */
-    int FUNC(run) ARG(int argc, char **argv);
+    int FUNC(run)(THIS, int argc, char **argv);
 
     /** abort the application
      * This function could be calle from anywhere through the global
      * mainApp pointer. A derived class should make sure to properly
      * clean up and then exit with a negative return value.
      */
-    void FUNC(abort) ARG();
+    void FUNC(abort)(THIS);
 };
 
 /** the global application pointer.

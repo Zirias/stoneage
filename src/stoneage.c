@@ -72,7 +72,7 @@ handleTick(Stoneage this)
 }
 
 static int
-m_run ARG(int argc, char **argv)
+m_run(THIS, int argc, char **argv)
 {
     METHOD(Stoneage);
 
@@ -110,7 +110,7 @@ m_run ARG(int argc, char **argv)
 }
 
 static void
-m_abort ARG()
+m_abort(THIS)
 {
     METHOD(Stoneage);
 

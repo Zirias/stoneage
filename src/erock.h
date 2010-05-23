@@ -16,7 +16,7 @@ CLASS(ERock)
 
     /** initiate falling down.
      */
-    void FUNC(fall) ARG();
+    void FUNC(fall)(THIS);
 };
 
 #endif
