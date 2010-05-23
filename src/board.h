@@ -29,16 +29,16 @@ CLASS(Board)
      * This method must be called whenever the video-mode changes.
      * It calulates tile sizes.
      */
-    void FUNC(initVideo) ARG();
+    void FUNC(initVideo)(THIS);
 
     /** Load and start a level.
      * STUB
      */
-    void FUNC(loadLevel) ARG();
+    void FUNC(loadLevel)(THIS);
 
     /** Redraws the whole Board.
      */
-    void FUNC(redraw) ARG();
+    void FUNC(redraw)(THIS);
 
     /** Draw tile at the given position.
      * The given position is checked for a game entity. If one is found,
@@ -48,7 +48,7 @@ CLASS(Board)
      * @param y y-coordinate on the board
      * @param refresh flag indicating whether to call SDL_UpdateRects()
      */
-    void FUNC(draw) ARG(int x, int y, int refresh);
+    void FUNC(draw)(THIS, int x, int y, int refresh);
 
     /** Get real pixel position for a given coordinate.
      * This function gives the upper left edge of a board coordinate in
@@ -59,7 +59,7 @@ CLASS(Board)
      * @param py y component of pixel position
      * @return non-zero on error (coordinate out of board range)
      */
-    int FUNC(coordinatesToPixel) ARG(int x, int y, int *px, int *py);
+    int FUNC(coordinatesToPixel)(THIS, int x, int y, int *px, int *py);
 
     /** Get entity at given position.
      * @param x x-coordinate on the board
@@ -67,48 +67,48 @@ CLASS(Board)
      * @param e store the Entity (or 0 if the given position is empty) here
      * @return non-zero if the coordinates are invalid
      */
-    int FUNC(entity) ARG(int x, int y, struct Entity **e);
+    int FUNC(entity)(THIS, int x, int y, struct Entity **e);
 
     /** Start a moving operation.
      * Start movement described by a given Move object
      * @param m a Move object describing the motion.
      */
-    void FUNC(startMove) ARG(struct Move *m);
+    void FUNC(startMove)(THIS, struct Move *m);
 
     /** Get SDL Surface with "Empty" Tile suitable for the given position.
      * @return SDL Surface
      */
-    void FUNC(getEmptyTile) ARG(int x, int y, void *buf);
+    void FUNC(getEmptyTile)(THIS, int x, int y, void *buf);
 
     /** Get SDL Surface with "Earth" Tile suitable for the given position.
      * @return SDL Surface
      */
-    void FUNC(getEarthBaseTile) ARG(int x, int y, void *buf);
+    void FUNC(getEarthBaseTile)(THIS, int x, int y, void *buf);
 
     /** Get SDL Surface with "Earth" Tile.
      * @return SDL Surface
      */
-    const SDL_Surface *FUNC(getEarthTile) ARG();
+    const SDL_Surface *FUNC(getEarthTile)(THIS);
 
     /** Get SDL Surface with "Wall" Tile.
      * @return SDL Surface
      */
-    const SDL_Surface *FUNC(getWallTile) ARG();
+    const SDL_Surface *FUNC(getWallTile)(THIS);
 
     /** Get SDL Surface with "Rock" Tile.
      * @return SDL Surface
      */
-    const SDL_Surface *FUNC(getRockTile) ARG();
+    const SDL_Surface *FUNC(getRockTile)(THIS);
 
     /** Get SDL Surface with "Cabbage" Tile.
      * @return SDL Surface
      */
-    const SDL_Surface *FUNC(getCabbageTile) ARG();
+    const SDL_Surface *FUNC(getCabbageTile)(THIS);
 
     /** Get SDL Surface with "Willy" Tile.
      * @return SDL Surface
      */
-    const SDL_Surface *FUNC(getWillyTile) ARG();
+    const SDL_Surface *FUNC(getWillyTile)(THIS);
 };
 
 #endif

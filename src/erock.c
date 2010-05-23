@@ -5,10 +5,10 @@
 #include "ehandler.h"
 
 static void
-FUNC(parent_init) ARG(Board b, int x, int y);
+FUNC(parent_init)(THIS, Board b, int x, int y);
 
 static void
-m_handleEvent ARG(Event ev)
+m_handleEvent(THIS, Event ev)
 {
     METHOD(ERock);
 
@@ -17,7 +17,7 @@ m_handleEvent ARG(Event ev)
     if (ev->type == SAEV_MoveFinished)
     {
 	e = CAST(this, Entity);
-	if (e->m) return; /* new move already started */
+	if (e->m) goto m_handleEvent_done; /* new move already started */
 
 	if (e->b->entity(e->b, e->x, e->y+1, &n) < 0) goto m_handleEvent_done;
 	if (!n) {
@@ -52,7 +52,7 @@ m_handleEvent_done:
 }
 
 static void
-m_init ARG(Board b, int x, int y)
+m_init(THIS, Board b, int x, int y)
 {
     METHOD(ERock);
 
@@ -64,14 +64,14 @@ m_init ARG(Board b, int x, int y)
 }
 
 static void
-m_dispose ARG()
+m_dispose(THIS)
 {
     METHOD(ERock);
     DELETE(ERock, this);
 }
 
 static void
-m_fall ARG()
+m_fall(THIS)
 {
     METHOD(ERock);
 
@@ -84,9 +84,12 @@ m_fall ARG()
 
 CTOR(ERock)
 {
+    Entity e;
+
     BASECTOR(ERock, Entity);
+
     ((EHandler)this)->handleEvent = &m_handleEvent;
-    Entity e = CAST(this, Entity);
+    e = CAST(this, Entity);
     parent_init = e->init;
     e->init = &m_init;
     e->dispose = &m_dispose;

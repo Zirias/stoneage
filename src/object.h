@@ -67,10 +67,10 @@
  */
 #define FUNC(name) (* name )
 
-/** Argument list of a method.
+/** starting boilerplate for method signature
  * @relates Object
  */
-#define ARG(...) (void *_this, ##__VA_ARGS__)
+#define THIS void *_this
 
 /** starting boilerplate for method implementation.
  * @relates Object

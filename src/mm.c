@@ -4,7 +4,9 @@
 void *
 xmalloc(size_t n)
 {
-    void *p = malloc(n);
+    void *p;
+   
+    p = malloc(n);
     if (!p)
     {
 	log_err(ERRMSG_OOM);
@@ -16,8 +18,10 @@ xmalloc(size_t n)
 void *
 xrealloc(void *p, size_t n)
 {
+    void *rp;
+
     if (!p) return xmalloc(n);
-    void *rp = realloc(p, n);
+    rp = realloc(p, n);
     if (!rp)
     {
 	free(p);

@@ -27,12 +27,12 @@ CLASS(Resource)
      * actually copied.
      * @param name the name for the Resource
      */
-    void FUNC(setName) ARG(const char *name);
+    void FUNC(setName)(THIS, const char *name);
 
     /** Get the Resource's name.
      * @return a pointer to the name of the Resource
      */
-    const char *FUNC(getName) ARG();
+    const char *FUNC(getName)(THIS);
 
     /** Give a block of data to the Resource
      * Sets the Resource's data to the given block. No copying is done,
@@ -41,7 +41,7 @@ CLASS(Resource)
      * @param dataSize size of the new data in bytes
      * @return nonzero if the Resource already contained data
      */
-    int FUNC(giveData) ARG(void *data, size_t dataSize);
+    int FUNC(giveData)(THIS, void *data, size_t dataSize);
 
     /** Set data by copying it.
      * Sets the Resource's data by copying bytes from a given location.
@@ -49,7 +49,7 @@ CLASS(Resource)
      * @param dataSize the number of bytes to copy
      * @return nonzero if the Resource already contained data
      */
-    int FUNC(copyDataFrom) ARG(const void *data, size_t dataSize);
+    int FUNC(copyDataFrom)(THIS, const void *data, size_t dataSize);
 
     /** Set data by reading from a file stream.
      * Sets the Resource's data by reading bytes from an opened file stream
@@ -57,28 +57,28 @@ CLASS(Resource)
      * @param dataSize the number of bytes to read
      * @return nonzero on read error or if the Resource already contained data
      */
-    int FUNC(readDataFrom) ARG(FILE *file, size_t dataSize);
+    int FUNC(readDataFrom)(THIS, FILE *file, size_t dataSize);
 
     /** Get the size of the Resource data.
      * @return the number of bytes of the Resource's data
      */
-    size_t FUNC(getDataSize) ARG();
+    size_t FUNC(getDataSize)(THIS);
 
     /** Get the Resource's data.
      * @return a pointer to the Resource's data
      */
-    const void *FUNC(getData) ARG();
+    const void *FUNC(getData)(THIS);
 
     /** Take ownership of the Resource's data.
      * Returns a pointer to the Resource's data and makes the Resource object
      * forget about it.
      * @return a pointer to the data, must be released after use
      */
-    void *FUNC(takeData) ARG();
+    void *FUNC(takeData)(THIS);
 
     /** Delete the Resource's data
      */
-    void FUNC(deleteData) ARG();
+    void FUNC(deleteData)(THIS);
 };
 
 #endif

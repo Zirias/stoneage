@@ -8,7 +8,7 @@
 #include "resfile.h"
 
 static void
-m_abort ARG()
+m_abort(THIS)
 {
     METHOD(SaMkres);
 
@@ -17,7 +17,7 @@ m_abort ARG()
 }
 
 static int
-m_run ARG(int argc, char **argv)
+m_run(THIS, int argc, char **argv)
 {
     METHOD(SaMkres);
 
@@ -85,8 +85,10 @@ DTOR(SaMkres)
 int
 main(int argc, char **argv)
 {
+    int rc;
+
     mainApp = (App)NEW(SaMkres);
-    int rc = mainApp->run(mainApp, argc, argv);
+    rc = mainApp->run(mainApp, argc, argv);
     DELETE(SaMkres, mainApp);
     return rc;
 }

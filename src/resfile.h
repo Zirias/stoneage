@@ -27,12 +27,12 @@ CLASS(Resfile)
     /** Check whether reading is possible.
      * @return 1 if file is opened and readable, 0 otherwise
      */
-    int FUNC(canRead) ARG();
+    int FUNC(canRead)(THIS);
 
     /** Check whether writing is possible.
      * @return 1 if file is opened and writeable, 0 otherwise
      */
-    int FUNC(canWrite) ARG();
+    int FUNC(canWrite)(THIS);
 
     /** Set the filename.
      * Sets the resource file's name for a subsequent call to open.
@@ -40,7 +40,7 @@ CLASS(Resfile)
      * @param filename the file name
      * @return non-zero if the file is already opened
      */
-    int FUNC(setFile) ARG(const char *filename);
+    int FUNC(setFile)(THIS, const char *filename);
 
     /** Open the resource file.
      * This method opens and scans the resource file, creating a table
@@ -49,13 +49,13 @@ CLASS(Resfile)
      *   possibly creating it first
      * @return non-zero on error
      */
-    int FUNC(open) ARG(int writeable);
+    int FUNC(open)(THIS, int writeable);
 
     /** Close the resource file.
      * This method closes the resource file and releases the table of
      * available keys.
      */
-    void FUNC(close) ARG();
+    void FUNC(close)(THIS);
 
     /** Store a resource to the file.
      * This method tries to store a given resource to the file. It will fail
@@ -64,7 +64,7 @@ CLASS(Resfile)
      * @param res the Resource to store.
      * @return non-zero on error
      */
-    int FUNC(store) ARG(struct Resource *res);
+    int FUNC(store)(THIS, struct Resource *res);
 
     /** Load a resource from the file.
      * This method loads a Resource from the resource file. It will fail if
@@ -75,7 +75,7 @@ CLASS(Resfile)
      *   created Resource object.
      * @return non-zero on error
      */
-    int FUNC(load) ARG(const char *key, struct Resource **res);
+    int FUNC(load)(THIS, const char *key, struct Resource **res);
 };
 
 #endif
