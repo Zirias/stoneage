@@ -9,6 +9,8 @@ typedef enum
     TT_KeyCombine
 } TickerType;
 
+static Uint8 *keyState;
+
 Uint32
 createTickerEvent(Uint32 interval, void *param)
 {
@@ -84,10 +86,8 @@ static void
 checkKeys(Stoneage this)
 {
     int x, y;
-    int numKeys;
-    Uint8 *keyState;
 
-    keyState = SDL_GetKeyState(&numKeys);
+    SDL_PumpEvents();
     x = keyState[SDLK_RIGHT] - keyState[SDLK_LEFT];
     y = keyState[SDLK_DOWN] - keyState[SDLK_UP];
     if (x||y)
@@ -131,7 +131,7 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 		case SDLK_LEFT:
 		case SDLK_RIGHT:
 		    if (!this->keyCheck)
-			this->keyCheck = SDL_AddTimer(20, &combineKey, this);
+			this->keyCheck = SDL_AddTimer(30, &combineKey, this);
 		    break;
 	    }
 	}
@@ -157,6 +157,7 @@ m_run(THIS, int argc, char **argv)
     this->board->loadLevel(this->board);
 
     running = 1;
+    keyState = SDL_GetKeyState(0);
     while (running)
     {
 	SDL_WaitEvent(&event);
@@ -218,6 +219,7 @@ CTOR(Stoneage)
 	    " -- as seen 1988 in AmigaBASIC", "stoneage");
 
     this->ticker = SDL_AddTimer(1000, &createTickerEvent, this);
+    this->keyCheck = 0;
     return this;
 }
 
