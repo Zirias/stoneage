@@ -18,6 +18,19 @@ AC_CONFIG_SRCDIR([src/stoneage.c])
 AC_CONFIG_HEADERS([src/config.h])
 
 # Checks for programs.
+#
+# ATTENTION
+# do NOT include the following, even if 'autoscan' tells it:
+#   AC_PROG_CXX
+#   AC_PROG_RANLIB
+#
+# these are referenced by the libtool script.
+#
+# libtool is only used to ease the creation of a statically linked binary with
+# --enable-static --disable-shared for the win32 platform. There is neither any
+# C++ code (AC_PROG_CXX) in the project nor any standalone library (AC_PROG_RANLIB),
+# so there is NO need to introduce these bogus dependencies!
+#
 AC_PROG_AWK
 AC_PROG_CC
 AC_PROG_CC_C_O
