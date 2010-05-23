@@ -33,10 +33,11 @@ CLASS(Entity)
 
     /** Pointer for getting background tile.
      * For partially transparent entities, this points to one of the
-     * Board's methods for getting a surface containing the default
+     * Board's methods for getting surfaces containing the default
      * background tile this entity should blend over
      * @param x x coordinate on the board
      * @param y y coordinate on the board
+     * @param buf store the surfaces here
      */
     void FUNC(getBaseSurface) ARG(int x, int y, void *buf);
 
