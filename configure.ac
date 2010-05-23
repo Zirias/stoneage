@@ -33,21 +33,11 @@ AC_CONFIG_HEADERS([src/config.h])
 #
 AC_PROG_AWK
 AC_PROG_CC
-AC_PROG_CC_C_O
+AM_PROG_CC_C_O
 AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_LIBTOOL
-
-# Misc options.
-AC_ARG_ENABLE([debugging],
-	AC_HELP_STRING([--enable-debugging],
-	[build without optimizations and with debugging symbols, also use GCC options to enforce strict C89 compliance. Use this during development with GCC and GDB.]))
-AS_IF([test "x$enable_debugging" = "xyes"], [CFLAGS="$CFLAGS -O0 -g3 -std=c89 -pedantic -Werror"])
-
-AC_ARG_ENABLE([resbuild],
-	AC_HELP_STRING([--enable-resbuild],
-	[generate resource files even if they exist. (for maintainer usage)]))
 
 # Checks for platforms.
 AC_MSG_CHECKING([for Win32])
@@ -104,10 +94,24 @@ AC_TYPE_UINT8_T
 #  - never call realloc(0, x)
 # so it doesn't rely on behavior not specified in C89
 #
-AC_CHECK_FUNCS([memset strerror])
+AC_CHECK_FUNCS([memset], [], [AC_MSG_ERROR([
+** memset() not found in C library, unable to build!
+])])
+AC_CHECK_FUNCS([strerror], [], [AC_MSG_ERROR([
+** strerror() not found in C library, unable to build!
+])])
+
+# Misc options.
+AC_ARG_ENABLE([debugging],
+	AC_HELP_STRING([--enable-debugging],
+	[build without optimizations and with debugging symbols, also use GCC options to enforce strict C89 compliance. Use this during development with GCC and GDB.]))
+AS_IF([test "x$enable_debugging" = "xyes"], [CFLAGS="-O0 -g3 -std=c89 -pedantic -Werror"])
+
+AC_ARG_ENABLE([resbuild],
+	AC_HELP_STRING([--enable-resbuild],
+	[generate resource files even if they exist. (for maintainer usage)]))
 
 # Building options
-
 resources_exist="yes"
 AS_IF([test -f bin/gfx.sar], [], [resources_exist="no"])
 AS_IF([test -f bin/stoneage.ico], [], [resources_exist="no"])
