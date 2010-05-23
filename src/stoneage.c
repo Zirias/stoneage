@@ -3,8 +3,6 @@
 #include "event.h"
 #include "ewilly.h"
 
-static int m_x, m_y;
-
 typedef enum
 {
     TT_None,
@@ -79,16 +77,25 @@ combineKey(Uint32 interval, void *param)
     e.type = SDL_USEREVENT;
     e.user = ue;
     SDL_PushEvent(&e);
-    return 0;
+    return interval;
 }
 
 static void
 checkKeys(Stoneage this)
 {
-    if (m_x || m_y)
+    int x, y;
+    int numKeys;
+    Uint8 *keyState;
+
+    keyState = SDL_GetKeyState(&numKeys);
+    x = keyState[SDLK_RIGHT] - keyState[SDLK_LEFT];
+    y = keyState[SDLK_DOWN] - keyState[SDLK_UP];
+    if (x||y)
+	moveWilly(this, x, y);
+    else
     {
-	moveWilly(this, m_x, m_y);
-	m_x = m_y = 0;
+	SDL_RemoveTimer(this->keyCheck);
+	this->keyCheck = 0;
     }
 }
 
@@ -120,72 +127,11 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 	    switch (e->keysym.sym)
 	    {
 		case SDLK_UP:
-		    if (m_x < 0)
-		    {
-			m_x = 0;
-			moveWilly(this, -1,-1);
-		    }
-		    else if (m_x > 0)
-		    {
-			m_x = 0;
-			moveWilly(this, 1,-1);
-		    }
-		    else
-		    {
-			m_y = -1;
-			SDL_AddTimer(50, &combineKey, this);
-		    }
-		    break;
 		case SDLK_DOWN:
-		    if (m_x < 0)
-		    {
-			m_x = 0;
-			moveWilly(this, -1,1);
-		    }
-		    else if (m_x > 0)
-		    {
-			m_x = 0;
-			moveWilly(this, 1,1);
-		    }
-		    else
-		    {
-			m_y = 1;
-			SDL_AddTimer(50, &combineKey, this);
-		    }
-		    break;
 		case SDLK_LEFT:
-		    if (m_y < 0)
-		    {
-			m_y = 0;
-			moveWilly(this, -1,-1);
-		    }
-		    else if (m_y > 0)
-		    {
-			m_y = 0;
-			moveWilly(this, -1,1);
-		    }
-		    else
-		    {
-			m_x = -1;
-			SDL_AddTimer(50, &combineKey, this);
-		    }
-		    break;
 		case SDLK_RIGHT:
-		    if (m_y < 0)
-		    {
-			m_y = 0;
-			moveWilly(this, 1,-1);
-		    }
-		    else if (m_y > 0)
-		    {
-			m_y = 0;
-			moveWilly(this, 1,1);
-		    }
-		    else
-		    {
-			m_x = 1;
-			SDL_AddTimer(50, &combineKey, this);
-		    }
+		    if (!this->keyCheck)
+			this->keyCheck = SDL_AddTimer(20, &combineKey, this);
 		    break;
 	    }
 	}

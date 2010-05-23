@@ -24,7 +24,8 @@ m_handleEvent(THIS, Event ev)
 
     if (ev->type == SAEV_Move)
     {
-	if (e->m) goto m_handleEvent_done; /* already moving */
+	if (this->moveLock) goto m_handleEvent_done;	/* no moving allowed */
+	if (e->m) goto m_handleEvent_done;		/* already moving */
 	md = (MoveData) ev->data;
 
 	/* check destination coordinates */
@@ -70,6 +71,7 @@ m_init(THIS, Board b, int x, int y)
 
     e->getSurface = b->getWillyTile;
     e->getBaseSurface = b->getEmptyTile;
+    this->moveLock = 0;
     instance = this;
 }
 

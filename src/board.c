@@ -247,6 +247,12 @@ moveStep(Board b, Move m)
 	DELETE(Move, m);
 
 	checkRocks(b);
+
+	if (!b->pimpl->movelist)
+	{
+	    /* all moves finished, unfreeze willy */
+	    getWilly()->moveLock = 0;
+	}
     }
 }
 
@@ -442,7 +448,12 @@ checkRocks(Board b)
     {
 	r = b->pimpl->rock[i];
 	e = CAST(r, Entity);
-	if (e->y<LVL_ROWS-1 && !b->pimpl->entity[e->y+1][e->x]) r->fall(r);
+	if (e->y<LVL_ROWS-1 && !b->pimpl->entity[e->y+1][e->x])
+	{
+	    /* freeze willy and let rock fall */
+	    getWilly()->moveLock = 1;
+	    r->fall(r);
+	}
     }
 }
 
