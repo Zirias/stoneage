@@ -19,14 +19,21 @@ m_handleEvent(THIS, Event ev)
 	e = CAST(this, Entity);
 	if (e->m) goto m_handleEvent_done; /* new move already started */
 
+	/* bottom of board */
 	if (e->b->entity(e->b, e->x, e->y+1, &n) < 0) goto m_handleEvent_done;
+
 	if (!n) {
+	    /* fall straight down */
 	    this->fall(this);
 	    goto m_handleEvent_done;
 	}
+
 	if (!CAST(n, ERock)) goto m_handleEvent_done;
+
+	/* rock below, check rolling off it's edge */
 	if ((e->b->entity(e->b, e->x+1, e->y+1, &n) == 0) && (!n))
 	{
+	    /* to the right ... */
 	    e->b->entity(e->b, e->x+1, e->y, &n);
 	    if (!n)
 	    {
@@ -34,8 +41,9 @@ m_handleEvent(THIS, Event ev)
 		e->m->init(e->m, e, 1, 1, TR_CircleX);
 	    }
 	}
-	else if ((e->b->entity(e->b, e->x-1, e->y+1, &n) == 0) && (!n))
+	if (!e->m && (e->b->entity(e->b, e->x-1, e->y+1, &n) == 0) && (!n))
 	{
+	    /* or else to the left */
 	    e->b->entity(e->b, e->x-1, e->y, &n);
 	    if (!n)
 	    {
@@ -43,6 +51,8 @@ m_handleEvent(THIS, Event ev)
 		e->m->init(e->m, e, -1, 1, TR_CircleX);
 	    }
 	}
+
+	/* found possible move -> start it */
 	if (e->m)
 	    e->b->startMove(e->b, e->m);
     }
