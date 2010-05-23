@@ -15,7 +15,19 @@ struct EHandler;
 enum EventType
 {
     SAEV_MoveTick,
-    SAEV_MoveFinished
+    SAEV_MoveFinished,
+    SAEV_Move
+};
+
+struct MoveData;
+typedef struct MoveData *MoveData;
+
+/** Data for SAEV_Move event.
+ */
+struct MoveData
+{
+    int x;  /**< x component of requested move (-1,0,1) */
+    int y;  /**< y component of requested move (-1,0,1) */
 };
 
 /** Class representing an Event.
@@ -32,7 +44,7 @@ CLASS(Event)
 
 /** Schedule an Event for delivery.
  * @relates Event
- * @param e the Event to deliver
+ * @param e the Event to raise
  */
 void extern RaiseEvent(Event e);
 
@@ -49,7 +61,7 @@ void extern DeliverEvent(Event e);
  * @relates Event
  * If the event wasn't yet delivered, it is marked as invalid to avoid
  * delivery.
- * @param e the Event to deliver
+ * @param e the Event to cancel
  */
 void extern CancelEvent(Event e);
 

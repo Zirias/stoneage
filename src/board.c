@@ -59,9 +59,6 @@ struct Board_impl
     int tile_width;
     int tile_height;
 
-    int willy_x;
-    int willy_y;
-
     Entity entity[LVL_ROWS][LVL_COLS];
     int num_rocks;
     ERock rock[LVL_ROWS * LVL_COLS];
@@ -729,9 +726,6 @@ CTOR(Board)
 
     rf->close(rf);
     DELETE(Resfile, rf);
-
-    b->willy_x = -1;
-    b->willy_y = -1;
 
     this->initVideo(this);
 
