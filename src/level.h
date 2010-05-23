@@ -42,24 +42,24 @@ CLASS(Level)
      * @param b The game's Board
      * @param buffer Poiner to an array of Entities to fill
      */
-    void FUNC(createEntities) ARG(struct Board *b, struct Entity **buffer);
+    void FUNC(createEntities)(THIS, struct Board *b, struct Entity **buffer);
 
     /** Create a random level.
      */
-    void FUNC(random) ARG();
+    void FUNC(random)(THIS);
 
     /** Load a debugging level.
      * Loads a special debugging level defined in level.c and identified
      * by an index number.
      * @param num number of the debugging level to load
      */
-    void FUNC(debug) ARG(int num);
+    void FUNC(debug)(THIS, int num);
 
     /** Load a level from a resource.
      * STUB
      * @param r the Resource to load the Level from
      */
-    void FUNC(load) ARG(struct Resource *r);
+    void FUNC(load)(THIS, struct Resource *r);
 };
 
 

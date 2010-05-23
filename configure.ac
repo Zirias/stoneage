@@ -42,8 +42,8 @@ AC_PROG_LIBTOOL
 # Misc options.
 AC_ARG_ENABLE([debugging],
 	AC_HELP_STRING([--enable-debugging],
-	[build without optimizations and with debugging symbols]))
-AS_IF([test "x$enable_debugging" = "xyes"], [CFLAGS="$CFLAGS -O0 -g3"])
+	[build without optimizations and with debugging symbols, also use GCC options to enforce strict C89 compliance. Use this during development with GCC and GDB.]))
+AS_IF([test "x$enable_debugging" = "xyes"], [CFLAGS="$CFLAGS -O0 -g3 -std=c89 -pedantic -Werror"])
 
 AC_ARG_ENABLE([resbuild],
 	AC_HELP_STRING([--enable-resbuild],
@@ -93,8 +93,17 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT8_T
 
 # Checks for library functions.
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
+#
+# ATTENTION
+# do NOT include the following, even if 'autoscan' tells it:
+#   AC_FUNC_MALLOC
+#   AC_FUNC_REALLOC
+#
+# the code is supposed to
+#  - never call malloc(0)
+#  - never call realloc(0, x)
+# so it doesn't rely on behavior not specified in C89
+#
 AC_CHECK_FUNCS([memset strerror])
 
 # Building options

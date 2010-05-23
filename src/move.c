@@ -59,7 +59,7 @@ computeTrajectories(int tile_width, int tile_height)
 }
 
 static void
-m_init ARG(Entity e, int dx, int dy, Trajectory t)
+m_init(THIS, Entity e, int dx, int dy, Trajectory t)
 {
     METHOD(Move);
 
@@ -79,14 +79,14 @@ m_init ARG(Entity e, int dx, int dy, Trajectory t)
 }
 
 static Entity
-m_entity ARG()
+m_entity(THIS)
 {
     METHOD(Move);
     return this->pimpl->e;
 }
 
 static int
-m_step ARG(Uint16 *x, Uint16 *y)
+m_step(THIS, Sint16 *x, Sint16 *y)
 {
     METHOD(Move);
 

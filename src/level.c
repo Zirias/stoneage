@@ -55,7 +55,7 @@ struct Level_impl
 };
 
 static void
-m_createEntities ARG(Board b, Entity *buffer)
+m_createEntities(THIS, Board b, Entity *buffer)
 {
     METHOD(Level);
 
@@ -90,7 +90,7 @@ m_createEntities ARG(Board b, Entity *buffer)
 }
 
 static void
-m_random ARG()
+m_random(THIS)
 {
     METHOD(Level);
     
@@ -109,7 +109,7 @@ m_random ARG()
 }
 
 static void
-m_debug ARG(int num)
+m_debug(THIS, int num)
 {
     METHOD(Level);
 

@@ -29,7 +29,7 @@ CLASS(Entity)
      * This points to one of the Board's methods for getting a surface
      * containing the entities main tile
      */
-    const SDL_Surface *FUNC(getSurface) ARG();
+    const SDL_Surface *FUNC(getSurface)(THIS);
 
     /** Pointer for getting background tile.
      * For partially transparent entities, this points to one of the
@@ -39,7 +39,7 @@ CLASS(Entity)
      * @param y y coordinate on the board
      * @param buf store the surfaces here
      */
-    void FUNC(getBaseSurface) ARG(int x, int y, void *buf);
+    void FUNC(getBaseSurface)(THIS, int x, int y, void *buf);
 
     /** Initialize the entity.
      * Sets the important properties and is called by the Board class
@@ -48,7 +48,7 @@ CLASS(Entity)
      * @param x x coordinate on the board
      * @param y y coordinate on the board
      */
-    void FUNC(init) ARG(
+    void FUNC(init)(THIS, 
 	    struct Board *b, int x, int y);
 
     /** "virtual" destructor.
@@ -57,7 +57,7 @@ CLASS(Entity)
      * directly, so derived classes get the Possibility to clean up their
      * extra data.
      */
-    void FUNC(dispose) ARG();
+    void FUNC(dispose)(THIS);
 };
 
 #endif
