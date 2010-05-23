@@ -17,7 +17,7 @@ m_handleEvent ARG(Event ev)
     if (ev->type == SAEV_MoveFinished)
     {
 	e = CAST(this, Entity);
-	e->m = 0;
+	if (e->m) return; /* new move already started */
 
 	if (e->b->entity(e->b, e->x, e->y+1, &n) < 0) goto m_handleEvent_done;
 	if (!n) {
