@@ -1,6 +1,15 @@
 #include "stoneage.h"
 #include "board.h"
 #include "event.h"
+#include "ewilly.h"
+
+static int m_x, m_y;
+
+typedef enum
+{
+    TT_None,
+    TT_KeyCombine
+} TickerType;
 
 Uint32
 createTickerEvent(Uint32 interval, void *param)
@@ -12,7 +21,7 @@ createTickerEvent(Uint32 interval, void *param)
     ue.type = SDL_USEREVENT;
     ue.code = 0;
     ue.data1 = 0;
-    ue.data2 = 0;
+    ue.data2 = (void *)TT_None;
     e.type = SDL_USEREVENT;
     e.user = ue;
     SDL_PushEvent(&e);
@@ -40,6 +49,50 @@ toggleFullscreen(Stoneage this)
 }
 
 static void
+moveWilly(Stoneage this, int x, int y)
+{
+    Event ev;
+    MoveData md;
+
+    md = XMALLOC(struct MoveData, 1);
+    md->x = x;
+    md->y = y;
+    ev = NEW(Event);
+    ev->type = SAEV_Move;
+    ev->sender = CAST(this, Object);
+    ev->handler = CAST(getWilly(), EHandler);
+    ev->data = md;
+    RaiseEvent(ev);
+}
+
+Uint32
+combineKey(Uint32 interval, void *param)
+{
+    Stoneage this = CAST(param, Stoneage);
+
+    SDL_Event e;
+    SDL_UserEvent ue;
+    ue.type = SDL_USEREVENT;
+    ue.code = 0;
+    ue.data1 = 0;
+    ue.data2 = (void *)TT_KeyCombine;
+    e.type = SDL_USEREVENT;
+    e.user = ue;
+    SDL_PushEvent(&e);
+    return 0;
+}
+
+static void
+checkKeys(Stoneage this)
+{
+    if (m_x || m_y)
+    {
+	moveWilly(this, m_x, m_y);
+	m_x = m_y = 0;
+    }
+}
+
+static void
 handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 {
     if (e->state == SDL_PRESSED)
@@ -59,6 +112,80 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 	    {
 		case SDLK_n:
 		    this->board->loadLevel(this->board);
+		    break;
+	    }
+	}
+	else
+	{
+	    switch (e->keysym.sym)
+	    {
+		case SDLK_UP:
+		    if (m_x < 0)
+		    {
+			m_x = 0;
+			moveWilly(this, -1,-1);
+		    }
+		    else if (m_x > 0)
+		    {
+			m_x = 0;
+			moveWilly(this, 1,-1);
+		    }
+		    else
+		    {
+			m_y = -1;
+			SDL_AddTimer(50, &combineKey, this);
+		    }
+		    break;
+		case SDLK_DOWN:
+		    if (m_x < 0)
+		    {
+			m_x = 0;
+			moveWilly(this, -1,1);
+		    }
+		    else if (m_x > 0)
+		    {
+			m_x = 0;
+			moveWilly(this, 1,1);
+		    }
+		    else
+		    {
+			m_y = 1;
+			SDL_AddTimer(50, &combineKey, this);
+		    }
+		    break;
+		case SDLK_LEFT:
+		    if (m_y < 0)
+		    {
+			m_y = 0;
+			moveWilly(this, -1,-1);
+		    }
+		    else if (m_y > 0)
+		    {
+			m_y = 0;
+			moveWilly(this, -1,1);
+		    }
+		    else
+		    {
+			m_x = -1;
+			SDL_AddTimer(50, &combineKey, this);
+		    }
+		    break;
+		case SDLK_RIGHT:
+		    if (m_y < 0)
+		    {
+			m_y = 0;
+			moveWilly(this, 1,-1);
+		    }
+		    else if (m_y > 0)
+		    {
+			m_y = 0;
+			moveWilly(this, 1,1);
+		    }
+		    else
+		    {
+			m_x = 1;
+			SDL_AddTimer(50, &combineKey, this);
+		    }
 		    break;
 	    }
 	}
@@ -91,7 +218,15 @@ m_run(THIS, int argc, char **argv)
 	{
 	    case SDL_USEREVENT:
 		if (!event.user.code)
-		    handleTick(this);
+		    switch ((TickerType)event.user.data2)
+		    {
+			case TT_None:
+			    handleTick(this);
+			    break;
+			case TT_KeyCombine:
+			    checkKeys(this);
+			    break;
+		    }
 		else
 		    DeliverEvent(CAST(event.user.data1, Event));
 		break;

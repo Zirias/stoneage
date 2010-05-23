@@ -337,6 +337,8 @@ m_draw(THIS, int x, int y, int refresh)
     Entity e;
     int i;
 
+    if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return;
+
     e = this->pimpl->entity[y][x];
 
     drawArea.x = x * drawArea.w;

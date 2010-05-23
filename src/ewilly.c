@@ -18,10 +18,12 @@ m_handleEvent(THIS, Event ev)
 
     Entity e, d, d1, d2;
     MoveData md;
+    int x, y;
+
+    e = CAST(this, Entity);
 
     if (ev->type == SAEV_Move)
     {
-	e = CAST(this, Entity);
 	if (e->m) goto m_handleEvent_done; /* already moving */
 	md = (MoveData) ev->data;
 
@@ -47,6 +49,11 @@ m_handleEvent(THIS, Event ev)
 	    e->m->init(e->m, e, md->x, md->y, TR_Linear);
 	    e->b->startMove(e->b, e->m);
 	}
+    }
+    else if (ev->type == SAEV_MoveFinished)
+    {
+	for (x=e->x-1; x<=e->x+1; ++x) for (y=e->y-1; y<=e->y+1; ++y)
+	    e->b->draw(e->b, x, y, 1);
     }
 
 m_handleEvent_done:
