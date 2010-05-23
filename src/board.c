@@ -420,7 +420,7 @@ m_startMove ARG(Move m)
     if (!this->pimpl->moveticker)
     {
 	this->pimpl->moveticker = SDL_AddTimer(
-		10, &createMoveTickEvent, this);
+		20, &createMoveTickEvent, this);
     }
 }
 
