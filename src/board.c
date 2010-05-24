@@ -442,6 +442,11 @@ checkRocks(Board b)
     int i;
     ERock r;
     Entity e;
+    EWilly w;
+
+    /* let willy finish his current move */
+    w = getWilly();
+    if (w && CAST(w, Entity)->m) return;
 
     for (i=0; i<b->pimpl->num_rocks; ++i)
     {

@@ -9,6 +9,7 @@ CLASS(EWilly)
     INHERIT(Entity);
 
     int moveLock;
+    int alive;
 };
 
 /** get current instance of Willy
