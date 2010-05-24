@@ -15,6 +15,10 @@
  */
 #define LVL_COLS 31
 
+/** number of builtin levels
+ */
+#define BUILTIN_LEVELS 3
+
 struct Board;
 struct Entity;
 struct Resource;

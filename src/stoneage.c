@@ -124,7 +124,7 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 	    switch (e->keysym.sym)
 	    {
 		case SDLK_n:
-		    this->board->loadLevel(this->board);
+		    this->board->loadLevel(this->board, -1);
 		    break;
 		default:
 		    ;
@@ -164,7 +164,7 @@ m_run(THIS, int argc, char **argv)
 
     setupVideo(this);
     this->board = NEW(Board);
-    this->board->loadLevel(this->board);
+    this->board->loadLevel(this->board, 0);
 
     running = 1;
     keyState = SDL_GetKeyState(0);

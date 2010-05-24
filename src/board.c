@@ -62,8 +62,11 @@ struct Board_impl
     int tile_width;
     int tile_height;
 
-    Entity entity[LVL_ROWS][LVL_COLS];
     int num_rocks;
+    int num_cabbages;
+    int level;
+
+    Entity entity[LVL_ROWS][LVL_COLS];
     ERock rock[LVL_ROWS * LVL_COLS];
 };
 
@@ -168,19 +171,21 @@ createScaledSurface(Resource r, int width, int height)
 }
 
 static void
-findRocks(Board b)
+scanLevel(Board b)
 {
     int x, y;
     Entity e;
     ERock r;
 
     b->pimpl->num_rocks = 0;
+    b->pimpl->num_cabbages = 0;
     for (y=0; y<LVL_ROWS; ++y) for (x=0; x<LVL_COLS; ++x)
     {
 	e = b->pimpl->entity[y][x];
 	if (!e) continue;
 	r = CAST(e, ERock);
 	if (r) b->pimpl->rock[b->pimpl->num_rocks++] = r;
+	else if CAST(e, ECabbage) b->pimpl->num_cabbages++;
     }
 }
 
@@ -191,6 +196,7 @@ moveStep(Board b, Move m)
     int tw, th;
     SDL_Rect dirty;
     Entity e;
+    Entity d;
     Event ev;
 
     e = m->entity(m);
@@ -242,6 +248,15 @@ moveStep(Board b, Move m)
 	e->x += m->dx;
 	e->y += m->dy;
 	e->m = 0;
+	d = b->pimpl->entity[e->y][e->x];
+	if (d)
+	{
+	    if (CAST(d, ECabbage))
+	    {
+		b->pimpl->num_cabbages--;
+	    }
+	    if (!CAST(d, EWilly)) d->dispose(d);
+	}
 	b->pimpl->entity[e->y][e->x] = e;
 
 	if (m->rel != MR_Slave)
@@ -265,6 +280,12 @@ moveStep(Board b, Move m)
 	    getWilly()->moveLock = 0;
 	}
     }
+
+    if (!b->pimpl->num_cabbages) {
+	b->pimpl->level++;
+	if (b->pimpl->level >= BUILTIN_LEVELS) b->pimpl->level = 0;
+	b->loadLevel(b, -1);
+    }
 }
 
 static void
@@ -272,6 +293,7 @@ internal_clear(Board b)
 {
     Move m, next;
     Entity *e;
+    EWilly w;
     Entity *end = (Entity *)&(b->pimpl->entity) + LVL_COLS*LVL_ROWS;
 
     if (b->pimpl->moveticker)
@@ -300,6 +322,9 @@ internal_clear(Board b)
     }
     
     b->pimpl->num_rocks = 0;
+    b->pimpl->num_cabbages = 0;
+
+    if (( w = getWilly() )) DELETE(EWilly, w);
 }
 
 static void
@@ -556,17 +581,19 @@ m_getWillyTile(THIS)
 }
 
 static void
-m_loadLevel(THIS)
+m_loadLevel(THIS, int n)
 {
     Level l;
     METHOD(Board);
 
+    if (n < 0) n = this->pimpl->level;
     internal_clear(this);
     l = NEW(Level);
-    l->builtin(l, 0);
+    l->builtin(l, n);
     l->createEntities(l, this, (Entity *)&this->pimpl->entity);
     DELETE(Level, l);
-    findRocks(this);
+    this->pimpl->level = n;
+    scanLevel(this);
     this->redraw(this);
     checkRocks(this);
 }

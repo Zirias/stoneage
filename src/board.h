@@ -34,7 +34,7 @@ CLASS(Board)
     /** Load and start a level.
      * STUB
      */
-    void FUNC(loadLevel)(THIS);
+    void FUNC(loadLevel)(THIS, int n);
 
     /** Redraws the whole Board.
      */

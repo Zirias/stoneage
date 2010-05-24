@@ -19,8 +19,6 @@
 #define C 4	/* cabbage */
 #define H 5	/* hero (aka willy) */
 
-#define BUILTIN_LEVELS 1
-
 static const uint8_t lvl_data[BUILTIN_LEVELS][LVL_ROWS][LVL_COLS] =
 {
     {
@@ -42,6 +40,46 @@ static const uint8_t lvl_data[BUILTIN_LEVELS][LVL_ROWS][LVL_COLS] =
 	{W,E,E,E,E,E,E,E,W,R,E,W,E,W,E,W,N,W,N,W,E,W,E,W,W,N,N,N,N,N,N},
 	{W,E,E,E,E,E,E,E,W,R,E,W,C,W,E,W,N,W,N,W,R,W,E,W,N,W,N,N,N,N,N},
 	{W,H,E,E,E,E,E,E,E,E,E,E,W,E,E,W,W,W,C,W,R,W,R,W,N,E,W,C,W,C,C}
+    },
+    {
+	{C,R,E,N,W,C,E,E,E,W,E,E,R,E,E,C,E,E,E,E,N,N,N,E,E,E,E,E,E,E,E},
+	{E,R,W,E,W,W,W,W,R,W,R,E,C,E,E,E,E,W,W,W,W,W,W,W,W,W,W,W,W,W,N},
+	{E,R,W,E,R,E,E,E,E,N,R,E,E,C,E,E,R,W,N,N,N,N,N,N,N,R,N,N,N,N,E},
+	{N,R,W,E,E,N,R,E,N,N,R,E,E,E,E,C,E,W,N,W,W,W,W,W,N,W,W,W,W,W,E},
+	{E,R,W,R,N,E,E,N,N,R,R,E,E,R,E,E,E,W,N,N,N,R,C,W,N,N,N,N,N,W,E},
+	{E,R,W,R,R,E,N,N,R,R,E,C,E,E,E,R,E,W,E,R,E,C,E,W,R,N,N,N,N,W,E},
+	{E,R,W,R,E,N,N,R,R,W,E,E,E,R,R,R,E,W,W,W,W,W,W,W,R,R,N,R,R,W,E},
+	{E,R,W,E,N,N,R,R,W,W,R,E,C,E,R,R,R,W,E,E,N,N,E,E,E,R,C,R,R,W,E},
+	{C,R,W,N,N,R,R,W,W,E,E,E,E,E,R,H,R,W,E,W,W,W,W,W,W,W,W,W,W,W,E},
+	{E,R,W,N,R,R,W,W,C,R,E,C,E,E,E,E,E,W,E,W,E,E,R,E,E,R,R,E,E,E,E},
+	{E,R,W,N,R,W,W,R,C,C,E,R,E,E,R,E,R,W,E,W,W,W,W,W,W,W,W,W,W,W,E},
+	{N,R,W,N,W,W,C,C,R,C,R,C,E,E,E,C,E,W,E,E,E,W,E,R,R,W,E,E,N,W,E},
+	{N,R,W,E,W,C,C,C,C,C,R,C,E,E,E,C,E,W,W,W,E,W,E,E,E,W,E,W,N,W,E},
+	{N,R,W,E,W,C,R,C,R,C,C,C,R,E,C,C,E,W,W,W,E,W,E,N,N,W,N,W,E,W,E},
+	{N,R,W,N,W,R,C,C,C,R,C,C,C,C,C,C,E,W,R,R,E,W,E,W,N,W,N,W,E,W,E},
+	{E,R,W,E,W,C,C,R,C,C,C,C,C,R,C,C,E,W,R,E,E,E,E,W,N,W,N,W,E,W,E},
+	{E,R,W,E,W,C,C,C,C,C,R,C,C,C,C,C,R,W,R,N,R,R,E,W,N,W,N,W,E,W,E},
+	{R,E,E,E,W,R,C,C,C,C,C,C,R,C,R,C,R,W,C,N,R,R,E,W,N,N,N,W,E,E,E}
+    },
+    {
+	{C,R,E,R,R,R,R,R,E,E,E,W,W,W,R,W,W,W,W,C,E,W,W,W,W,W,W,W,W,W,W},
+	{E,R,R,W,E,R,C,W,R,R,N,N,N,N,R,N,N,N,N,N,E,W,R,R,R,R,R,N,N,C,W},
+	{N,R,W,E,E,R,E,E,W,R,E,W,E,W,R,W,W,N,W,E,E,W,R,R,R,R,E,N,N,E,W},
+	{R,E,E,C,E,R,E,N,N,E,R,E,W,W,R,W,W,W,E,E,E,W,R,R,R,R,R,R,R,R,W},
+	{R,W,E,W,W,R,W,W,E,W,R,E,R,W,R,W,R,E,E,W,E,W,W,W,W,R,W,W,W,W,W},
+	{R,W,E,E,R,R,R,E,E,W,R,E,R,W,R,W,R,E,R,W,E,W,C,E,E,R,E,E,E,E,W},
+	{R,W,E,R,E,R,E,R,E,W,R,E,R,W,R,W,R,E,E,W,E,W,W,W,W,R,W,W,W,E,W},
+	{R,W,R,E,E,R,E,E,R,W,R,E,R,W,R,W,R,E,E,W,E,E,E,E,E,E,E,E,E,E,W},
+	{E,R,E,E,N,R,E,E,E,R,E,E,R,W,R,W,R,R,E,W,W,W,W,W,W,E,W,W,W,W,W},
+	{W,R,R,E,E,R,E,E,R,R,W,E,R,W,R,W,R,E,E,E,R,W,E,E,E,E,E,E,E,E,E},
+	{W,E,E,R,R,R,R,R,E,E,W,E,R,W,R,W,R,C,E,W,E,W,E,E,E,E,E,E,R,E,R},
+	{W,W,E,E,W,W,W,E,E,W,W,E,R,W,R,W,R,E,E,E,E,W,R,R,E,W,W,W,W,W,W},
+	{E,E,E,R,E,E,C,E,E,E,E,E,R,W,R,W,R,E,E,W,E,W,R,R,R,W,R,W,C,E,R},
+	{C,R,E,E,E,R,E,E,E,E,R,E,R,W,R,W,R,E,R,E,E,W,W,W,W,W,R,W,W,E,E},
+	{C,C,C,R,E,E,E,R,E,R,E,E,R,W,R,W,R,E,E,E,E,W,W,W,R,R,R,C,W,E,R},
+	{R,C,C,C,C,E,E,E,E,E,E,E,R,W,R,W,R,E,E,W,E,E,N,E,E,E,E,E,W,E,R},
+	{C,C,R,C,C,C,C,E,E,R,E,E,R,W,R,W,R,E,E,E,E,W,W,W,W,W,W,W,W,R,E},
+	{C,C,C,C,C,C,C,C,C,E,E,E,E,E,H,E,E,E,W,E,E,E,E,E,N,N,N,E,E,E,E}
     }
 };
 
