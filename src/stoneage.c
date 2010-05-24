@@ -14,7 +14,9 @@ static Uint8 *keyState;
 Uint32
 createTickerEvent(Uint32 interval, void *param)
 {
+    /*
     Stoneage this = CAST(param, Stoneage);
+    */
 
     SDL_Event e;
     SDL_UserEvent ue;
@@ -68,7 +70,9 @@ moveWilly(Stoneage this, int x, int y)
 Uint32
 combineKey(Uint32 interval, void *param)
 {
+    /*
     Stoneage this = CAST(param, Stoneage);
+    */
 
     SDL_Event e;
     SDL_UserEvent ue;
@@ -111,6 +115,8 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 		case SDLK_RETURN:
 		    toggleFullscreen(this);
 		    break;
+		default:
+		    ;
 	    }
 	}
 	else if (e->keysym.mod & KMOD_CTRL)
@@ -120,6 +126,8 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 		case SDLK_n:
 		    this->board->loadLevel(this->board);
 		    break;
+		default:
+		    ;
 	    }
 	}
 	else
@@ -133,6 +141,8 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 		    if (!this->keyCheck)
 			this->keyCheck = SDL_AddTimer(30, &combineKey, this);
 		    break;
+		default:
+		    ;
 	    }
 	}
     }
@@ -189,6 +199,7 @@ m_run(THIS, int argc, char **argv)
 
 	}
     }
+    return 0;
 }
 
 static void
@@ -234,8 +245,11 @@ DTOR(Stoneage)
 int
 main(int argc, char **argv)
 {
+    int rc;
+
     mainApp = (App)NEW(Stoneage);
-    mainApp->run(mainApp, argc, argv);
+    rc = mainApp->run(mainApp, argc, argv);
     DELETE(Stoneage, mainApp);
+    return rc;
 }
 

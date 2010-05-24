@@ -280,7 +280,6 @@ internal_clear(Board b)
     Move m, next;
     Entity *e;
     Entity *end = (Entity *)&(b->pimpl->entity) + LVL_COLS*LVL_ROWS;
-    int i;
 
     if (b->pimpl->moveticker)
     {
@@ -394,7 +393,6 @@ static void
 m_redraw(THIS)
 {
     METHOD(Board);
-    Entity e;
     int x, y;
 
     struct Board_impl *b = this->pimpl;
@@ -479,8 +477,6 @@ isSolidTile(Board this, int x, int y)
 static unsigned int
 calculateNeighbors(Board this, int x, int y)
 {
-    struct Board_impl *b = this->pimpl;
-
     unsigned int neighbors = 0;
     if ((y > 0) && isSolidTile(this, x, y-1)) neighbors += 8;
     if ((x < LVL_COLS-1) && isSolidTile(this, x+1, y)) neighbors += 4;
