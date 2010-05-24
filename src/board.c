@@ -56,6 +56,9 @@ struct Board_impl
 
     SDL_TimerID moveticker;
 
+    int off_x;
+    int off_y;
+
     int tile_width;
     int tile_height;
 
@@ -193,8 +196,7 @@ moveStep(Board b, Move m)
     e = m->entity(m);
     tw = b->pimpl->tile_width;
     th = b->pimpl->tile_height;
-    dirty.x = e->x * tw;
-    dirty.y = e->y * th;
+    b->coordinatesToPixel(b, e->x, e->y, &dirty.x, &dirty.y);
     dirty.w = tw;
     dirty.h = th;
 
@@ -263,15 +265,6 @@ moveStep(Board b, Move m)
 	    getWilly()->moveLock = 0;
 	}
     }
-}
-
-static void
-randomLevel(Board b)
-{
-    Level l = NEW(Level);
-    l->random(l);
-    l->createEntities(l, b, (Entity *)&b->pimpl->entity);
-    DELETE(Level, l);
 }
 
 static void
@@ -351,12 +344,10 @@ m_draw(THIS, int x, int y, int refresh)
     Entity e;
     int i;
 
-    if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return;
+    if (this->coordinatesToPixel(this, x, y, &drawArea.x, &drawArea.y) < 0)
+	return;
 
     e = this->pimpl->entity[y][x];
-
-    drawArea.x = x * drawArea.w;
-    drawArea.y = y * drawArea.h;
 
     screen = this->pimpl->screen;
 
@@ -401,17 +392,18 @@ m_redraw(THIS)
 	for (x = 0; x < LVL_COLS; ++x)
 	    this->draw(this, x, y, 0);
 
-    SDL_UpdateRect(b->screen, 0, 0, b->screen->w, b->screen->h);
+    SDL_UpdateRect(b->screen, b->off_x, b->off_y,
+	    drawArea.w * LVL_COLS, drawArea.h * LVL_ROWS);
 }
 
 static int
-m_coordinatesToPixel(THIS, int x, int y, int *px, int *py)
+m_coordinatesToPixel(THIS, int x, int y, Sint16 *px, Sint16 *py)
 {
     METHOD(Board);
 
     if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return -1;
-    *px = this->pimpl->tile_width * x;
-    *py = this->pimpl->tile_height * y;
+    *px = this->pimpl->tile_width * x + this->pimpl->off_x;
+    *py = this->pimpl->tile_height * y + this->pimpl->off_y;
     return 0;
 }
 
@@ -561,10 +553,14 @@ m_getWillyTile(THIS)
 static void
 m_loadLevel(THIS)
 {
+    Level l;
     METHOD(Board);
 
     internal_clear(this);
-    randomLevel(this);
+    l = NEW(Level);
+    l->builtin(l, 0);
+    l->createEntities(l, this, (Entity *)&this->pimpl->entity);
+    DELETE(Level, l);
     findRocks(this);
     this->redraw(this);
     checkRocks(this);
@@ -601,8 +597,10 @@ m_initVideo(THIS)
     struct Board_impl *b = this->pimpl;
 
     b->screen = SDL_GetVideoSurface();
-    b->tile_width = b->screen->w / LVL_COLS;
-    b->tile_height = b->screen->h / LVL_ROWS;
+    b->tile_width = b->screen->w / (LVL_COLS + 1);
+    b->tile_height = b->screen->h / (LVL_ROWS + 6);
+    b->off_x = b->tile_width / 2;
+    b->off_y = b->tile_height / 2;
     computeTrajectories(b->tile_width, b->tile_height);
 
     drawArea.w = b->tile_width;
