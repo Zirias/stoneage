@@ -34,6 +34,7 @@ m_handleEvent(THIS, Event ev)
 
 	if (!CAST(n, ERock)) goto m_handleEvent_done;
 
+	w = 0;
 	/* rock below, check rolling off it's edge */
 	if ((e->b->entity(e->b, e->x+1, e->y+1, &n) == 0) &&
 		(!n || ( w = CAST(n, EWilly) )))
@@ -47,6 +48,7 @@ m_handleEvent(THIS, Event ev)
 		if (w) w->alive = 0;
 	    }
 	}
+	w = 0;
 	if (!e->m && (e->b->entity(e->b, e->x-1, e->y+1, &n) == 0) &&
 		(!n || ( w = CAST(n, EWilly) )))
 	{
