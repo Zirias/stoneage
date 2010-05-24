@@ -19,33 +19,29 @@
 #define C 4	/* cabbage */
 #define H 5	/* hero (aka willy) */
 
-static const uint8_t lvl_debug[][LVL_ROWS][LVL_COLS] =
+#define BUILTIN_LEVELS 1
+
+static const uint8_t lvl_data[BUILTIN_LEVELS][LVL_ROWS][LVL_COLS] =
 {
     {
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,E,N,N,N,N,N,N,N,N,N,N,N,N,E,N,N,N,N,N,N,N,N,N,N,E,N,N,N,N,N},
-	{N,N,N,N,N,N,E,N,N,N,N,E,N,N,N,N,E,N,N,N,E,N,E,N,N,E,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,E,N,N,N,N,N,N,N,N,N,E,N,N,N,E,N,N,N,N,N,N,N,N},
-	{N,N,E,N,N,N,N,N,N,E,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,E,N,E,N,E,N,E,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,E,N,N,N,N,N,N,E,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,E,N,N,N,N,N,E,N,N,E,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,E,E,N,E,E,N,N,E,N,E,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,E,N,N,E,N,N,E,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N},
-	{N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N}
+	{R,C,E,R,W,R,N,N,E,E,W,E,E,N,E,E,E,E,E,E,R,E,E,E,N,N,E,E,E,E,R},
+	{R,W,W,E,W,C,R,W,W,E,W,W,R,N,W,E,E,W,W,E,E,E,W,W,E,E,R,E,R,E,R},
+	{R,N,N,N,W,E,E,W,R,E,W,E,E,W,E,W,R,W,R,W,E,W,W,W,N,E,R,E,R,E,R},
+	{E,N,N,N,W,R,E,E,W,N,W,E,E,W,N,W,R,W,C,W,E,W,N,N,N,E,R,E,R,E,C},
+	{E,E,R,E,W,R,E,W,W,N,W,W,R,E,W,R,R,W,E,W,E,E,W,W,E,E,R,E,R,E,N},
+	{E,W,E,W,W,W,N,E,E,N,E,E,E,E,E,R,R,E,E,E,N,E,E,E,E,E,R,R,R,R,N},
+	{E,W,E,W,R,W,W,W,W,W,W,E,E,E,E,W,W,W,W,W,E,E,R,R,R,E,R,R,R,R,N},
+	{N,W,E,W,R,W,E,N,E,E,W,E,R,E,R,N,N,N,N,N,R,E,R,R,R,E,R,R,R,E,N},
+	{N,W,C,W,R,W,E,W,W,E,W,E,R,E,W,R,N,N,N,R,W,E,R,C,R,E,R,R,E,N,N},
+	{N,W,W,W,R,W,E,R,W,E,W,E,R,E,W,W,N,E,E,W,W,E,R,R,R,E,R,E,N,N,R},
+	{E,R,R,R,R,W,N,E,W,N,W,E,R,E,E,W,N,E,E,W,R,E,E,E,E,E,R,N,N,R,R},
+	{R,E,E,E,R,W,N,E,W,E,W,E,R,E,E,W,C,W,C,W,R,E,E,E,E,E,R,N,R,R,R},
+	{R,R,R,R,R,W,R,C,W,E,E,E,R,E,E,W,W,W,W,W,E,E,E,W,E,E,W,N,E,E,E},
+	{W,W,W,W,R,W,W,W,W,R,E,E,E,E,E,R,R,N,N,R,E,E,E,W,E,W,N,N,E,E,E},
+	{W,E,E,E,C,E,E,E,W,R,E,W,E,W,E,W,W,W,E,W,W,E,E,W,W,N,N,N,N,N,N},
+	{W,E,E,E,E,E,E,E,W,R,E,W,E,W,E,W,N,W,N,W,E,W,E,W,W,N,N,N,N,N,N},
+	{W,E,E,E,E,E,E,E,W,R,E,W,C,W,E,W,N,W,N,W,R,W,E,W,N,W,N,N,N,N,N},
+	{W,H,E,E,E,E,E,E,E,E,E,E,W,E,E,W,W,W,C,W,R,W,R,W,N,E,W,C,W,C,C}
     }
 };
 
@@ -109,11 +105,11 @@ m_random(THIS)
 }
 
 static void
-m_debug(THIS, int num)
+m_builtin(THIS, int num)
 {
     METHOD(Level);
 
-    memcpy(this->pimpl->data, lvl_debug[num],
+    memcpy(this->pimpl->data, lvl_data[num],
 	    LVL_ROWS * LVL_COLS * sizeof(uint8_t));
 }
 
@@ -123,7 +119,7 @@ CTOR(Level)
     this->pimpl = XMALLOC(struct Level_impl, 1);
     this->createEntities = &m_createEntities;
     this->random = &m_random;
-    this->debug = &m_debug;
+    this->builtin = &m_builtin;
     return this;
 }
 

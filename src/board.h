@@ -59,7 +59,7 @@ CLASS(Board)
      * @param py y component of pixel position
      * @return non-zero on error (coordinate out of board range)
      */
-    int FUNC(coordinatesToPixel)(THIS, int x, int y, int *px, int *py);
+    int FUNC(coordinatesToPixel)(THIS, int x, int y, Sint16 *px, Sint16 *py);
 
     /** Get entity at given position.
      * @param x x-coordinate on the board

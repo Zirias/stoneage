@@ -39,8 +39,10 @@ m_handleEvent(THIS, Event ev)
 	    e->b->entity(e->b, e->x+md->x, e->y, &d1);
 	    e->b->entity(e->b, e->x, e->y+md->y, &d2);
 
-	    /* both are walls? -> no move possible */
-	    if (d1 && d2 && CAST(d1, EWall) && CAST(d2, EWall))
+	    /* both are walls or rocks? -> no move possible */
+	    if (d1 && d2 &&
+		    (CAST(d1, EWall) || CAST(d1, ERock)) &&
+		    (CAST(d2, EWall) || CAST(d2, ERock)))
 		goto m_handleEvent_done;
 	}
 
