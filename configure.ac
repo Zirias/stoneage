@@ -105,7 +105,7 @@ AC_CHECK_FUNCS([strerror], [], [AC_MSG_ERROR([
 AC_ARG_ENABLE([debugging],
 	AC_HELP_STRING([--enable-debugging],
 	[build without optimizations and with debugging symbols, also use GCC options to enforce strict C89 compliance. Use this during development with GCC and GDB.]))
-AS_IF([test "x$enable_debugging" = "xyes"], [CFLAGS="-O0 -g3 -std=c89 -pedantic -Werror"])
+AS_IF([test "x$enable_debugging" = "xyes"], [CFLAGS="-O0 -g3 -std=c89 -pedantic-errors -Wall -Werror"])
 
 AC_ARG_ENABLE([resbuild],
 	AC_HELP_STRING([--enable-resbuild],

@@ -49,7 +49,7 @@ m_run(THIS, int argc, char **argv)
 	return -1;
     }
 
-    fstat(fileno(file), &s);
+    stat(argv[2], &s);
     size = (size_t) s.st_size;
     r = NEW(Resource);
     r->setName(r, argv[3]);

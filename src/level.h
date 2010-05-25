@@ -9,11 +9,15 @@
 
 /** number of rows in a level
  */
-#define LVL_ROWS 24
+#define LVL_ROWS 18
 
 /** number of columns in a level
  */
-#define LVL_COLS 32
+#define LVL_COLS 31
+
+/** number of builtin levels
+ */
+#define BUILTIN_LEVELS 3
 
 struct Board;
 struct Entity;
@@ -48,12 +52,11 @@ CLASS(Level)
      */
     void FUNC(random)(THIS);
 
-    /** Load a debugging level.
-     * Loads a special debugging level defined in level.c and identified
-     * by an index number.
-     * @param num number of the debugging level to load
+    /** Load a builtin level.
+     * Loads one of the hardcoded levels by index number.
+     * @param num number of the level to load
      */
-    void FUNC(debug)(THIS, int num);
+    void FUNC(builtin)(THIS, int num);
 
     /** Load a level from a resource.
      * STUB

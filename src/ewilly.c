@@ -26,6 +26,7 @@ m_handleEvent(THIS, Event ev)
     if (ev->type == SAEV_Move)
     {
 	if (this->moveLock) goto m_handleEvent_done;	/* no moving allowed */
+	if (!this->alive) goto m_handleEvent_done;	/* dead willy */
 	if (e->m) goto m_handleEvent_done;		/* already moving */
 	md = (MoveData) ev->data;
 
@@ -39,8 +40,10 @@ m_handleEvent(THIS, Event ev)
 	    e->b->entity(e->b, e->x+md->x, e->y, &d1);
 	    e->b->entity(e->b, e->x, e->y+md->y, &d2);
 
-	    /* both are walls? -> no move possible */
-	    if (d1 && d2 && CAST(d1, EWall) && CAST(d2, EWall))
+	    /* both are walls or rocks? -> no move possible */
+	    if (d1 && d2 &&
+		    (CAST(d1, EWall) || CAST(d1, ERock)) &&
+		    (CAST(d2, EWall) || CAST(d2, ERock)))
 		goto m_handleEvent_done;
 	}
 
@@ -91,6 +94,7 @@ m_init(THIS, Board b, int x, int y)
     e->getSurface = b->getWillyTile;
     e->getBaseSurface = b->getEmptyTile;
     this->moveLock = 0;
+    this->alive = 1;
     instance = this;
 }
 
@@ -117,6 +121,7 @@ CTOR(EWilly)
 
 DTOR(EWilly)
 {
+    instance = 0;
     BASEDTOR(Entity);
 }
 
@@ -125,4 +130,3 @@ getWilly(void)
 {
     return instance;
 }
-

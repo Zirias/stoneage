@@ -1,6 +1,7 @@
 #include "move.h"
 
 #include <stdlib.h>
+#include <SDL.h>
 
 #include "entity.h"
 #include "board.h"
@@ -8,10 +9,10 @@
 struct Move_impl
 {
     Entity e;
-    int x;
-    int y;
-    int tx;
-    int ty;
+    Sint16 x;
+    Sint16 y;
+    Sint16 tx;
+    Sint16 ty;
     int step;
     int (*t)[7][2];
 };
