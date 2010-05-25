@@ -56,11 +56,17 @@ struct Board_impl
 
     SDL_TimerID moveticker;
 
+    int off_x;
+    int off_y;
+
     int tile_width;
     int tile_height;
 
-    Entity entity[LVL_ROWS][LVL_COLS];
     int num_rocks;
+    int num_cabbages;
+    int level;
+
+    Entity entity[LVL_ROWS][LVL_COLS];
     ERock rock[LVL_ROWS * LVL_COLS];
 };
 
@@ -165,19 +171,21 @@ createScaledSurface(Resource r, int width, int height)
 }
 
 static void
-findRocks(Board b)
+scanLevel(Board b)
 {
     int x, y;
     Entity e;
     ERock r;
 
     b->pimpl->num_rocks = 0;
+    b->pimpl->num_cabbages = 0;
     for (y=0; y<LVL_ROWS; ++y) for (x=0; x<LVL_COLS; ++x)
     {
 	e = b->pimpl->entity[y][x];
 	if (!e) continue;
 	r = CAST(e, ERock);
 	if (r) b->pimpl->rock[b->pimpl->num_rocks++] = r;
+	else if CAST(e, ECabbage) b->pimpl->num_cabbages++;
     }
 }
 
@@ -188,13 +196,13 @@ moveStep(Board b, Move m)
     int tw, th;
     SDL_Rect dirty;
     Entity e;
+    Entity d;
     Event ev;
 
     e = m->entity(m);
     tw = b->pimpl->tile_width;
     th = b->pimpl->tile_height;
-    dirty.x = e->x * tw;
-    dirty.y = e->y * th;
+    b->coordinatesToPixel(b, e->x, e->y, &dirty.x, &dirty.y);
     dirty.w = tw;
     dirty.h = th;
 
@@ -240,6 +248,15 @@ moveStep(Board b, Move m)
 	e->x += m->dx;
 	e->y += m->dy;
 	e->m = 0;
+	d = b->pimpl->entity[e->y][e->x];
+	if (d)
+	{
+	    if (CAST(d, ECabbage))
+	    {
+		b->pimpl->num_cabbages--;
+	    }
+	    if (!CAST(d, EWilly)) d->dispose(d);
+	}
 	b->pimpl->entity[e->y][e->x] = e;
 
 	if (m->rel != MR_Slave)
@@ -263,15 +280,12 @@ moveStep(Board b, Move m)
 	    getWilly()->moveLock = 0;
 	}
     }
-}
 
-static void
-randomLevel(Board b)
-{
-    Level l = NEW(Level);
-    l->random(l);
-    l->createEntities(l, b, (Entity *)&b->pimpl->entity);
-    DELETE(Level, l);
+    if (!b->pimpl->num_cabbages) {
+	b->pimpl->level++;
+	if (b->pimpl->level >= BUILTIN_LEVELS) b->pimpl->level = 0;
+	b->loadLevel(b, -1);
+    }
 }
 
 static void
@@ -279,8 +293,8 @@ internal_clear(Board b)
 {
     Move m, next;
     Entity *e;
+    EWilly w;
     Entity *end = (Entity *)&(b->pimpl->entity) + LVL_COLS*LVL_ROWS;
-    int i;
 
     if (b->pimpl->moveticker)
     {
@@ -308,6 +322,9 @@ internal_clear(Board b)
     }
     
     b->pimpl->num_rocks = 0;
+    b->pimpl->num_cabbages = 0;
+
+    if (( w = getWilly() )) DELETE(EWilly, w);
 }
 
 static void
@@ -352,12 +369,10 @@ m_draw(THIS, int x, int y, int refresh)
     Entity e;
     int i;
 
-    if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return;
+    if (this->coordinatesToPixel(this, x, y, &drawArea.x, &drawArea.y) < 0)
+	return;
 
     e = this->pimpl->entity[y][x];
-
-    drawArea.x = x * drawArea.w;
-    drawArea.y = y * drawArea.h;
 
     screen = this->pimpl->screen;
 
@@ -394,7 +409,6 @@ static void
 m_redraw(THIS)
 {
     METHOD(Board);
-    Entity e;
     int x, y;
 
     struct Board_impl *b = this->pimpl;
@@ -403,17 +417,18 @@ m_redraw(THIS)
 	for (x = 0; x < LVL_COLS; ++x)
 	    this->draw(this, x, y, 0);
 
-    SDL_UpdateRect(b->screen, 0, 0, b->screen->w, b->screen->h);
+    SDL_UpdateRect(b->screen, b->off_x, b->off_y,
+	    drawArea.w * LVL_COLS, drawArea.h * LVL_ROWS);
 }
 
 static int
-m_coordinatesToPixel(THIS, int x, int y, int *px, int *py)
+m_coordinatesToPixel(THIS, int x, int y, Sint16 *px, Sint16 *py)
 {
     METHOD(Board);
 
     if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return -1;
-    *px = this->pimpl->tile_width * x;
-    *py = this->pimpl->tile_height * y;
+    *px = this->pimpl->tile_width * x + this->pimpl->off_x;
+    *py = this->pimpl->tile_height * y + this->pimpl->off_y;
     return 0;
 }
 
@@ -452,6 +467,11 @@ checkRocks(Board b)
     int i;
     ERock r;
     Entity e;
+    EWilly w;
+
+    /* let willy finish his current move */
+    w = getWilly();
+    if (w && CAST(w, Entity)->m) return;
 
     for (i=0; i<b->pimpl->num_rocks; ++i)
     {
@@ -479,8 +499,6 @@ isSolidTile(Board this, int x, int y)
 static unsigned int
 calculateNeighbors(Board this, int x, int y)
 {
-    struct Board_impl *b = this->pimpl;
-
     unsigned int neighbors = 0;
     if ((y > 0) && isSolidTile(this, x, y-1)) neighbors += 8;
     if ((x < LVL_COLS-1) && isSolidTile(this, x+1, y)) neighbors += 4;
@@ -563,13 +581,19 @@ m_getWillyTile(THIS)
 }
 
 static void
-m_loadLevel(THIS)
+m_loadLevel(THIS, int n)
 {
+    Level l;
     METHOD(Board);
 
+    if (n < 0) n = this->pimpl->level;
     internal_clear(this);
-    randomLevel(this);
-    findRocks(this);
+    l = NEW(Level);
+    l->builtin(l, n);
+    l->createEntities(l, this, (Entity *)&this->pimpl->entity);
+    DELETE(Level, l);
+    this->pimpl->level = n;
+    scanLevel(this);
     this->redraw(this);
     checkRocks(this);
 }
@@ -605,8 +629,10 @@ m_initVideo(THIS)
     struct Board_impl *b = this->pimpl;
 
     b->screen = SDL_GetVideoSurface();
-    b->tile_width = b->screen->w / LVL_COLS;
-    b->tile_height = b->screen->h / LVL_ROWS;
+    b->tile_width = b->screen->w / (LVL_COLS + 1);
+    b->tile_height = b->screen->h / (LVL_ROWS + 6);
+    b->off_x = b->tile_width / 2;
+    b->off_y = b->tile_height / 2;
     computeTrajectories(b->tile_width, b->tile_height);
 
     drawArea.w = b->tile_width;

@@ -1,4 +1,5 @@
 #include "erock.h"
+#include "ewilly.h"
 #include "board.h"
 #include "move.h"
 #include "event.h"
@@ -13,36 +14,55 @@ m_handleEvent(THIS, Event ev)
     METHOD(ERock);
 
     Entity e, n;
+    EWilly w;
 
     if (ev->type == SAEV_MoveFinished)
     {
 	e = CAST(this, Entity);
+	w = 0;
 	if (e->m) goto m_handleEvent_done; /* new move already started */
 
+	/* bottom of board */
 	if (e->b->entity(e->b, e->x, e->y+1, &n) < 0) goto m_handleEvent_done;
-	if (!n) {
+
+	if (!n || ( w = CAST(n, EWilly) )) {
+	    /* fall straight down */
 	    this->fall(this);
+	    if (w) w->alive = 0;
 	    goto m_handleEvent_done;
 	}
+
 	if (!CAST(n, ERock)) goto m_handleEvent_done;
-	if ((e->b->entity(e->b, e->x+1, e->y+1, &n) == 0) && (!n))
+
+	w = 0;
+	/* rock below, check rolling off it's edge */
+	if ((e->b->entity(e->b, e->x+1, e->y+1, &n) == 0) &&
+		(!n || ( w = CAST(n, EWilly) )))
 	{
+	    /* to the right ... */
 	    e->b->entity(e->b, e->x+1, e->y, &n);
 	    if (!n)
 	    {
 		e->m = NEW(Move);
 		e->m->init(e->m, e, 1, 1, TR_CircleX);
+		if (w) w->alive = 0;
 	    }
 	}
-	else if ((e->b->entity(e->b, e->x-1, e->y+1, &n) == 0) && (!n))
+	w = 0;
+	if (!e->m && (e->b->entity(e->b, e->x-1, e->y+1, &n) == 0) &&
+		(!n || ( w = CAST(n, EWilly) )))
 	{
+	    /* or else to the left */
 	    e->b->entity(e->b, e->x-1, e->y, &n);
 	    if (!n)
 	    {
 		e->m = NEW(Move);
 		e->m->init(e->m, e, -1, 1, TR_CircleX);
+		if (w) w->alive = 0;
 	    }
 	}
+
+	/* found possible move -> start it */
 	if (e->m)
 	    e->b->startMove(e->b, e->m);
     }
