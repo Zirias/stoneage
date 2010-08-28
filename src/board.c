@@ -1,7 +1,3 @@
-#include <SDL_rotozoom.h>
-#include <SDL_image.h>
-#include <stdlib.h>
-
 #include "board.h"
 #include "screen.h"
 #include "app.h"
@@ -15,7 +11,24 @@
 #include "ecabbage.h"
 #include "ewilly.h"
 
-static SDL_Rect drawArea;
+static const int emptyTileTable[16][2] = {
+    {SATN_Empty, 0},
+    {SATN_Empty_1, 3},
+    {SATN_Empty_1, 2},
+    {SATN_Empty_2a, 2},
+    {SATN_Empty_1, 1},
+    {SATN_Empty_2f, 1},
+    {SATN_Empty_2a, 1},
+    {SATN_Empty_3, 1},
+    {SATN_Empty_1, 0},
+    {SATN_Empty_2a, 3},
+    {SATN_Empty_2f, 0},
+    {SATN_Empty_3, 2},
+    {SATN_Empty_2a, 0},
+    {SATN_Empty_3, 3},
+    {SATN_Empty_3, 0},
+    {SATN_Empty_4, 0},
+};
 
 struct BlitSequence;
 typedef struct BlitSequence *BlitSequence;
@@ -30,27 +43,6 @@ struct Board_impl
 {
     SDL_Surface *screen;
 
-    Resource t_empty;
-    Resource t_empty_1;
-    Resource t_empty_2a;
-    Resource t_empty_2f;
-    Resource t_empty_3;
-    Resource t_empty_4;
-    Resource t_corner;
-    Resource t_earth;
-    Resource t_wall;
-    Resource t_rock;
-    Resource t_cabbage;
-    Resource t_willy;
-
-    SDL_Surface *s_empty[16];
-    SDL_Surface *s_corner[4];
-    SDL_Surface *s_earth;
-    SDL_Surface *s_wall;
-    SDL_Surface *s_rock;
-    SDL_Surface *s_cabbage;
-    SDL_Surface *s_willy;
-
     Move movelist;
 
     SDL_TimerID moveticker;
@@ -58,6 +50,10 @@ struct Board_impl
     int num_rocks;
     int num_cabbages;
     int level;
+
+    SDL_Rect drawArea;
+    int off_x;
+    int off_y;
 
     Entity entity[LVL_ROWS][LVL_COLS];
     ERock rock[LVL_ROWS * LVL_COLS];
@@ -136,7 +132,7 @@ moveStep(Board b, Move m)
     }
 
     done = m->step(m, &drawArea.x, &drawArea.y);
-    SDL_BlitSurface((SDL_Surface *)e->getSurface(b),
+    SDL_BlitSurface((SDL_Surface *)e->getSurface(e),
 	    0, b->pimpl->screen, &drawArea);
     SDL_UpdateRects(b->pimpl->screen, 1, &dirty);
 
@@ -279,7 +275,8 @@ m_draw(THIS, int x, int y, int refresh)
     Entity e;
     int i;
 
-    if (this->coordinatesToPixel(this, x, y, &drawArea.x, &drawArea.y) < 0)
+    Screen s = getScreen();
+    if (s->coordinatesToPixel(this, x, y, &drawArea.x, &drawArea.y) < 0)
 	return;
 
     e = this->pimpl->entity[y][x];
@@ -291,12 +288,12 @@ m_draw(THIS, int x, int y, int refresh)
 
     if (e)
     {
-	if (e->getBaseSurface)
+	if (e->getBackground)
 	{
-	    e->getBaseSurface(this, x, y, &base);
+	    e->getBackground(this, x, y, &base);
 	    drawBase = 1;
 	}
-	tile = e->getSurface(this);
+	tile = e->getSurface(e);
     }
     else
     {
@@ -329,17 +326,6 @@ m_redraw(THIS)
 
     SDL_UpdateRect(b->screen, b->off_x, b->off_y,
 	    drawArea.w * LVL_COLS, drawArea.h * LVL_ROWS);
-}
-
-static int
-m_coordinatesToPixel(THIS, int x, int y, Sint16 *px, Sint16 *py)
-{
-    METHOD(Board);
-
-    if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return -1;
-    *px = this->pimpl->tile_width * x + this->pimpl->off_x;
-    *py = this->pimpl->tile_height * y + this->pimpl->off_y;
-    return 0;
 }
 
 static int
@@ -418,76 +404,41 @@ calculateNeighbors(Board this, int x, int y)
 }
 
 static void
-m_getEmptyTile(THIS, int x, int y, void *buf)
+m_getEmptyBackground(THIS, int x, int y, void *buf)
 {
     METHOD(Board);
     
+    Screen s = getScreen();
     BlitSequence bs = (BlitSequence)buf;
     unsigned int n = calculateNeighbors(this, x, y);
+
     bs->n = 0;
-    bs->blits[bs->n++] = this->pimpl->s_empty[n];
+    bs->blits[bs->n++] = s->getTile(
+	    emptyTileTable[n][0], emptyTileTable[n][1]);
     if (!(n&(8|4)) && (y>0) && (x<LVL_COLS-1)
 	    && isSolidTile(this, x+1, y-1))
-	bs->blits[bs->n++] = this->pimpl->s_corner[0];
+	bs->blits[bs->n++] = s->getTile(SATN_Corner, 0);
     if (!(n&(4|2)) && (y<LVL_ROWS-1) && (x<LVL_COLS-1)
 	    && isSolidTile(this, x+1, y+1))
-	bs->blits[bs->n++] = this->pimpl->s_corner[1];
+	bs->blits[bs->n++] = s->getTile(SATN_Corner, 1);
     if (!(n&(2|1)) && (y<LVL_ROWS-1) && (x>0)
 	    && isSolidTile(this, x-1, y+1))
-	bs->blits[bs->n++] = this->pimpl->s_corner[2];
+	bs->blits[bs->n++] = s->getTile(SATN_Corner, 2);
     if (!(n&(8|1)) && (y>0) && (x>0)
 	    && isSolidTile(this, x-1, y-1))
-	bs->blits[bs->n++] = this->pimpl->s_corner[3];
+	bs->blits[bs->n++] = s->getTile(SATN_Corner, 3);
 }
 
 static void
-m_getEarthBaseTile(THIS, int x, int y, void *buf)
+m_getEarthBackground(THIS, int x, int y, void *buf)
 {
     METHOD(Board);
+
+    Screen s = getScreen();
 
     BlitSequence bs = (BlitSequence)buf;
     bs->n = 1;
-    bs->blits[0] = this->pimpl->s_earth;
-}
-
-static const SDL_Surface *
-m_getEarthTile(THIS)
-{
-    METHOD(Board);
-
-    return this->pimpl->s_earth;
-}
-
-static const SDL_Surface *
-m_getWallTile(THIS)
-{
-    METHOD(Board);
-
-    return this->pimpl->s_wall;
-}
-
-static const SDL_Surface *
-m_getRockTile(THIS)
-{
-    METHOD(Board);
-
-    return this->pimpl->s_rock;
-}
-
-static const SDL_Surface *
-m_getCabbageTile(THIS)
-{
-    METHOD(Board);
-
-    return this->pimpl->s_cabbage;
-}
-
-static const SDL_Surface *
-m_getWillyTile(THIS)
-{
-    METHOD(Board);
-
-    return this->pimpl->s_willy;
+    bs->blits[0] = s->getTile(SATN_Earth, 0);
 }
 
 static void
@@ -509,110 +460,18 @@ m_loadLevel(THIS, int n)
 }
 
 static void
-freeSdlSurfaces(Board this)
-{
-    struct Board_impl *b = this->pimpl;
-    SDL_Surface **p;
-    SDL_Surface **p_end;
-
-    p_end = (SDL_Surface **)b->s_empty + 16;
-    for (p = (SDL_Surface **)b->s_empty; p != p_end; ++p)
-	if (*p) SDL_FreeSurface(*p);
-    p_end = (SDL_Surface **)b->s_corner + 4;
-    for (p = (SDL_Surface **)b->s_corner; p != p_end; ++p)
-	if (*p) SDL_FreeSurface(*p);
-    if (b->s_earth) SDL_FreeSurface(b->s_earth);
-    if (b->s_wall) SDL_FreeSurface(b->s_wall);
-    if (b->s_rock) SDL_FreeSurface(b->s_rock);
-    if (b->s_cabbage) SDL_FreeSurface(b->s_cabbage);
-    if (b->s_willy) SDL_FreeSurface(b->s_willy);
-}
-
-static void
-m_initVideo(THIS)
+m_setTileSize(THIS, int tile_width, int tile_height)
 {
     METHOD(Board);
 
-    SDL_Surface *png;
-    int i;
-
     struct Board_impl *b = this->pimpl;
 
-    b->screen = SDL_GetVideoSurface();
-    b->tile_width = b->screen->w / (LVL_COLS + 1);
-    b->tile_height = b->screen->h / (LVL_ROWS + 6);
-    b->off_x = b->tile_width / 2;
-    b->off_y = b->tile_height / 2;
-    computeTrajectories(b->tile_width, b->tile_height);
-
-    drawArea.w = b->tile_width;
-    drawArea.h = b->tile_height;
-
-    freeSdlSurfaces(this);
-
-    /* "empty" tiles with different edges and rotations */
-    b->s_empty[0] = createScaledSurface(
-	    b->t_empty, b->tile_width, b->tile_height);
-    png = loadPngSurface(b->t_empty_1);
-    b->s_empty[1] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 3);
-    b->s_empty[2] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 2);
-    b->s_empty[4] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 1);
-    b->s_empty[8] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 0);
-    SDL_FreeSurface(png);
-    png = loadPngSurface(b->t_empty_2a);
-    b->s_empty[8|1] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 3);
-    b->s_empty[2|1] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 2);
-    b->s_empty[4|2] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 1);
-    b->s_empty[8|4] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 0);
-    SDL_FreeSurface(png);
-    png = loadPngSurface(b->t_empty_2f);
-    b->s_empty[4|1] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 1);
-    b->s_empty[8|2] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 0);
-    SDL_FreeSurface(png);
-    png = loadPngSurface(b->t_empty_3);
-    b->s_empty[8|4|1] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 3);
-    b->s_empty[8|2|1] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 2);
-    b->s_empty[4|2|1] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 1);
-    b->s_empty[8|4|2] = scaleSurface(
-	    png, b->tile_width, b->tile_height, 0);
-    SDL_FreeSurface(png);
-    b->s_empty[8|4|2|1] = createScaledSurface(
-	    b->t_empty_4, b->tile_width, b->tile_height);
-
-    /* the four corners */
-    png = loadPngSurface(b->t_corner);
-    for (i=0; i<4; ++i)
-	b->s_corner[i] = scaleSurface(
-		png, b->tile_width, b->tile_height, i);
-    SDL_FreeSurface(png);
-
-    /* tiles for the items on the board */
-    b->s_earth = createScaledSurface(
-	    b->t_earth, b->tile_width, b->tile_height);
-    b->s_wall = createScaledSurface(
-	    b->t_wall, b->tile_width, b->tile_height);
-    b->s_rock = createScaledSurface(
-	    b->t_rock, b->tile_width, b->tile_height);
-    b->s_cabbage = createScaledSurface(
-	    b->t_cabbage, b->tile_width, b->tile_height);
-    b->s_willy = createScaledSurface(
-	    b->t_willy, b->tile_width, b->tile_height);
-
-    this->redraw(this);
-    checkRocks(this);
+    if (tile_width != b->drawArea.w || tile_height != b->drawArea.h)
+    {
+	b->drawArea.w = tile_width;
+	b->drawArea.h = tile_height;
+	computeTrajectories(b->drawArea.w, b->drawArea.h);
+    }
 }
 
 CTOR(Board)
@@ -627,41 +486,14 @@ CTOR(Board)
     this->pimpl = b;
 
     ((EHandler)this)->handleEvent = &m_handleEvent;
-    this->initVideo = &m_initVideo;
+    this->setTileSize = &m_setTileSize;
     this->loadLevel = &m_loadLevel;
     this->redraw = &m_redraw;
     this->draw = &m_draw;
-    this->coordinatesToPixel = &m_coordinatesToPixel;
     this->entity = &m_entity;
     this->startMove = &m_startMove;
-    this->getEmptyTile = &m_getEmptyTile;
-    this->getEarthBaseTile = &m_getEarthBaseTile;
-    this->getEarthTile = &m_getEarthTile;
-    this->getWallTile = &m_getWallTile;
-    this->getRockTile = &m_getRockTile;
-    this->getCabbageTile = &m_getCabbageTile;
-    this->getWillyTile = &m_getWillyTile;
-
-    rf = getScreen()->graphics;
-
-    rf->load(rf, "tile_empty", &(b->t_empty));
-    rf->load(rf, "tile_empty_1", &(b->t_empty_1));
-    rf->load(rf, "tile_empty_2a", &(b->t_empty_2a));
-    rf->load(rf, "tile_empty_2f", &(b->t_empty_2f));
-    rf->load(rf, "tile_empty_3", &(b->t_empty_3));
-    rf->load(rf, "tile_empty_4", &(b->t_empty_4));
-    rf->load(rf, "tile_corner", &(b->t_corner));
-    rf->load(rf, "tile_earth", &(b->t_earth));
-    rf->load(rf, "tile_wall", &(b->t_wall));
-    rf->load(rf, "tile_rock", &(b->t_rock));
-    rf->load(rf, "tile_cabbage", &(b->t_cabbage));
-    rf->load(rf, "tile_willy", &(b->t_willy));
-    if (!b->t_empty || !b->t_earth || !b->t_wall || !b->t_rock
-	    || !b->t_cabbage || !b->t_willy)
-    {
-	log_err("Error loading tiles.\n");
-	mainApp->abort(mainApp);
-    }
+    this->getEmptyBackground = &m_getEmptyBackground;
+    this->getEarthBackground = &m_getEarthBackground;
 
     this->initVideo(this);
 
@@ -673,21 +505,6 @@ DTOR(Board)
     struct Board_impl *b = this->pimpl;
 
     internal_clear(this);
-
-    freeSdlSurfaces(this);
-
-    DELETE(Resource, b->t_empty);
-    DELETE(Resource, b->t_empty_1);
-    DELETE(Resource, b->t_empty_2a);
-    DELETE(Resource, b->t_empty_2f);
-    DELETE(Resource, b->t_empty_3);
-    DELETE(Resource, b->t_empty_4);
-    DELETE(Resource, b->t_corner);
-    DELETE(Resource, b->t_earth);
-    DELETE(Resource, b->t_wall);
-    DELETE(Resource, b->t_rock);
-    DELETE(Resource, b->t_cabbage);
-    DELETE(Resource, b->t_willy);
 
     XFREE(this->pimpl);
     BASEDTOR(EHandler);

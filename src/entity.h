@@ -39,7 +39,7 @@ CLASS(Entity)
      * @param y y coordinate on the board
      * @param buf store the surfaces here
      */
-    void FUNC(getBaseSurface)(THIS, int x, int y, void *buf);
+    void FUNC(getBackground)(THIS, int x, int y, void *buf);
 
     /** Initialize the entity.
      * Sets the important properties and is called by the Board class

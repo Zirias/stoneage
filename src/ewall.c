@@ -1,25 +1,22 @@
 #include "ewall.h"
 #include "board.h"
-
-static void
-FUNC(parent_init)(THIS, Board b, int x, int y);
-
-static void
-m_init(THIS, Board b, int x, int y)
-{
-    METHOD(EWall);
-
-    Entity e = CAST(this, Entity);
-    parent_init(e, b, x, y);
-
-    e->getSurface = b->getWallTile;
-}
+#include "screen.h"
 
 static void
 m_dispose(THIS)
 {
     METHOD(EWall);
     DELETE(EWall, this);
+}
+
+static const SDL_Surface *
+m_getSurface(THIS)
+{
+    METHOD(EWall);
+
+    Screen s = getScreen();
+    struct TileId id = { SATN_Wall, 0 };
+    return s->getTile(s, id);
 }
 
 CTOR(EWall)
@@ -29,9 +26,8 @@ CTOR(EWall)
     BASECTOR(EWall, Entity);
 
     e = CAST(this, Entity);
-    parent_init = e->init;
-    e->init = &m_init;
     e->dispose = &m_dispose;
+    e->getSurface = &m_getSurface;
     return this;
 }
 
