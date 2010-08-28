@@ -3,8 +3,8 @@
 
 #include <stdlib.h>
 
-#define XMALLOC(T, n) ((T *)xmalloc((n) * sizeof(T)))
-#define XREALLOC(T, p, n) ((T *)xrealloc((p), (n) * sizeof(T)))
+#define XMALLOC(T, n) xmalloc((n) * sizeof(T))
+#define XREALLOC(T, p, n) xrealloc((p), (n) * sizeof(T))
 #define XFREE(p) do { if (p) {free(p); p=0;}} while(0)
 
 extern void *xmalloc(size_t n);

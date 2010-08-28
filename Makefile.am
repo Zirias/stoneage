@@ -23,7 +23,7 @@ maintainer-clean-local:
 	rm -fr resbuild bin
 
 dist_pkgdata_DATA = bin/gfx.sar
-EXTRA_DIST = VERSION bin/stoneage.ico src/icon.h src/icon.c src/icondat.h src/stoneage.rc
+EXTRA_DIST = VERSION bin/stoneage.ico src/icon.h src/icon.c src/icondat.h
 
 if BUILD_RESOURCES
 
@@ -118,6 +118,7 @@ bin_stoneage_SOURCES = src/common.h src/classes.h \
 	src/app.h src/app.c \
 	src/event.h src/event.c \
 	src/ehandler.h src/ehandler.c \
+	src/screen.h src/screen.c \
 	src/board.h src/board.c \
 	src/move.h src/move.c \
 	src/level.h src/level.c \

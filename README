@@ -1,4 +1,4 @@
-STONEAGE -- created after a roghly boulderdash-like AmigaBASIC game
+STONEAGE -- created after a roughly boulderdash-like AmigaBASIC game
 
 This is currently non-functional pre-alpha software, so a detailed
 description will follow later.
@@ -12,9 +12,42 @@ n.x.0: minor release version
 
 x.0.0: major version x.
 
-SCM-POLICIES:
+DEVELOPMENT POLICIES:
 
-- use GNU autotools
-- keep any autotools-generated files out of the VCS
-- use doxygen to document AT LEAST the header files
-- The only place to configure the version number is the VERSION file
+1) SCM:
+
+- use GNU autotools.
+
+- keep any autotools-generated files out of the VCS.
+
+- The only place to configure the version number is the VERSION file.
+
+2) Coding:
+
+- Strictly stick to ANSI C89/C90 standards.
+
+- Use GCC -pedantic-errors, -Wall and -Werror flags to check the code.
+  Whenever GCC thinks something in the code is not clear (like, e.g.,
+  having a switch statement that only handles some possible enum values
+  and does not have a default: branch), add the "redundant" code (like
+  in this case, a "default: ;") to make the intention clear. The
+  compiler will optimize it away.
+
+- use doxygen to document AT LEAST the header files.
+
+- make use of goto! But ONLY in one special case where a function/method
+  needs some "cleanup" code for multiple execution paths. Instead of
+  repeating that code everywhere, place it at the end of the function,
+  set a label "<functionname>_done:" and use goto.
+
+- keep code to the left whereever possible. So instead of writing
+  something like
+    if (condition)
+    {
+      ...;
+    }
+  better write
+    if (!condition) return;
+    ...;
+  The "goto" rule can also help with that.
+
