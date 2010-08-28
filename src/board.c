@@ -3,6 +3,7 @@
 #include <stdlib.h>
 
 #include "board.h"
+#include "screen.h"
 #include "resfile.h"
 #include "resource.h"
 #include "app.h"
@@ -113,8 +114,8 @@ rotateSurface(SDL_Surface *s, int rot)
 	    s->format->Amask);
     SDL_LockSurface(s);
     SDL_LockSurface(dest);
-    srcpix = (uint32_t *)s->pixels;
-    dstpix = (uint32_t *)dest->pixels;
+    srcpix = s->pixels;
+    dstpix = dest->pixels;
     if (rot == 1)
     {
 	for (x=dest->w-1;x>=0;--x) for (y=0;y<dest->h;++y)
@@ -745,13 +746,7 @@ CTOR(Board)
     this->getCabbageTile = &m_getCabbageTile;
     this->getWillyTile = &m_getWillyTile;
 
-    rf = NEW(Resfile);
-    rf->setFile(rf, RES_GFX);
-    if (rf->open(rf, 0) < 0)
-    {
-	log_err("Error loading tiles.\n");
-	mainApp->abort(mainApp);
-    }
+    rf = getScreen()->graphics;
 
     rf->load(rf, "tile_empty", &(b->t_empty));
     rf->load(rf, "tile_empty_1", &(b->t_empty_1));
@@ -771,9 +766,6 @@ CTOR(Board)
 	log_err("Error loading tiles.\n");
 	mainApp->abort(mainApp);
     }
-
-    rf->close(rf);
-    DELETE(Resfile, rf);
 
     this->initVideo(this);
 
