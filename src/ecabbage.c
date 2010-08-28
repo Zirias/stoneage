@@ -26,11 +26,10 @@ m_dispose(THIS)
 static const SDL_Surface *
 m_getSurface(THIS)
 {
-    METHOD(ECabbage);
+    /* METHOD(ECabbage); */
 
     Screen s = getScreen();
-    struct TileId id = { SATN_Cabbage, 0 };
-    return s->getTile(s, id);
+    return s->getTile(s, SATN_Cabbage, 0);
 }
 
 CTOR(ECabbage)

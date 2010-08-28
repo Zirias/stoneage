@@ -55,10 +55,10 @@ resbuild/twall.png: gfx/tiles.xcf
 	$(V_X2P)$(XCF2PNG) -o resbuild/twall.png gfx/tiles.xcf wall
 
 resbuild/twall_v.png: gfx/tiles.xcf
-	$(V_X2P)$(XCF2PNG) -o resbuild/twall.png gfx/tiles.xcf wall_v
+	$(V_X2P)$(XCF2PNG) -o resbuild/twall_v.png gfx/tiles.xcf wall_v
 
 resbuild/twall_h.png: gfx/tiles.xcf
-	$(V_X2P)$(XCF2PNG) -o resbuild/twall.png gfx/tiles.xcf wall_h
+	$(V_X2P)$(XCF2PNG) -o resbuild/twall_h.png gfx/tiles.xcf wall_h
 
 resbuild/trock.png: gfx/tiles.xcf
 	$(V_X2P)$(XCF2PNG) -A -o resbuild/trock.png gfx/tiles.xcf rock

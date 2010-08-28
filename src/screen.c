@@ -8,9 +8,9 @@
 #include "board.h"
 #include "app.h"
 
-static Screen _instance;
+static Screen _instance = NULL;
 
-static const char **tileNameStrings =
+static const char *tileNameStrings[] =
 {
     "tile_empty",
     "tile_empty_1",
@@ -37,6 +37,8 @@ struct Screen_impl
 
     int tile_width;
     int tile_height;
+    int off_x;
+    int off_y;
 };
 
 static SDL_Surface *
@@ -125,11 +127,11 @@ createScaledSurface(Resource r, int width, int height)
 static void
 freeSurfaces(struct Screen_impl *s)
 {
-    SDL_surface **tile;
-    SDL_surface **tile_end
+    SDL_Surface **tile;
+    SDL_Surface **tile_end;
 
-    tile_end = (SDL_surface **) s->tiles + SATN_NumberOfTiles;
-    for (tile = (SDL_surface **) s->tiles; tile != tile_end; ++tile)
+    tile_end = (SDL_Surface **) s->tiles + SATN_NumberOfTiles;
+    for (tile = (SDL_Surface **) s->tiles; tile != tile_end; ++tile)
     {
 	if (*tile) SDL_FreeSurface(*tile);
 	*tile = NULL;
@@ -147,7 +149,7 @@ m_getTile(THIS, enum TileName tile, int rotation)
 	if (rotation)
 	{
 	    s->tiles[tile][rotation] = rotateSurface(
-		    this->getTile(this, tile, 0), rotation);
+		    (SDL_Surface *)this->getTile(this, tile, 0), rotation);
 	}
 	else
 	{
@@ -156,6 +158,14 @@ m_getTile(THIS, enum TileName tile, int rotation)
 	}
     }
     return s->tiles[tile][rotation];
+}
+
+static Board
+m_getBoard(THIS)
+{
+    METHOD(Screen);
+
+    return this->pimpl->board;
 }
 
 static int
@@ -175,17 +185,27 @@ m_initVideo(THIS)
     METHOD(Screen);
 
     struct Screen_impl *s = this->pimpl;
-
-    freeSdlSurfaces(this);
-
     SDL_Surface *screen = SDL_GetVideoSurface();
+
+    freeSurfaces(s);
+
+    if (!s->board) s->board = NEW(Board);
     s->tile_width = screen->w / (LVL_COLS + 1);
     s->tile_height = screen->h / (LVL_ROWS + 6);
     s->off_x = s->tile_width / 2;
     s->off_y = s->tile_height / 2;
-    s->board->setTileSize(s->board,
-	    s->tile_width, s->tile_height);
+    s->board->setGeometry(s->board,
+	    s->tile_width, s->tile_height, s->off_x, s->off_y);
     s->board->redraw(s->board);
+}
+
+static void
+m_startGame(THIS)
+{
+    METHOD(Screen);
+
+    struct Screen_impl *s = this->pimpl;
+    s->board->loadLevel(s->board, 0);
 }
 
 CTOR(Screen)
@@ -214,7 +234,10 @@ CTOR(Screen)
     this->pimpl = s;
 
     this->getTile = &m_getTile;
+    this->getBoard = &m_getBoard;
     this->coordinatesToPixel = &m_coordinatesToPixel;
+    this->initVideo = &m_initVideo;
+    this->startGame = &m_startGame;
 
     rf = NEW(Resfile);
     rf->setFile(rf, RES_GFX);
@@ -241,14 +264,15 @@ CTOR(Screen)
 
 DTOR(Screen)
 {
-    freeSurfaces(this->pimpl);
-    this->pimpl->graphics->close(this->graphics);
+    struct Screen_impl *s = this->pimpl;
+    DELETE(Board, s->board);
+    freeSurfaces(s);
 
 #ifndef SDL_IMG_OLD
     IMG_Quit();
 #endif
 
-    XFREE(this->pimpl);
+    XFREE(s);
     BASEDTOR(Object);
 }
 

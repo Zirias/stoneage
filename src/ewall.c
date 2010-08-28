@@ -12,11 +12,10 @@ m_dispose(THIS)
 static const SDL_Surface *
 m_getSurface(THIS)
 {
-    METHOD(EWall);
+    /* METHOD(EWall); */
 
     Screen s = getScreen();
-    struct TileId id = { SATN_Wall, 0 };
-    return s->getTile(s, id);
+    return s->getTile(s, SATN_Wall, 0);
 }
 
 CTOR(EWall)

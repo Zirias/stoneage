@@ -1,11 +1,14 @@
 #ifndef STONEAGE_SCREEN_H
 #define STONEAGE_SCREEN_H
 
+#include <SDL.h>
+
 #include "common.h"
 
 struct Screen_impl;
 
 struct Resfile;
+struct Board;
 
 enum TileName
 {
@@ -32,6 +35,17 @@ CLASS(Screen)
 
     struct Screen_impl *pimpl;
 
+    /** Initialize the display of the board.
+     * This method must be called whenever the video-mode changes.
+     * It calulates tile sizes.
+     */
+    void FUNC(initVideo)(THIS);
+
+    /** Starts the game.
+     * Starts the game by loading the first level.
+     */
+    void FUNC(startGame)(THIS);
+
     /** Get a surface for a particular tile in a given rotation.
      * This function returns a SDL-Surface of a tile in a given rotation.
      * Loading/rotating of the tile is handled automatically if necessary.
@@ -40,6 +54,12 @@ CLASS(Screen)
      * @return SDL-Surface of the requested tile
      */
     const SDL_Surface *FUNC(getTile)(THIS, enum TileName tile, int rotation);
+
+    /** Get the board on the screen.
+     * Returns the board that is displayed on the screen.
+     * @return the board
+     */
+    struct Board *FUNC(getBoard)(THIS);
 
     /** Get real pixel position for a given coordinate.
      * This function gives the upper left edge of a board coordinate in

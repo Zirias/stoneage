@@ -25,11 +25,18 @@ CLASS(Board)
 
     struct Board_impl *pimpl; /**< @private */
 
-    /** Initialize the display of the board.
-     * This method must be called whenever the video-mode changes.
-     * It calulates tile sizes.
+    /** Set geometry information of the board.
+     * This must be called when the size of a tile is about to change, e.g.
+     * due to a new screen resolution. The drawing rectangle for SDL drawing
+     * functions and the individual points of movement trajectories are
+     * calculated when this is called.
+     * @param width new width of a tile
+     * @param height new height of a tile
+     * @param off_x x offset for the whole board
+     * @param off_y y offset for the whole board
      */
-    void FUNC(initVideo)(THIS);
+    void FUNC(setGeometry)(THIS, int width, int height,
+	    int off_x, int off_y);
 
     /** Load and start a level.
      * STUB
