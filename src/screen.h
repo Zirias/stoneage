@@ -7,7 +7,7 @@ struct Screen_impl;
 
 struct Resfile;
 
-enum TileNames
+enum TileName
 {
     SATN_Empty,
     SATN_Empty_1,
@@ -26,32 +26,31 @@ enum TileNames
     SATN_NumberOfTiles
 };
 
-static const char **tileNameStrings = {
-    "tile_empty",
-    "tile_empty_1",
-    "tile_empty_2a",
-    "tile_empty_2f",
-    "tile_empty_3",
-    "tile_empty_4",
-    "tile_corner",
-    "tile_earth",
-    "tile_wall",
-    "tile_wall_v",
-    "tile_wall_h",
-    "tile_rock",
-    "tile_cabbage",
-    "tile_willy"
-};
-
 CLASS(Screen)
 {
     INHERIT(Object);
 
     struct Screen_impl *pimpl;
 
-    struct Resfile *FUNC(getGraphics)(THIS);
+    /** Get a surface for a particular tile in a given rotation.
+     * This function returns a SDL-Surface of a tile in a given rotation.
+     * Loading/rotating of the tile is handled automatically if necessary.
+     * @param tile which tile to return
+     * @param rotation 0 - 3 for 0°, 90°, 180° or 270°
+     * @return SDL-Surface of the requested tile
+     */
+    const SDL_Surface *FUNC(getTile)(THIS, enum TileName tile, int rotation);
 
-    const SDL_Surface *FUNC(getTile)(THIS, int tile, int rotation);
+    /** Get real pixel position for a given coordinate.
+     * This function gives the upper left edge of a board coordinate in
+     * real pixels.
+     * @param x x-coordinate on the board
+     * @param y y-coordinate on the board
+     * @param px x component of pixel position
+     * @param py y component of pixel position
+     * @return non-zero on error (coordinate out of board range)
+     */
+    int FUNC(coordinatesToPixel)(THIS, int x, int y, Sint16 *px, Sint16 *py);
 };
 
 extern Screen getScreen(void);

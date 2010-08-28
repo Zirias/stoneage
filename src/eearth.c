@@ -1,25 +1,22 @@
 #include "eearth.h"
 #include "board.h"
-
-static void
-FUNC(parent_init)(THIS, Board b, int x, int y);
-
-static void
-m_init(THIS, Board b, int x, int y)
-{
-    METHOD(EEarth);
-
-    Entity e = CAST(this, Entity);
-    parent_init(e, b, x, y);
-
-    e->getSurface = b->getEarthTile;
-}
+#include "screen.h"
 
 static void
 m_dispose(THIS)
 {
     METHOD(EEarth);
     DELETE(EEarth, this);
+}
+
+static const SDL_Surface *
+m_getSurface(THIS)
+{
+    METHOD(EEarth);
+
+    Screen s = getScreen();
+    struct TileId id = { SATN_Earth, 0 };
+    return s->getTile(s, id);
 }
 
 CTOR(EEarth)
@@ -29,9 +26,8 @@ CTOR(EEarth)
     BASECTOR(EEarth, Entity);
 
     e = CAST(this, Entity);
-    parent_init = e->init;
-    e->init = &m_init;
     e->dispose = &m_dispose;
+    e->getSurface = &m_getSurface;
     return this;
 }
 

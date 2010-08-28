@@ -4,6 +4,7 @@
 #include "move.h"
 #include "event.h"
 #include "ehandler.h"
+#include "screen.h"
 
 static void
 FUNC(parent_init)(THIS, Board b, int x, int y);
@@ -79,8 +80,7 @@ m_init(THIS, Board b, int x, int y)
     Entity e = CAST(this, Entity);
     parent_init(e, b, x, y);
 
-    e->getSurface = b->getRockTile;
-    e->getBaseSurface = b->getEmptyTile;
+    e->getBackground = b->getEmptyBackground;
 }
 
 static void
@@ -102,6 +102,16 @@ m_fall(THIS)
     e->b->startMove(e->b, e->m);
 }
 
+static const SDL_Surface *
+m_getSurface(THIS)
+{
+    METHOD(ERock);
+
+    Screen s = getScreen();
+    struct TileId id = { SATN_Rock, 0 };
+    return s->getTile(s, id);
+}
+
 CTOR(ERock)
 {
     Entity e;
@@ -113,6 +123,7 @@ CTOR(ERock)
     parent_init = e->init;
     e->init = &m_init;
     e->dispose = &m_dispose;
+    e->getSurface = &m_getSurface;
     this->fall = &m_fall;
     return this;
 }

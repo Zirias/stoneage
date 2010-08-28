@@ -1,18 +1,39 @@
+#include <SDL_rotozoom.h>
+#include <SDL_image.h>
+
 #include "screen.h"
+#include "level.h"
 #include "resfile.h"
 #include "resource.h"
+#include "board.h"
 #include "app.h"
 
 static Screen _instance;
 
+static const char **tileNameStrings =
+{
+    "tile_empty",
+    "tile_empty_1",
+    "tile_empty_2a",
+    "tile_empty_2f",
+    "tile_empty_3",
+    "tile_empty_4",
+    "tile_corner",
+    "tile_earth",
+    "tile_wall",
+    "tile_wall_v",
+    "tile_wall_h",
+    "tile_rock",
+    "tile_cabbage",
+    "tile_willy"
+};
+
 struct Screen_impl
 {
-    Resfile graphics;
     Resource res[SATN_NumberOfTiles];
     SDL_Surface * tiles[SATN_NumberOfTiles][4];
 
-    int off_x;
-    int off_y;
+    Board board;
 
     int tile_width;
     int tile_height;
@@ -111,19 +132,12 @@ freeSurfaces(struct Screen_impl *s)
     for (tile = (SDL_surface **) s->tiles; tile != tile_end; ++tile)
     {
 	if (*tile) SDL_FreeSurface(*tile);
+	*tile = NULL;
     }
 }
 
-static struct Resfile *
-getGraphics(THIS)
-{
-    METHOD(Screen);
-
-    return this->pimpl->graphics;
-}
-
 static const SDL_Surface *
-getTile(THIS, int tile, int rotation)
+m_getTile(THIS, enum TileName tile, int rotation)
 {
     METHOD(Screen);
 
@@ -137,14 +151,48 @@ getTile(THIS, int tile, int rotation)
 	}
 	else
 	{
+	    s->tiles[tile][rotation] = createScaledSurface(
+		    s->res[tile], s->tile_width, s->tile_height);
 	}
     }
     return s->tiles[tile][rotation];
 }
 
+static int
+m_coordinatesToPixel(THIS, int x, int y, Sint16 *px, Sint16 *py)
+{
+    METHOD(Screen);
+
+    if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return -1;
+    *px = this->pimpl->tile_width * x + this->pimpl->off_x;
+    *py = this->pimpl->tile_height * y + this->pimpl->off_y;
+    return 0;
+}
+
+static void
+m_initVideo(THIS)
+{
+    METHOD(Screen);
+
+    struct Screen_impl *s = this->pimpl;
+
+    freeSdlSurfaces(this);
+
+    SDL_Surface *screen = SDL_GetVideoSurface();
+    s->tile_width = screen->w / (LVL_COLS + 1);
+    s->tile_height = screen->h / (LVL_ROWS + 6);
+    s->off_x = s->tile_width / 2;
+    s->off_y = s->tile_height / 2;
+    s->board->setTileSize(s->board,
+	    s->tile_width, s->tile_height);
+    s->board->redraw(s->board);
+}
+
 CTOR(Screen)
 {
     struct Screen_impl *s;
+    Resfile rf;
+    int i;
 #ifndef SDL_IMG_OLD
     int imgflags;
 #endif
@@ -165,14 +213,28 @@ CTOR(Screen)
     memset(s, 0, sizeof(struct Screen_impl));
     this->pimpl = s;
 
-    s->graphics = NEW(Resfile);
-    s->graphics->setFile(s->graphics, RES_GFX);
-    if (s->graphics->open(s->graphics, 0) < 0)
+    this->getTile = &m_getTile;
+    this->coordinatesToPixel = &m_coordinatesToPixel;
+
+    rf = NEW(Resfile);
+    rf->setFile(rf, RES_GFX);
+    if (rf->open(rf, 0) < 0)
     {
-	DELETE(Resfile, s->graphics);
+	DELETE(Resfile, rf);
 	log_err("Error loading graphics from `" RES_GFX "'.\n");
 	mainApp->abort(mainApp);
     }
+    for (i = 0; i < SATN_NumberOfTiles; ++i)
+    {
+	rf->load(rf, tileNameStrings[i], &(s->res[i]));
+	if (!s->res[i])
+	{
+	    DELETE(Resfile, rf);
+	    log_err("Error loading tiles.\n");
+	    mainApp->abort(mainApp);
+	}
+    }
+    DELETE(Resfile, rf);
 
     return this;
 }
@@ -181,7 +243,6 @@ DTOR(Screen)
 {
     freeSurfaces(this->pimpl);
     this->pimpl->graphics->close(this->graphics);
-    DELETE(Resfile, this->pimpl->graphics);
 
 #ifndef SDL_IMG_OLD
     IMG_Quit();
