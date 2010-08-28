@@ -36,13 +36,11 @@ typedef struct BlitSequence *BlitSequence;
 struct BlitSequence
 {
     int n;
-    SDL_Surface *blits[16];
+    const SDL_Surface *blits[16];
 };
 
 struct Board_impl
 {
-    SDL_Surface *screen;
-
     Move movelist;
 
     SDL_TimerID moveticker;
@@ -96,7 +94,7 @@ scanLevel(Board b)
 }
 
 static void
-moveStep(Board b, Move m)
+moveStep(Board this, Move m)
 {
     int done;
     int tw, th;
@@ -104,37 +102,41 @@ moveStep(Board b, Move m)
     Entity e;
     Entity d;
     Event ev;
+    
+    Screen s = getScreen();
+    SDL_Surface *sf = SDL_GetVideoSurface();
+    struct Board_impl *b = this->pimpl;
 
     e = m->entity(m);
-    tw = b->pimpl->tile_width;
-    th = b->pimpl->tile_height;
-    b->coordinatesToPixel(b, e->x, e->y, &dirty.x, &dirty.y);
+    tw = b->drawArea.w;
+    th = b->drawArea.h;
+    s->coordinatesToPixel(s, e->x, e->y, &dirty.x, &dirty.y);
     dirty.w = tw;
     dirty.h = th;
 
     if (m->rel != MR_Slave)
-	b->draw(b, e->x, e->y, 0);
+	this->draw(this, e->x, e->y, 0);
     if (m->rel != MR_Master)
     {
 	if (m->dx)
 	{
-	    b->draw(b, e->x + m->dx, e->y, 0);
+	    this->draw(this, e->x + m->dx, e->y, 0);
 	    if (m->dx < 0) dirty.x -= tw;
 	    dirty.w += tw;
 	}
 	if (m->dy)
 	{
-	    b->draw(b, e->x, e->y + m->dy, 0);
+	    this->draw(this, e->x, e->y + m->dy, 0);
 	    if (m->dy < 0) dirty.y -= th;
 	    dirty.h += th;
 	}
-	if (m->dx && m->dy) b->draw(b, e->x + m->dx, e->y + m->dy, 0);
+	if (m->dx && m->dy) this->draw(this, e->x + m->dx, e->y + m->dy, 0);
     }
 
-    done = m->step(m, &drawArea.x, &drawArea.y);
+    done = m->step(m, &(b->drawArea.x), &(b->drawArea.y));
     SDL_BlitSurface((SDL_Surface *)e->getSurface(e),
-	    0, b->pimpl->screen, &drawArea);
-    SDL_UpdateRects(b->pimpl->screen, 1, &dirty);
+	    0, sf, &(b->drawArea));
+    SDL_UpdateRects(sf, 1, &dirty);
 
     if (done)
     {
@@ -144,33 +146,33 @@ moveStep(Board b, Move m)
 	}
 	else
 	{
-	    b->pimpl->movelist = m->next;
+	    b->movelist = m->next;
 	}
 	if (m->next)
 	{
 	    m->next->prev = m->prev;
 	}
-	b->pimpl->entity[e->y][e->x] = 0;
+	b->entity[e->y][e->x] = 0;
 	e->x += m->dx;
 	e->y += m->dy;
 	e->m = 0;
-	d = b->pimpl->entity[e->y][e->x];
+	d = b->entity[e->y][e->x];
 	if (d)
 	{
 	    if (CAST(d, ECabbage))
 	    {
-		b->pimpl->num_cabbages--;
+		b->num_cabbages--;
 	    }
 	    if (!CAST(d, EWilly)) d->dispose(d);
 	}
-	b->pimpl->entity[e->y][e->x] = e;
+	b->entity[e->y][e->x] = e;
 
 	if (m->rel != MR_Slave)
 	{
 	    /* don't give the slave of a move any events */
 
 	    ev = NEW(Event);
-	    ev->sender = CAST(b, Object);
+	    ev->sender = CAST(this, Object);
 	    ev->handler = CAST(e, EHandler);
 	    ev->type = SAEV_MoveFinished;
 	    RaiseEvent(ev);
@@ -178,19 +180,19 @@ moveStep(Board b, Move m)
 
 	DELETE(Move, m);
 
-	checkRocks(b);
+	checkRocks(this);
 
-	if (!b->pimpl->movelist)
+	if (!b->movelist)
 	{
 	    /* all moves finished, unfreeze willy */
 	    getWilly()->moveLock = 0;
 	}
     }
 
-    if (!b->pimpl->num_cabbages) {
-	b->pimpl->level++;
-	if (b->pimpl->level >= BUILTIN_LEVELS) b->pimpl->level = 0;
-	b->loadLevel(b, -1);
+    if (!b->num_cabbages) {
+	b->level++;
+	if (b->level >= BUILTIN_LEVELS) b->level = 0;
+	this->loadLevel(this, -1);
     }
 }
 
@@ -268,7 +270,6 @@ m_draw(THIS, int x, int y, int refresh)
 {
     METHOD(Board);
 
-    SDL_Surface *screen;
     const SDL_Surface *tile;
     struct BlitSequence base;
     int drawBase;
@@ -276,12 +277,14 @@ m_draw(THIS, int x, int y, int refresh)
     int i;
 
     Screen s = getScreen();
-    if (s->coordinatesToPixel(this, x, y, &drawArea.x, &drawArea.y) < 0)
+    SDL_Surface *sf = SDL_GetVideoSurface();
+    struct Board_impl *b = this->pimpl;
+
+    if (s->coordinatesToPixel(s, x, y,
+		&(b->drawArea.x), &(b->drawArea.y)) < 0)
 	return;
 
-    e = this->pimpl->entity[y][x];
-
-    screen = this->pimpl->screen;
+    e = b->entity[y][x];
 
     drawBase = 0;
     tile = 0;
@@ -297,19 +300,20 @@ m_draw(THIS, int x, int y, int refresh)
     }
     else
     {
-	this->getEmptyTile(this, x, y, &base);
+	this->getEmptyBackground(this, x, y, &base);
 	drawBase = 1;
     }
 
     if (drawBase) for (i=0; i<base.n; ++i)
-	SDL_BlitSurface(base.blits[i], 0, screen, &drawArea);
+	SDL_BlitSurface((SDL_Surface *)base.blits[i],
+		0, sf, &(b->drawArea));
 
 
     if (tile && !e->m)
-	SDL_BlitSurface((SDL_Surface *)tile, 0, screen, &drawArea);
+	SDL_BlitSurface((SDL_Surface *)tile, 0, sf, &(b->drawArea));
 
     if (refresh)
-	SDL_UpdateRects(screen, 1, &drawArea);
+	SDL_UpdateRects(sf, 1, &(b->drawArea));
 }
 
 static void
@@ -319,13 +323,16 @@ m_redraw(THIS)
     int x, y;
 
     struct Board_impl *b = this->pimpl;
+    SDL_Surface *sf = SDL_GetVideoSurface();
+
+    if (b->level < 0) return;
 
     for (y = 0; y < LVL_ROWS; ++y)
 	for (x = 0; x < LVL_COLS; ++x)
 	    this->draw(this, x, y, 0);
 
-    SDL_UpdateRect(b->screen, b->off_x, b->off_y,
-	    drawArea.w * LVL_COLS, drawArea.h * LVL_ROWS);
+    SDL_UpdateRect(sf, b->off_x, b->off_y,
+	    b->drawArea.w * LVL_COLS, b->drawArea.h * LVL_ROWS);
 }
 
 static int
@@ -413,32 +420,32 @@ m_getEmptyBackground(THIS, int x, int y, void *buf)
     unsigned int n = calculateNeighbors(this, x, y);
 
     bs->n = 0;
-    bs->blits[bs->n++] = s->getTile(
+    bs->blits[bs->n++] = s->getTile(s,
 	    emptyTileTable[n][0], emptyTileTable[n][1]);
     if (!(n&(8|4)) && (y>0) && (x<LVL_COLS-1)
 	    && isSolidTile(this, x+1, y-1))
-	bs->blits[bs->n++] = s->getTile(SATN_Corner, 0);
+	bs->blits[bs->n++] = s->getTile(s, SATN_Corner, 0);
     if (!(n&(4|2)) && (y<LVL_ROWS-1) && (x<LVL_COLS-1)
 	    && isSolidTile(this, x+1, y+1))
-	bs->blits[bs->n++] = s->getTile(SATN_Corner, 1);
+	bs->blits[bs->n++] = s->getTile(s, SATN_Corner, 1);
     if (!(n&(2|1)) && (y<LVL_ROWS-1) && (x>0)
 	    && isSolidTile(this, x-1, y+1))
-	bs->blits[bs->n++] = s->getTile(SATN_Corner, 2);
+	bs->blits[bs->n++] = s->getTile(s, SATN_Corner, 2);
     if (!(n&(8|1)) && (y>0) && (x>0)
 	    && isSolidTile(this, x-1, y-1))
-	bs->blits[bs->n++] = s->getTile(SATN_Corner, 3);
+	bs->blits[bs->n++] = s->getTile(s, SATN_Corner, 3);
 }
 
 static void
 m_getEarthBackground(THIS, int x, int y, void *buf)
 {
-    METHOD(Board);
+    /* METHOD(Board); */
 
     Screen s = getScreen();
 
     BlitSequence bs = (BlitSequence)buf;
     bs->n = 1;
-    bs->blits[0] = s->getTile(SATN_Earth, 0);
+    bs->blits[0] = s->getTile(s, SATN_Earth, 0);
 }
 
 static void
@@ -460,33 +467,35 @@ m_loadLevel(THIS, int n)
 }
 
 static void
-m_setTileSize(THIS, int tile_width, int tile_height)
+m_setGeometry(THIS, int width, int height, int off_x, int off_y)
 {
     METHOD(Board);
 
     struct Board_impl *b = this->pimpl;
 
-    if (tile_width != b->drawArea.w || tile_height != b->drawArea.h)
+    if (width != b->drawArea.w || height != b->drawArea.h)
     {
-	b->drawArea.w = tile_width;
-	b->drawArea.h = tile_height;
-	computeTrajectories(b->drawArea.w, b->drawArea.h);
+	b->drawArea.w = width;
+	b->drawArea.h = height;
+	computeTrajectories(width, height);
     }
+    b->off_x = off_x;
+    b->off_y = off_y;
 }
 
 CTOR(Board)
 {
     struct Board_impl *b;
-    Resfile rf;
 
     BASECTOR(Board, EHandler);
 
     b = XMALLOC(struct Board_impl, 1);
     memset(b, 0, sizeof(struct Board_impl));
+    b->level = -1;
     this->pimpl = b;
 
     ((EHandler)this)->handleEvent = &m_handleEvent;
-    this->setTileSize = &m_setTileSize;
+    this->setGeometry = &m_setGeometry;
     this->loadLevel = &m_loadLevel;
     this->redraw = &m_redraw;
     this->draw = &m_draw;
@@ -495,15 +504,11 @@ CTOR(Board)
     this->getEmptyBackground = &m_getEmptyBackground;
     this->getEarthBackground = &m_getEarthBackground;
 
-    this->initVideo(this);
-
     return this;
 }
 
 DTOR(Board)
 {
-    struct Board_impl *b = this->pimpl;
-
     internal_clear(this);
 
     XFREE(this->pimpl);

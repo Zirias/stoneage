@@ -4,7 +4,7 @@
 #include <SDL.h>
 
 #include "entity.h"
-#include "board.h"
+#include "screen.h"
 
 struct Move_impl
 {
@@ -64,11 +64,12 @@ m_init(THIS, Entity e, int dx, int dy, Trajectory t)
 {
     METHOD(Move);
 
+    Screen s = getScreen();
     struct Move_impl *p = this->pimpl;
 
     p->e = e;
-    e->b->coordinatesToPixel(e->b, e->x, e->y, &p->x, &p->y);
-    e->b->coordinatesToPixel(e->b, e->x + dx, e->y + dy, &p->tx, &p->ty);
+    s->coordinatesToPixel(s, e->x, e->y, &p->x, &p->y);
+    s->coordinatesToPixel(s, e->x + dx, e->y + dy, &p->tx, &p->ty);
 
     p->step = 0;
     p->t = &(pTables[t]);

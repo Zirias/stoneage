@@ -105,11 +105,10 @@ m_fall(THIS)
 static const SDL_Surface *
 m_getSurface(THIS)
 {
-    METHOD(ERock);
+    /* METHOD(ERock); */
 
     Screen s = getScreen();
-    struct TileId id = { SATN_Rock, 0 };
-    return s->getTile(s, id);
+    return s->getTile(s, SATN_Rock, 0);
 }
 
 CTOR(ERock)

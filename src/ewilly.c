@@ -108,11 +108,10 @@ m_dispose(THIS)
 static const SDL_Surface *
 m_getSurface(THIS)
 {
-    METHOD(EWilly);
+    /* METHOD(EWilly); */
 
     Screen s = getScreen();
-    struct TileId id = { SATN_Willy, 0 };
-    return s->getTile(s, id);
+    return s->getTile(s, SATN_Willy, 0);
 }
 
 CTOR(EWilly)
