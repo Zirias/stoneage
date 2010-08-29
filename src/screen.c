@@ -148,8 +148,8 @@ m_getTile(THIS, enum TileName tile, int rotation)
     {
 	if (rotation)
 	{
-	    s->tiles[tile][rotation] = rotateSurface(
-		    (SDL_Surface *)this->getTile(this, tile, 0), rotation);
+	    s->tiles[tile][rotation] = scaleSurface(loadPngSurface(
+		    s->res[tile]), s->tile_width, s->tile_height, rotation);
 	}
 	else
 	{
