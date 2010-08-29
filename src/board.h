@@ -25,11 +25,18 @@ CLASS(Board)
 
     struct Board_impl *pimpl; /**< @private */
 
-    /** Initialize the display of the board.
-     * This method must be called whenever the video-mode changes.
-     * It calulates tile sizes.
+    /** Set geometry information of the board.
+     * This must be called when the size of a tile is about to change, e.g.
+     * due to a new screen resolution. The drawing rectangle for SDL drawing
+     * functions and the individual points of movement trajectories are
+     * calculated when this is called.
+     * @param width new width of a tile
+     * @param height new height of a tile
+     * @param off_x x offset for the whole board
+     * @param off_y y offset for the whole board
      */
-    void FUNC(initVideo)(THIS);
+    void FUNC(setGeometry)(THIS, int width, int height,
+	    int off_x, int off_y);
 
     /** Load and start a level.
      * STUB
@@ -37,8 +44,9 @@ CLASS(Board)
     void FUNC(loadLevel)(THIS, int n);
 
     /** Redraws the whole Board.
+     * @param refresh flag indicating whether to call SDL_UpdateRect()
      */
-    void FUNC(redraw)(THIS);
+    void FUNC(redraw)(THIS, int refresh);
 
     /** Draw tile at the given position.
      * The given position is checked for a game entity. If one is found,
@@ -49,17 +57,6 @@ CLASS(Board)
      * @param refresh flag indicating whether to call SDL_UpdateRects()
      */
     void FUNC(draw)(THIS, int x, int y, int refresh);
-
-    /** Get real pixel position for a given coordinate.
-     * This function gives the upper left edge of a board coordinate in
-     * real pixels.
-     * @param x x-coordinate on the board
-     * @param y y-coordinate on the board
-     * @param px x component of pixel position
-     * @param py y component of pixel position
-     * @return non-zero on error (coordinate out of board range)
-     */
-    int FUNC(coordinatesToPixel)(THIS, int x, int y, Sint16 *px, Sint16 *py);
 
     /** Get entity at given position.
      * @param x x-coordinate on the board
@@ -75,15 +72,15 @@ CLASS(Board)
      */
     void FUNC(startMove)(THIS, struct Move *m);
 
-    /** Get SDL Surface with "Empty" Tile suitable for the given position.
+    /** Get SDL Surfaces with "Empty" Tiles suitable for the given position.
      * @return SDL Surface
      */
-    void FUNC(getEmptyTile)(THIS, int x, int y, void *buf);
+    void FUNC(getEmptyBackground)(THIS, int x, int y, void *buf);
 
-    /** Get SDL Surface with "Earth" Tile suitable for the given position.
+    /** Get SDL Surfaces with "Earth" Tiles suitable for the given position.
      * @return SDL Surface
      */
-    void FUNC(getEarthBaseTile)(THIS, int x, int y, void *buf);
+    void FUNC(getEarthBackground)(THIS, int x, int y, void *buf);
 
     /** Get SDL Surface with "Earth" Tile.
      * @return SDL Surface

@@ -1,4 +1,5 @@
 #include "stoneage.h"
+#include "screen.h"
 #include "board.h"
 #include "event.h"
 #include "ewilly.h"
@@ -45,9 +46,11 @@ setupVideo(Stoneage this)
 static void
 toggleFullscreen(Stoneage this)
 {
+    Screen s = getScreen();
+
     this->modeflags ^= (SDL_HWSURFACE|SDL_FULLSCREEN);
     setupVideo(this);
-    this->board->initVideo(this->board);
+    s->initVideo(s);
 }
 
 static void
@@ -106,6 +109,9 @@ checkKeys(Stoneage this)
 static void
 handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 {
+    Screen s;
+    Board b;
+
     if (e->state == SDL_PRESSED)
     {
 	if (e->keysym.mod & KMOD_ALT)
@@ -124,7 +130,9 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 	    switch (e->keysym.sym)
 	    {
 		case SDLK_n:
-		    this->board->loadLevel(this->board, -1);
+		    s = getScreen();
+		    b = s->getBoard(s);
+		    b->loadLevel(b, -1);
 		    break;
 		default:
 		    ;
@@ -161,10 +169,12 @@ m_run(THIS, int argc, char **argv)
 
     SDL_Event event;
     int running;
+    Screen s;
 
+    s = getScreen();
     setupVideo(this);
-    this->board = NEW(Board);
-    this->board->loadLevel(this->board, 0);
+    s->initVideo(s);
+    s->startGame(s);
 
     running = 1;
     keyState = SDL_GetKeyState(0);
@@ -236,7 +246,6 @@ CTOR(Stoneage)
 
 DTOR(Stoneage)
 {
-    DELETE(Board, this->board);
     SDL_RemoveTimer(this->ticker);
     SDL_Quit();
     BASEDTOR(App);

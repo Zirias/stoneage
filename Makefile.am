@@ -23,7 +23,7 @@ maintainer-clean-local:
 	rm -fr resbuild bin
 
 dist_pkgdata_DATA = bin/gfx.sar
-EXTRA_DIST = VERSION bin/stoneage.ico src/icon.h src/icon.c src/icondat.h src/stoneage.rc
+EXTRA_DIST = VERSION bin/stoneage.ico src/icon.h src/icon.c src/icondat.h
 
 if BUILD_RESOURCES
 
@@ -53,6 +53,12 @@ resbuild/tearth.png: gfx/tiles.xcf
 
 resbuild/twall.png: gfx/tiles.xcf
 	$(V_X2P)$(XCF2PNG) -o resbuild/twall.png gfx/tiles.xcf wall
+
+resbuild/twall_v.png: gfx/tiles.xcf
+	$(V_X2P)$(XCF2PNG) -o resbuild/twall_v.png gfx/tiles.xcf wall_v
+
+resbuild/twall_h.png: gfx/tiles.xcf
+	$(V_X2P)$(XCF2PNG) -o resbuild/twall_h.png gfx/tiles.xcf wall_h
 
 resbuild/trock.png: gfx/tiles.xcf
 	$(V_X2P)$(XCF2PNG) -A -o resbuild/trock.png gfx/tiles.xcf rock
@@ -86,7 +92,7 @@ resbuild/stoneage.bmp: resbuild/twilly.png
 src/icondat.h: resbuild/stoneage.bmp
 	$(AM_V_GEN)$(XXD) -i resbuild/stoneage.bmp src/icondat.h
 
-bin/gfx.sar: bin/samkres$(EXEEXT) resbuild/tempty.png resbuild/tempty_1.png resbuild/tempty_2f.png resbuild/tempty_2a.png resbuild/tempty_3.png resbuild/tempty_4.png resbuild/tcorner.png resbuild/tearth.png resbuild/twall.png resbuild/trock.png resbuild/tcabbage.png resbuild/twilly.png
+bin/gfx.sar: bin/samkres$(EXEEXT) resbuild/tempty.png resbuild/tempty_1.png resbuild/tempty_2f.png resbuild/tempty_2a.png resbuild/tempty_3.png resbuild/tempty_4.png resbuild/tcorner.png resbuild/tearth.png resbuild/twall.png resbuild/twall_v.png resbuild/twall_h.png resbuild/trock.png resbuild/tcabbage.png resbuild/twilly.png
 	$(AM_V_GEN) rm -f bin/gfx.sar && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/tempty.png tile_empty && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/tempty_1.png tile_empty_1 && \
@@ -97,6 +103,8 @@ bin/gfx.sar: bin/samkres$(EXEEXT) resbuild/tempty.png resbuild/tempty_1.png resb
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/tcorner.png tile_corner && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/tearth.png tile_earth && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/twall.png tile_wall && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/twall_v.png tile_wall_v && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/twall_h.png tile_wall_h && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/trock.png tile_rock && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/tcabbage.png tile_cabbage && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/twilly.png tile_willy
@@ -118,6 +126,7 @@ bin_stoneage_SOURCES = src/common.h src/classes.h \
 	src/app.h src/app.c \
 	src/event.h src/event.c \
 	src/ehandler.h src/ehandler.c \
+	src/screen.h src/screen.c \
 	src/board.h src/board.c \
 	src/move.h src/move.c \
 	src/level.h src/level.c \
