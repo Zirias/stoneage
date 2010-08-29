@@ -25,7 +25,7 @@ CTOR(Entity)
     this->init = &m_init;
     this->dispose = &m_dispose;
     this->getSurface = 0;
-    this->getBaseSurface = 0;
+    this->getBackground = 0;
     return this;
 }
 

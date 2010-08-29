@@ -12,6 +12,7 @@
 enum Type {
     CLASS_Event,
     CLASS_EHandler,
+    CLASS_Screen,
     CLASS_Board,
     CLASS_Move,
     CLASS_Level,

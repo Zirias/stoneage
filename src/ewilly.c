@@ -1,6 +1,7 @@
 #include "ewilly.h"
 #include "board.h"
 #include "move.h"
+#include "screen.h"
 #include "event.h"
 #include "ewall.h"
 #include "eearth.h"
@@ -91,8 +92,7 @@ m_init(THIS, Board b, int x, int y)
     Entity e = CAST(this, Entity);
     parent_init(e, b, x, y);
 
-    e->getSurface = b->getWillyTile;
-    e->getBaseSurface = b->getEmptyTile;
+    e->getBackground = b->getEmptyBackground;
     this->moveLock = 0;
     this->alive = 1;
     instance = this;
@@ -103,6 +103,15 @@ m_dispose(THIS)
 {
     METHOD(EWilly);
     DELETE(EWilly, this);
+}
+
+static const SDL_Surface *
+m_getSurface(THIS)
+{
+    /* METHOD(EWilly); */
+
+    Screen s = getScreen();
+    return s->getTile(s, SATN_Willy, 0);
 }
 
 CTOR(EWilly)
@@ -116,6 +125,7 @@ CTOR(EWilly)
     parent_init = e->init;
     e->init = &m_init;
     e->dispose = &m_dispose;
+    e->getSurface = &m_getSurface;
     return this;
 }
 
