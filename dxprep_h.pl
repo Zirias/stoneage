@@ -41,7 +41,7 @@ while(<HEADER>)
 	}
 	elsif (/(\s*)(.*)FUNC\((.+?)\)\s*\(THIS(?:, )?(.*)\)/)
 	{
-		print "$1$2$3($4)\n";
+		print "$1$2$3($4);\n";
 	}
 	else
 	{

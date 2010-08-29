@@ -35,8 +35,7 @@ CLASS(Board)
      * @param off_x x offset for the whole board
      * @param off_y y offset for the whole board
      */
-    void FUNC(setGeometry)(THIS, int width, int height,
-	    int off_x, int off_y);
+    void FUNC(setGeometry)(THIS, int width, int height, int off_x, int off_y);
 
     /** Load and start a level.
      * STUB
