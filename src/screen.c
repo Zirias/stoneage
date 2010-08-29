@@ -180,6 +180,65 @@ m_coordinatesToPixel(THIS, int x, int y, Sint16 *px, Sint16 *py)
 }
 
 static void
+drawBoardFrame(Screen this)
+{
+    int max_x, max_y, control_top;
+    SDL_Rect drawArea;
+    const SDL_Surface *frameTile;
+
+    struct Screen_impl *s = this->pimpl;
+    SDL_Surface *sf = SDL_GetVideoSurface();
+
+    max_x = LVL_COLS * s->tile_width + s->off_x;
+    max_y = LVL_ROWS * s->tile_height + s->off_y;
+
+    drawArea.w = s->tile_width;
+    drawArea.h = s->tile_height / 2;
+    frameTile = this->getTile(this, SATN_Wall_h, 0);
+
+    drawArea.y = 0;
+    for (drawArea.x = 0; drawArea.x < max_x; drawArea.x += s->tile_width)
+	SDL_BlitSurface((SDL_Surface *)frameTile, 0, sf, &drawArea);
+    drawArea.y = max_y;
+    for (drawArea.x = 0; drawArea.x < max_x; drawArea.x += s->tile_width)
+	SDL_BlitSurface((SDL_Surface *)frameTile, 0, sf, &drawArea);
+
+    drawArea.w = s->tile_width / 2;
+    drawArea.h = s->tile_height;
+    frameTile = this->getTile(this, SATN_Wall_v, 0);
+
+    drawArea.x = 0;
+    for (drawArea.y = s->off_y; drawArea.y < max_y;
+	    drawArea.y += s->tile_height)
+	SDL_BlitSurface((SDL_Surface *)frameTile, 0, sf, &drawArea);
+    drawArea.x = max_x;
+    for (drawArea.y = s->off_y; drawArea.y < max_y;
+	    drawArea.y += s->tile_height)
+	SDL_BlitSurface((SDL_Surface *)frameTile, 0, sf, &drawArea);
+
+    control_top = (LVL_ROWS + 1) * s->tile_height;
+    max_y = control_top + 4 * s->tile_height;
+
+    drawArea.w = s->tile_width;
+    frameTile = this->getTile(this, SATN_Wall, 0);
+
+    drawArea.y = max_y;
+    for (drawArea.x = 0; drawArea.x < max_x; drawArea.x += s->tile_width)
+	SDL_BlitSurface((SDL_Surface *)frameTile, 0, sf, &drawArea);
+
+    drawArea.x = 0;
+    for (drawArea.y = control_top; drawArea.y < max_y;
+	    drawArea.y += s->tile_height)
+	SDL_BlitSurface((SDL_Surface *)frameTile, 0, sf, &drawArea);
+    drawArea.x = max_x - s->off_x;
+    for (drawArea.y = control_top; drawArea.y < max_y;
+	    drawArea.y += s->tile_height)
+	SDL_BlitSurface((SDL_Surface *)frameTile, 0, sf, &drawArea);
+
+    SDL_UpdateRect(sf, 0, 0, 0, 0);
+}
+
+static void
 m_initVideo(THIS)
 {
     METHOD(Screen);
@@ -196,7 +255,8 @@ m_initVideo(THIS)
     s->off_y = s->tile_height / 2;
     s->board->setGeometry(s->board,
 	    s->tile_width, s->tile_height, s->off_x, s->off_y);
-    s->board->redraw(s->board);
+    s->board->redraw(s->board, 0);
+    drawBoardFrame(this);
 }
 
 static void

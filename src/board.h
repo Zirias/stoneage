@@ -44,8 +44,9 @@ CLASS(Board)
     void FUNC(loadLevel)(THIS, int n);
 
     /** Redraws the whole Board.
+     * @param refresh flag indicating whether to call SDL_UpdateRect()
      */
-    void FUNC(redraw)(THIS);
+    void FUNC(redraw)(THIS, int refresh);
 
     /** Draw tile at the given position.
      * The given position is checked for a game entity. If one is found,

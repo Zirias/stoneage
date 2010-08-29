@@ -317,7 +317,7 @@ m_draw(THIS, int x, int y, int refresh)
 }
 
 static void
-m_redraw(THIS)
+m_redraw(THIS, int refresh)
 {
     METHOD(Board);
     int x, y;
@@ -330,6 +330,8 @@ m_redraw(THIS)
     for (y = 0; y < LVL_ROWS; ++y)
 	for (x = 0; x < LVL_COLS; ++x)
 	    this->draw(this, x, y, 0);
+
+    if (!refresh) return;
 
     SDL_UpdateRect(sf, b->off_x, b->off_y,
 	    b->drawArea.w * LVL_COLS, b->drawArea.h * LVL_ROWS);
@@ -462,7 +464,7 @@ m_loadLevel(THIS, int n)
     DELETE(Level, l);
     this->pimpl->level = n;
     scanLevel(this);
-    this->redraw(this);
+    this->redraw(this, 1);
     checkRocks(this);
 }
 
