@@ -9,7 +9,7 @@
 #include "board.h"
 #include "app.h"
 
-static Screen _instance = NULL;
+static Screen _instance = 0;
 
 static const char *tileNameStrings[] =
 {
@@ -141,12 +141,12 @@ freeSurfaces(struct Screen_impl *s)
     for (tile = (SDL_Surface **) s->tiles; tile != tile_end; ++tile)
     {
 	if (*tile) SDL_FreeSurface(*tile);
-	*tile = NULL;
+	*tile = 0;
     }
     for (i = 0; i < 10; ++i)
     {
 	if (s->digits[i]) SDL_FreeSurface(s->digits[i]);
-	s->digits[i] = NULL;
+	s->digits[i] = 0;
     }
 }
 
@@ -383,7 +383,7 @@ CTOR(Screen)
     {
 	rf->load(rf, digitRes, &(s->resDigits[i]));
 	digitRes[6]++;
-	if (!s->res[i])
+	if (!s->resDigits[i])
 	{
 	    DELETE(Resfile, rf);
 	    log_err("Error loading digits.\n");
