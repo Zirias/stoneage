@@ -10,6 +10,14 @@ struct Screen_impl;
 struct Resfile;
 struct Board;
 
+/** @file screen.h
+ * Includes definition of class Screen
+ */
+
+/** The different types of tile graphics
+ * This is a collection of symbolic names for the tile graphics used in the
+ * game
+ */
 enum TileName
 {
     SATN_Empty,
@@ -29,6 +37,11 @@ enum TileName
     SATN_NumberOfTiles
 };
 
+/** This class represents the whole SDL screen.
+ * The screen class includes primitives for loading, scaling and rotating
+ * tile graphics as well as managing the position of the Board and the
+ * size of the tiles.
+ */
 CLASS(Screen)
 {
     INHERIT(Object);
