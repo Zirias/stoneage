@@ -173,6 +173,8 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 		    }
 		    else
 		    {
+			simpl->lastTimerTicks =
+			    SDL_GetTicks() - simpl->remainingTimerTicks;
 			simpl->ticker = SDL_AddTimer(
 				simpl->remainingTimerTicks,
 				&createTickerEvent, this);
