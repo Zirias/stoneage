@@ -119,6 +119,34 @@ checkKeys(Stoneage this)
 }
 
 static void
+handlePause(Stoneage this)
+{
+    Screen s;
+    Board b;
+
+    struct Stoneage_impl *simpl = this->pimpl;
+
+    s = getScreen();
+    b = s->getBoard(s);
+    if (simpl->paused)
+    {
+	SDL_RemoveTimer(simpl->ticker);
+	simpl->remainingTimerTicks = 1000 -
+	    ( SDL_GetTicks() - simpl->lastTimerTicks );
+	b->setPaused(b, 1);
+    }
+    else
+    {
+	simpl->lastTimerTicks =
+	    SDL_GetTicks() - simpl->remainingTimerTicks;
+	simpl->ticker = SDL_AddTimer(
+		simpl->remainingTimerTicks,
+		&createTickerEvent, this);
+	b->setPaused(b, 0);
+    }
+}
+
+static void
 handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 {
     Screen s;
@@ -165,24 +193,7 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 		    break;
 		case SDLK_p:
 		    simpl->paused ^= 1;
-		    s = getScreen();
-		    b = s->getBoard(s);
-		    if (simpl->paused)
-		    {
-			SDL_RemoveTimer(simpl->ticker);
-			simpl->remainingTimerTicks = 1000 -
-			    ( SDL_GetTicks() - simpl->lastTimerTicks );
-			b->setPaused(b, 1);
-		    }
-		    else
-		    {
-			simpl->lastTimerTicks =
-			    SDL_GetTicks() - simpl->remainingTimerTicks;
-			simpl->ticker = SDL_AddTimer(
-				simpl->remainingTimerTicks,
-				&createTickerEvent, this);
-			b->setPaused(b, 0);
-		    }
+		    handlePause(this);
 		    break;
 		default:
 		    ;
@@ -240,6 +251,15 @@ m_run(THIS, int argc, char **argv)
 		handleKeyboardEvent(this, &event.key);
 		break;
 
+	    case SDL_ACTIVEEVENT:
+		if ((event.active.gain == 0)
+			&& (event.active.state == SDL_APPINPUTFOCUS)
+			&& (! this->pimpl->paused))
+		{
+		    this->pimpl->paused = 1;
+		    handlePause(this);
+		}
+		break;
 	    case SDL_QUIT:
 		running = 0;
 		break;
