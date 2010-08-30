@@ -71,6 +71,12 @@ CLASS(Board)
      */
     void FUNC(startMove)(THIS, struct Move *m);
 
+    /** Sets paused state
+     * Pauses or unpauses the movements on the board.
+     * @param paused 1 for pause, 0 for resume
+     */
+    void FUNC(setPaused)(THIS, int paused);
+
     /** Get SDL Surfaces with "Empty" Tiles suitable for the given position.
      * @return SDL Surface
      */

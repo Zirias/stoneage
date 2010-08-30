@@ -48,6 +48,7 @@ struct Board_impl
     int num_rocks;
     int num_cabbages;
     int level;
+    int paused;
 
     SDL_Rect drawArea;
     int off_x;
@@ -348,9 +349,41 @@ m_entity(THIS, int x, int y, Entity *e)
 }
 
 static void
+m_setPaused(THIS, int paused)
+{
+    METHOD(Board);
+
+    struct Board_impl *b = this->pimpl;
+
+    if (paused)
+    {
+	b->paused = 1;
+	if (b->moveticker)
+	{
+	    SDL_RemoveTimer(b->moveticker);
+	    b->moveticker = 0;
+	}
+    }
+    else
+    {
+	if (b->movelist)
+	{
+	    b->moveticker = SDL_AddTimer(20, &createMoveTickEvent, this);
+	}
+	else
+	{
+	    checkRocks(this);
+	}
+	b->paused = 0;
+    }
+}
+
+static void
 m_startMove(THIS, Move m)
 {
     METHOD(Board);
+
+    if (this->pimpl->paused) return;
 
     if (this->pimpl->movelist) 
     {
@@ -503,6 +536,7 @@ CTOR(Board)
     this->draw = &m_draw;
     this->entity = &m_entity;
     this->startMove = &m_startMove;
+    this->setPaused = &m_setPaused;
     this->getEmptyBackground = &m_getEmptyBackground;
     this->getEarthBackground = &m_getEarthBackground;
 

@@ -165,11 +165,14 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 		    break;
 		case SDLK_p:
 		    simpl->paused ^= 1;
+		    s = getScreen();
+		    b = s->getBoard(s);
 		    if (simpl->paused)
 		    {
 			SDL_RemoveTimer(simpl->ticker);
 			simpl->remainingTimerTicks = 1000 -
 			    ( SDL_GetTicks() - simpl->lastTimerTicks );
+			b->setPaused(b, 1);
 		    }
 		    else
 		    {
@@ -178,6 +181,7 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 			simpl->ticker = SDL_AddTimer(
 				simpl->remainingTimerTicks,
 				&createTickerEvent, this);
+			b->setPaused(b, 0);
 		    }
 		    break;
 		default:
