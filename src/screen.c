@@ -29,12 +29,20 @@ static const char *tileNameStrings[] =
     "tile_willy"
 };
 
+static const char *textNameStrings[] =
+{
+    "text_paused",
+    "text_time"
+};
+
 struct Screen_impl
 {
     Resource res[SATN_NumberOfTiles];
     SDL_Surface * tiles[SATN_NumberOfTiles][4];
     Resource resDigits[10];
     SDL_Surface * digits[10];
+    Resource resText[SATX_NumberOfTexts];
+    SDL_Surface * texts[SATX_NumberOfTexts];
 
     Board board;
 
@@ -172,6 +180,20 @@ m_getTile(THIS, enum TileName tile, int rotation)
     return s->tiles[tile][rotation];
 }
 
+static const SDL_Surface *
+m_getText(THIS, enum TextName text)
+{
+    METHOD(Screen);
+
+    struct Screen_impl *s = this->pimpl;
+    if (! s->texts[text])
+    {
+	s->texts[text] = createScaledSurface(s->resText[text],
+		s->tile_width, s->tile_height);
+    }
+    return s->texts[text];
+}
+
 static Board
 m_getBoard(THIS)
 {
@@ -246,6 +268,12 @@ drawBoardFrame(Screen this)
     for (drawArea.y = control_top; drawArea.y < max_y;
 	    drawArea.y += s->tile_height)
 	SDL_BlitSurface((SDL_Surface *)frameTile, 0, sf, &drawArea);
+
+    drawArea.x = (LVL_COLS - 9) * s->tile_width + s->off_x;
+    drawArea.y = (LVL_ROWS + 3) * s->tile_height;
+    frameTile = this->getText(this, SATX_Time);
+    drawArea.w = frameTile->w;
+    SDL_BlitSurface((SDL_Surface *)frameTile, 0, sf, &drawArea);
 }
 
 static void
@@ -354,6 +382,7 @@ CTOR(Screen)
     this->pimpl = s;
 
     this->getTile = &m_getTile;
+    this->getText = &m_getText;
     this->getBoard = &m_getBoard;
     this->coordinatesToPixel = &m_coordinatesToPixel;
     this->initVideo = &m_initVideo;
@@ -378,6 +407,16 @@ CTOR(Screen)
 	    mainApp->abort(mainApp);
 	}
     }
+    for (i = 0; i < SATX_NumberOfTexts; ++i)
+    {
+	rf->load(rf, textNameStrings[i], &(s->resText[i]));
+	if (!s->resText[i])
+	{
+	    DELETE(Resfile, rf);
+	    log_err("Error loading text graphics.\n");
+	    mainApp->abort(mainApp);
+	}
+    }
     digitRes[6] = '0';
     for (i = 0; i < 10; ++i)
     {
@@ -386,7 +425,7 @@ CTOR(Screen)
 	if (!s->resDigits[i])
 	{
 	    DELETE(Resfile, rf);
-	    log_err("Error loading digits.\n");
+	    log_err("Error loading digit graphics.\n");
 	    mainApp->abort(mainApp);
 	}
     }

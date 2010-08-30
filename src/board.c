@@ -353,7 +353,13 @@ m_setPaused(THIS, int paused)
 {
     METHOD(Board);
 
+    SDL_Surface *surface;
+    int x, y;
+    SDL_Rect drawArea;
+
     struct Board_impl *b = this->pimpl;
+    Screen s = getScreen();
+    SDL_Surface *sf = SDL_GetVideoSurface();
 
     if (paused)
     {
@@ -363,6 +369,22 @@ m_setPaused(THIS, int paused)
 	    SDL_RemoveTimer(b->moveticker);
 	    b->moveticker = 0;
 	}
+	surface = (SDL_Surface *)s->getTile(s, SATN_Empty, 0);
+	drawArea.w = b->drawArea.w;
+	drawArea.h = b->drawArea.h;
+	for (y = 0; y < LVL_ROWS; ++y) for (x = 0; x < LVL_COLS; ++x)
+	{
+	    s->coordinatesToPixel(s, x, y,
+		    &drawArea.x, &drawArea.y);
+	    SDL_BlitSurface(surface, 0, sf, &drawArea);
+	}
+	surface = (SDL_Surface *)s->getText(s, SATX_Paused);
+	drawArea.w *= 9;
+	s->coordinatesToPixel(s, LVL_COLS/2 - 4, LVL_ROWS/2,
+		&drawArea.x, &drawArea.y);
+	SDL_BlitSurface(surface, 0, sf, &drawArea);
+	SDL_UpdateRect(sf, b->off_x, b->off_y,
+		b->drawArea.w * LVL_COLS, b->drawArea.h * LVL_ROWS);
     }
     else
     {
@@ -375,6 +397,8 @@ m_setPaused(THIS, int paused)
 	    checkRocks(this);
 	}
 	b->paused = 0;
+
+	this->redraw(this, 1);
     }
 }
 

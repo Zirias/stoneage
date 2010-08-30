@@ -99,6 +99,12 @@ resbuild/d8.png: gfx/gui.xcf
 resbuild/d9.png: gfx/gui.xcf
 	$(V_X2P)$(XCF2PNG) -A -o resbuild/d9.png gfx/gui.xcf digit_9
 
+resbuild/txpaused.png: gfx/gui.xcf
+	$(V_X2P)$(XCF2PNG) -A -o resbuild/txpaused.png gfx/gui.xcf text_paused
+
+resbuild/txtime.png: gfx/gui.xcf
+	$(V_X2P)$(XCF2PNG) -A -o resbuild/txtime.png gfx/gui.xcf text_time
+
 bin/stoneage.ico: resbuild/twilly.png
 	$(AM_V_GEN)$(CONVERT) resbuild/twilly.png \
 		-trim +repage -resize 48x48\! resbuild/stoneage48.bmp && \
@@ -122,7 +128,7 @@ resbuild/stoneage.bmp: resbuild/twilly.png
 src/icondat.h: resbuild/stoneage.bmp
 	$(AM_V_GEN)$(XXD) -i resbuild/stoneage.bmp src/icondat.h
 
-bin/gfx.sar: bin/samkres$(EXEEXT) resbuild/tempty.png resbuild/tempty_1.png resbuild/tempty_2f.png resbuild/tempty_2a.png resbuild/tempty_3.png resbuild/tempty_4.png resbuild/tcorner.png resbuild/tearth.png resbuild/twall.png resbuild/twall_v.png resbuild/twall_h.png resbuild/trock.png resbuild/tcabbage.png resbuild/twilly.png resbuild/d0.png resbuild/d1.png resbuild/d2.png resbuild/d3.png resbuild/d4.png resbuild/d5.png resbuild/d6.png resbuild/d7.png resbuild/d8.png resbuild/d9.png
+bin/gfx.sar: bin/samkres$(EXEEXT) resbuild/tempty.png resbuild/tempty_1.png resbuild/tempty_2f.png resbuild/tempty_2a.png resbuild/tempty_3.png resbuild/tempty_4.png resbuild/tcorner.png resbuild/tearth.png resbuild/twall.png resbuild/twall_v.png resbuild/twall_h.png resbuild/trock.png resbuild/tcabbage.png resbuild/twilly.png resbuild/d0.png resbuild/d1.png resbuild/d2.png resbuild/d3.png resbuild/d4.png resbuild/d5.png resbuild/d6.png resbuild/d7.png resbuild/d8.png resbuild/d9.png resbuild/txpaused.png resbuild/txtime.png
 	$(AM_V_GEN) rm -f bin/gfx.sar && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/tempty.png tile_empty && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/tempty_1.png tile_empty_1 && \
@@ -147,7 +153,9 @@ bin/gfx.sar: bin/samkres$(EXEEXT) resbuild/tempty.png resbuild/tempty_1.png resb
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d6.png digit_6 && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d7.png digit_7 && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d8.png digit_8 && \
-	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d9.png digit_9
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d9.png digit_9 && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/txpaused.png text_paused && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/txtime.png text_time
 
 endif
 

@@ -37,6 +37,17 @@ enum TileName
     SATN_NumberOfTiles
 };
 
+/** The different types of text graphics
+ * This is a collection of symbolic names for the text graphics used in the
+ * game
+ */
+enum TextName
+{
+    SATX_Paused,
+    SATX_Time,
+    SATX_NumberOfTexts
+};
+
 /** This class represents the whole SDL screen.
  * The screen class includes primitives for loading, scaling and rotating
  * tile graphics as well as managing the position of the Board and the
@@ -72,6 +83,14 @@ CLASS(Screen)
      * @return SDL-Surface of the requested tile
      */
     const SDL_Surface *FUNC(getTile)(THIS, enum TileName tile, int rotation);
+
+    /** Get a surface containing a particular text
+     * This function returns a SDL-surface for a given text, it is scaled
+     * automatically.
+     * @param text which text to return
+     * @return SDL-Surface of the requested text.
+     */
+    const SDL_Surface *FUNC(getText)(THIS, enum TextName text);
 
     /** Get the board on the screen.
      * Returns the board that is displayed on the screen.
