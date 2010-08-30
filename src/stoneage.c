@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "stoneage.h"
 #include "screen.h"
 #include "board.h"
@@ -12,15 +14,25 @@ typedef enum
 
 static Uint8 *keyState;
 
+struct Stoneage_impl
+{
+    int paused;
+    Uint32 lastTimerTicks;
+    Uint32 remainingTimerTicks;
+
+    SDL_TimerID ticker;
+    SDL_TimerID keyCheck;
+};
+
 Uint32
 createTickerEvent(Uint32 interval, void *param)
 {
-    /*
     Stoneage this = CAST(param, Stoneage);
-    */
 
     SDL_Event e;
     SDL_UserEvent ue;
+
+    this->pimpl->lastTimerTicks = SDL_GetTicks();
     ue.type = SDL_USEREVENT;
     ue.code = 0;
     ue.data1 = 0;
@@ -28,7 +40,7 @@ createTickerEvent(Uint32 interval, void *param)
     e.type = SDL_USEREVENT;
     e.user = ue;
     SDL_PushEvent(&e);
-    return interval;
+    return 1000;
 }
 
 static void
@@ -101,8 +113,8 @@ checkKeys(Stoneage this)
 	moveWilly(this, x, y);
     else
     {
-	SDL_RemoveTimer(this->keyCheck);
-	this->keyCheck = 0;
+	SDL_RemoveTimer(this->pimpl->keyCheck);
+	this->pimpl->keyCheck = 0;
     }
 }
 
@@ -111,6 +123,8 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 {
     Screen s;
     Board b;
+
+    struct Stoneage_impl *simpl = this->pimpl;
 
     if (e->state == SDL_PRESSED)
     {
@@ -146,8 +160,23 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 		case SDLK_DOWN:
 		case SDLK_LEFT:
 		case SDLK_RIGHT:
-		    if (!this->keyCheck)
-			this->keyCheck = SDL_AddTimer(30, &combineKey, this);
+		    if (!simpl->keyCheck)
+			simpl->keyCheck = SDL_AddTimer(30, &combineKey, this);
+		    break;
+		case SDLK_p:
+		    simpl->paused ^= 1;
+		    if (simpl->paused)
+		    {
+			SDL_RemoveTimer(simpl->ticker);
+			simpl->remainingTimerTicks = 1000 -
+			    ( SDL_GetTicks() - simpl->lastTimerTicks );
+		    }
+		    else
+		    {
+			simpl->ticker = SDL_AddTimer(
+				simpl->remainingTimerTicks,
+				&createTickerEvent, this);
+		    }
 		    break;
 		default:
 		    ;
@@ -225,7 +254,13 @@ m_abort(THIS)
 
 CTOR(Stoneage)
 {
+    struct Stoneage_impl *s;
+
     BASECTOR(Stoneage, App);
+
+    s = XMALLOC(struct Stoneage_impl, 1);
+    memset(s, 0, sizeof(struct Stoneage_impl));
+    this->pimpl = s;
 
     ((App)this)->run = &m_run;
     ((App)this)->abort = &m_abort;
@@ -241,14 +276,15 @@ CTOR(Stoneage)
     SDL_WM_SetCaption("Stonage " VERSION
 	    " -- as seen 1988 in AmigaBASIC", "stoneage");
 
-    this->ticker = SDL_AddTimer(1000, &createTickerEvent, this);
-    this->keyCheck = 0;
+    s->ticker = SDL_AddTimer(1000, &createTickerEvent, this);
+    s->keyCheck = 0;
     return this;
 }
 
 DTOR(Stoneage)
 {
-    SDL_RemoveTimer(this->ticker);
+    SDL_RemoveTimer(this->pimpl->ticker);
+    XFREE(this->pimpl);
     SDL_Quit();
     BASEDTOR(App);
 }
