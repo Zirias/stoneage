@@ -69,6 +69,36 @@ resbuild/tcabbage.png: gfx/tiles.xcf
 resbuild/twilly.png: gfx/tiles.xcf
 	$(V_X2P)$(XCF2PNG) -A -o resbuild/twilly.png gfx/tiles.xcf willy
 
+resbuild/d0.png: gfx/gui.xcf
+	$(V_X2P)$(XCF2PNG) -A -o resbuild/d0.png gfx/gui.xcf digit_0
+
+resbuild/d1.png: gfx/gui.xcf
+	$(V_X2P)$(XCF2PNG) -A -o resbuild/d1.png gfx/gui.xcf digit_1
+
+resbuild/d2.png: gfx/gui.xcf
+	$(V_X2P)$(XCF2PNG) -A -o resbuild/d2.png gfx/gui.xcf digit_2
+
+resbuild/d3.png: gfx/gui.xcf
+	$(V_X2P)$(XCF2PNG) -A -o resbuild/d3.png gfx/gui.xcf digit_3
+
+resbuild/d4.png: gfx/gui.xcf
+	$(V_X2P)$(XCF2PNG) -A -o resbuild/d4.png gfx/gui.xcf digit_4
+
+resbuild/d5.png: gfx/gui.xcf
+	$(V_X2P)$(XCF2PNG) -A -o resbuild/d5.png gfx/gui.xcf digit_5
+
+resbuild/d6.png: gfx/gui.xcf
+	$(V_X2P)$(XCF2PNG) -A -o resbuild/d6.png gfx/gui.xcf digit_6
+
+resbuild/d7.png: gfx/gui.xcf
+	$(V_X2P)$(XCF2PNG) -A -o resbuild/d7.png gfx/gui.xcf digit_7
+
+resbuild/d8.png: gfx/gui.xcf
+	$(V_X2P)$(XCF2PNG) -A -o resbuild/d8.png gfx/gui.xcf digit_8
+
+resbuild/d9.png: gfx/gui.xcf
+	$(V_X2P)$(XCF2PNG) -A -o resbuild/d9.png gfx/gui.xcf digit_9
+
 bin/stoneage.ico: resbuild/twilly.png
 	$(AM_V_GEN)$(CONVERT) resbuild/twilly.png \
 		-trim +repage -resize 48x48\! resbuild/stoneage48.bmp && \
@@ -92,7 +122,7 @@ resbuild/stoneage.bmp: resbuild/twilly.png
 src/icondat.h: resbuild/stoneage.bmp
 	$(AM_V_GEN)$(XXD) -i resbuild/stoneage.bmp src/icondat.h
 
-bin/gfx.sar: bin/samkres$(EXEEXT) resbuild/tempty.png resbuild/tempty_1.png resbuild/tempty_2f.png resbuild/tempty_2a.png resbuild/tempty_3.png resbuild/tempty_4.png resbuild/tcorner.png resbuild/tearth.png resbuild/twall.png resbuild/twall_v.png resbuild/twall_h.png resbuild/trock.png resbuild/tcabbage.png resbuild/twilly.png
+bin/gfx.sar: bin/samkres$(EXEEXT) resbuild/tempty.png resbuild/tempty_1.png resbuild/tempty_2f.png resbuild/tempty_2a.png resbuild/tempty_3.png resbuild/tempty_4.png resbuild/tcorner.png resbuild/tearth.png resbuild/twall.png resbuild/twall_v.png resbuild/twall_h.png resbuild/trock.png resbuild/tcabbage.png resbuild/twilly.png resbuild/d0.png resbuild/d1.png resbuild/d2.png resbuild/d3.png resbuild/d4.png resbuild/d5.png resbuild/d6.png resbuild/d7.png resbuild/d8.png resbuild/d9.png
 	$(AM_V_GEN) rm -f bin/gfx.sar && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/tempty.png tile_empty && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/tempty_1.png tile_empty_1 && \
@@ -107,7 +137,17 @@ bin/gfx.sar: bin/samkres$(EXEEXT) resbuild/tempty.png resbuild/tempty_1.png resb
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/twall_h.png tile_wall_h && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/trock.png tile_rock && \
 	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/tcabbage.png tile_cabbage && \
-	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/twilly.png tile_willy
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/twilly.png tile_willy && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d0.png digit_0 && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d1.png digit_1 && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d2.png digit_2 && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d3.png digit_3 && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d4.png digit_4 && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d5.png digit_5 && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d6.png digit_6 && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d7.png digit_7 && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d8.png digit_8 && \
+	bin/samkres$(EXEEXT) bin/gfx.sar resbuild/d9.png digit_9
 
 endif
 

@@ -1,5 +1,6 @@
 #include <SDL_rotozoom.h>
 #include <SDL_image.h>
+#include <stdio.h>
 
 #include "screen.h"
 #include "level.h"
@@ -32,6 +33,8 @@ struct Screen_impl
 {
     Resource res[SATN_NumberOfTiles];
     SDL_Surface * tiles[SATN_NumberOfTiles][4];
+    Resource resDigits[10];
+    SDL_Surface * digits[10];
 
     Board board;
 
@@ -39,6 +42,9 @@ struct Screen_impl
     int tile_height;
     int off_x;
     int off_y;
+
+    int time;
+    char timeString[5];
 };
 
 static SDL_Surface *
@@ -129,12 +135,18 @@ freeSurfaces(struct Screen_impl *s)
 {
     SDL_Surface **tile;
     SDL_Surface **tile_end;
+    int i;
 
     tile_end = (SDL_Surface **) s->tiles + SATN_NumberOfTiles;
     for (tile = (SDL_Surface **) s->tiles; tile != tile_end; ++tile)
     {
 	if (*tile) SDL_FreeSurface(*tile);
 	*tile = NULL;
+    }
+    for (i = 0; i < 10; ++i)
+    {
+	if (s->digits[i]) SDL_FreeSurface(s->digits[i]);
+	s->digits[i] = NULL;
     }
 }
 
@@ -234,14 +246,51 @@ drawBoardFrame(Screen this)
     for (drawArea.y = control_top; drawArea.y < max_y;
 	    drawArea.y += s->tile_height)
 	SDL_BlitSurface((SDL_Surface *)frameTile, 0, sf, &drawArea);
+}
 
-    SDL_UpdateRect(sf, 0, 0, 0, 0);
+static void
+drawTime(Screen this)
+{
+    SDL_Rect drawArea;
+    int i;
+
+    struct Screen_impl *s = this->pimpl;
+    SDL_Surface *sf = SDL_GetVideoSurface();
+
+    snprintf(s->timeString, 5, "%04d", s->time);
+
+    drawArea.x = (LVL_COLS - 5) * s->tile_width;
+    drawArea.y = (LVL_ROWS + 3) * s->tile_height;
+    drawArea.w = s->tile_width;
+    drawArea.h = s->tile_height;
+    
+    for (i = 0; i < 5; ++i)
+    {
+	SDL_BlitSurface(s->digits[s->timeString[i] - '0'], 0, sf, &drawArea);
+	drawArea.x += s->tile_width;
+    }
+}
+
+static void
+m_timeStep(THIS)
+{
+    METHOD(Screen);
+
+    struct Screen_impl *s = this->pimpl;
+
+    s->time--;
+    drawTime(this);
+    SDL_UpdateRect(SDL_GetVideoSurface(), (LVL_COLS - 5) * s->tile_width,
+	    (LVL_ROWS + 3) * s->tile_height,
+	    4 * s->tile_width, s->tile_height);
 }
 
 static void
 m_initVideo(THIS)
 {
     METHOD(Screen);
+
+    int i;
 
     struct Screen_impl *s = this->pimpl;
     SDL_Surface *screen = SDL_GetVideoSurface();
@@ -253,10 +302,18 @@ m_initVideo(THIS)
     s->tile_height = screen->h / (LVL_ROWS + 6);
     s->off_x = s->tile_width / 2;
     s->off_y = s->tile_height / 2;
+    for (i = 0; i < 10; ++i)
+    {
+	s->digits[i] = createScaledSurface(
+		s->resDigits[i], s->tile_width, s->tile_height);
+    }
     s->board->setGeometry(s->board,
 	    s->tile_width, s->tile_height, s->off_x, s->off_y);
     s->board->redraw(s->board, 0);
     drawBoardFrame(this);
+    drawTime(this);
+
+    SDL_UpdateRect(SDL_GetVideoSurface(), 0, 0, 0, 0);
 }
 
 static void
@@ -266,6 +323,7 @@ m_startGame(THIS)
 
     struct Screen_impl *s = this->pimpl;
     s->board->loadLevel(s->board, 0);
+    s->time=100;
 }
 
 CTOR(Screen)
@@ -276,6 +334,8 @@ CTOR(Screen)
 #ifndef SDL_IMG_OLD
     int imgflags;
 #endif
+    
+    char digitRes[] = "digit_x";
 
     BASECTOR(Screen, Object);
 
@@ -298,6 +358,7 @@ CTOR(Screen)
     this->coordinatesToPixel = &m_coordinatesToPixel;
     this->initVideo = &m_initVideo;
     this->startGame = &m_startGame;
+    this->timeStep = &m_timeStep;
 
     rf = NEW(Resfile);
     rf->setFile(rf, RES_GFX);
@@ -317,6 +378,19 @@ CTOR(Screen)
 	    mainApp->abort(mainApp);
 	}
     }
+    digitRes[6] = '0';
+    for (i = 0; i < 10; ++i)
+    {
+	rf->load(rf, digitRes, &(s->resDigits[i]));
+	digitRes[6]++;
+	if (!s->res[i])
+	{
+	    DELETE(Resfile, rf);
+	    log_err("Error loading digits.\n");
+	    mainApp->abort(mainApp);
+	}
+    }
+
     DELETE(Resfile, rf);
 
     return this;

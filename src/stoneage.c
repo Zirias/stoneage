@@ -159,7 +159,9 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 static void
 handleTick(Stoneage this)
 {
-    
+    Screen s = getScreen();
+
+    s->timeStep(s);
 }
 
 static int
