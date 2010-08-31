@@ -1,6 +1,5 @@
 #include <SDL_rotozoom.h>
 #include <SDL_image.h>
-#include <stdio.h>
 
 #include "screen.h"
 #include "level.h"
@@ -51,8 +50,7 @@ struct Screen_impl
     int off_x;
     int off_y;
 
-    int time;
-    char timeString[5];
+    Uint16 time;
 };
 
 static SDL_Surface *
@@ -281,20 +279,27 @@ drawTime(Screen this)
 {
     SDL_Rect drawArea;
     int i;
+    Uint16 time;
+    int digits[4];
 
     struct Screen_impl *s = this->pimpl;
     SDL_Surface *sf = SDL_GetVideoSurface();
 
-    snprintf(s->timeString, 5, "%04d", s->time);
+    time = s->time;
+    for (i = 3; i >= 0; --i)
+    {
+	digits[i] = time % 10;
+	time /= 10;
+    }
 
     drawArea.x = (LVL_COLS - 5) * s->tile_width;
     drawArea.y = (LVL_ROWS + 3) * s->tile_height;
     drawArea.w = s->tile_width;
     drawArea.h = s->tile_height;
     
-    for (i = 0; i < 5; ++i)
+    for (i = 0; i < 4; ++i)
     {
-	SDL_BlitSurface(s->digits[s->timeString[i] - '0'], 0, sf, &drawArea);
+	SDL_BlitSurface(s->digits[digits[i]], 0, sf, &drawArea);
 	drawArea.x += s->tile_width;
     }
 }
