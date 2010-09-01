@@ -26,6 +26,7 @@ enum Type {
     CLASS_Resfile,
     CLASS_Stoneage,
     CLASS_Entity,
+    CLASS_JobQueue,
     CLASS_App,
     CLASS_Object
 };
