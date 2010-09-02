@@ -3,7 +3,7 @@
 
 #include "common.h"
 
-struct EHandler;
+typedef void (* EventHandler)(THIS, Object sender, void *eventData);
 
 /** @file event.h
  * Includes definition of Event class
@@ -30,32 +30,26 @@ struct MoveData
     int y;  /**< y component of requested move (-1,0,1) */
 };
 
+struct Event;
 /** Class representing an Event.
  */
-CLASS(Event)
-{
-    INHERIT(Object);
+typedef struct Event *Event;
 
-    enum EventType type;	/**< the event type */
-    Object sender;		/**< who sent the event */
-    struct EHandler *handler;	/**< who should handle the event */
-    void *data;			/**< optional extra data */
-};
+/** Add a new handler to an event.
+ * @relates Event
+ * @param e the Event to handle when raised
+ * @param instance a pointer to the object instance on which to invoke the handler
+ * @param handler pointer to an EventHandler that is called when the Event is raised
+ */
+void extern AddHandler(Event e, void *instance, EventHandler handler);
 
 /** Schedule an Event for delivery.
  * @relates Event
  * @param e the Event to raise
+ * @param sender the sender of the Event
+ * @param data optional Event arguments
  */
-void extern RaiseEvent(Event e);
-
-/** Deliver an Event.
- * @relates Event
- * The event is checked for validity and the receiver object is checked
- * whether it actually provides the handleEvent() implementation. If the
- * event can't be delivered, it is deleted and forgotten.
- * @param e the Event to deliver
- */
-void extern DeliverEvent(Event e);
+void extern RaiseEvent(Event e, Object sender, void *data);
 
 /** Cancel a scheduled Event.
  * @relates Event
@@ -65,11 +59,25 @@ void extern DeliverEvent(Event e);
  */
 void extern CancelEvent(Event e);
 
-/** Cancel all Events addressed to a given receiver.
+/** Deliver pending events.
  * @relates Event
- * All pending events for the given receiver are marked invalid.
- * @param h the receiver whose events should be canceled
+ * This function is intended to be called in a main loop. Its return value indicates
+ * whether there were events to deliver.
+ * @returns 1 if there were events delivered, 0 otherwise
  */
-void extern CancelEventsFor(struct EHandler *h);
+int extern DeliverEvents(void);
+
+/** Create an event instance.
+ * @relates Event
+ * example: Event Acivated = CreateEvent();
+ * @returns an event instance
+ */
+Event extern CreateEvent(void);
+
+/** Destroys an event (for use in destructors).
+ * @relates Event
+ * @param e the Event to destroy
+ */
+void extern DestroyEvent(Event e);
 
 #endif

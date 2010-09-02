@@ -65,12 +65,7 @@ createMoveTickEvent(Uint32 interval, void *param)
 {
     Board b = CAST(param, Board);
 
-    Event e = NEW(Event);
-    e->sender = CAST(b, Object);
-    e->handler = CAST(b, EHandler);
-    e->type = SAEV_MoveTick;
-
-    RaiseEvent(e);
+    RaiseEvent(b->MoveTick, (Object)b, 0);
     
     return interval;
 }
@@ -102,7 +97,6 @@ moveStep(Board this, Move m)
     SDL_Rect dirty;
     Entity e;
     Entity d;
-    Event ev;
     
     Screen s = getScreen();
     SDL_Surface *sf = SDL_GetVideoSurface();
@@ -168,17 +162,6 @@ moveStep(Board this, Move m)
 	}
 	b->entity[e->y][e->x] = e;
 
-	if (m->rel != MR_Slave)
-	{
-	    /* don't give the slave of a move any events */
-
-	    ev = NEW(Event);
-	    ev->sender = CAST(this, Object);
-	    ev->handler = CAST(e, EHandler);
-	    ev->type = SAEV_MoveFinished;
-	    RaiseEvent(ev);
-	}
-
 	DELETE(Move, m);
 
 	checkRocks(this);
@@ -209,7 +192,7 @@ internal_clear(Board b)
     {
 	SDL_RemoveTimer(b->pimpl->moveticker);
 	b->pimpl->moveticker = 0;
-	CancelEventsFor(CAST(b, EHandler));
+	CancelEvent(b->MoveTick);
 	m = b->pimpl->movelist;
 	b->pimpl->movelist = 0;
 	while (m)
@@ -222,9 +205,9 @@ internal_clear(Board b)
 
     for (e = (Entity *) &(b->pimpl->entity); e != end; ++e)
     {
-	if(*e)
+	if (*e)
 	{
-	    CancelEventsFor(CAST(*e, EHandler));
+	    if ((*e)->m) CancelEvent((*e)->m->Finished);
 	    (*e)->dispose(*e);
 	}
 	*e = 0;
@@ -237,33 +220,27 @@ internal_clear(Board b)
 }
 
 static void
-m_handleEvent(THIS, Event e)
+Board_MoveTick(THIS, Object sender, void *data)
 {
     METHOD(Board);
 
-    Move m;
-    Move next;
+    Move m, next;
 
-    if (e->type == SAEV_MoveTick)
+    m = this->pimpl->movelist;
+    if (!m)
     {
-	m = this->pimpl->movelist;
-	if (!m)
+	SDL_RemoveTimer(this->pimpl->moveticker);
+	this->pimpl->moveticker = 0;
+    }
+    else
+    {
+	while (m)
 	{
-	    SDL_RemoveTimer(this->pimpl->moveticker);
-	    this->pimpl->moveticker = 0;
-	}
-	else
-	{
-	    while (m)
-	    {
-		next = m->next;
-		moveStep(this, m);
-		m = next;
-	    }
+	    next = m->next;
+	    moveStep(this, m);
+	    m = next;
 	}
     }
-    
-    DELETE(Event, e);
 }
 
 static void
@@ -546,14 +523,13 @@ CTOR(Board)
 {
     struct Board_impl *b;
 
-    BASECTOR(Board, EHandler);
+    BASECTOR(Board, Object);
 
     b = XMALLOC(struct Board_impl, 1);
     memset(b, 0, sizeof(struct Board_impl));
     b->level = -1;
     this->pimpl = b;
 
-    ((EHandler)this)->handleEvent = &m_handleEvent;
     this->setGeometry = &m_setGeometry;
     this->loadLevel = &m_loadLevel;
     this->redraw = &m_redraw;
@@ -564,6 +540,9 @@ CTOR(Board)
     this->getEmptyBackground = &m_getEmptyBackground;
     this->getEarthBackground = &m_getEarthBackground;
 
+    this->MoveTick = CreateEvent();
+    AddHandler(this->MoveTick, this, &Board_MoveTick);
+
     return this;
 }
 
@@ -571,7 +550,9 @@ DTOR(Board)
 {
     internal_clear(this);
 
+    DestroyEvent(this->MoveTick);
+
     XFREE(this->pimpl);
-    BASEDTOR(EHandler);
+    BASEDTOR(Object);
 }
 

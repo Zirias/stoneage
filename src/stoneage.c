@@ -68,18 +68,10 @@ toggleFullscreen(Stoneage this)
 static void
 moveWilly(Stoneage this, int x, int y)
 {
-    Event ev;
-    MoveData md;
-
-    md = XMALLOC(struct MoveData, 1);
-    md->x = x;
-    md->y = y;
-    ev = NEW(Event);
-    ev->type = SAEV_Move;
-    ev->sender = CAST(this, Object);
-    ev->handler = CAST(getWilly(), EHandler);
-    ev->data = md;
-    RaiseEvent(ev);
+    MoveWillyEventData *data = XMALLOC(MoveWillyEventData, 1);
+    data->x = x;
+    data->y = y;
+    RaiseEvent(this->MoveWilly, (Object)this, data);
 }
 
 Uint32
@@ -211,6 +203,35 @@ handleTick(Stoneage this)
 }
 
 static int
+handleSDLEvent(Stoneage this, SDL_Event *e)
+{
+    switch (e->type)
+    {
+	case SDL_USEREVENT:
+	    switch ((TickerType)e->user.data2)
+	    {
+		case TT_None:
+		    handleTick(this);
+		    break;
+		case TT_KeyCombine:
+		    checkKeys(this);
+		    break;
+	    }
+	    break;
+	
+	case SDL_KEYDOWN:
+	case SDL_KEYUP:
+	    handleKeyboardEvent(this, &(e->key));
+	    break;
+
+	case SDL_QUIT:
+	    return 0;
+	    break;
+    }
+    return 1;
+}
+
+static int
 m_run(THIS, int argc, char **argv)
 {
     METHOD(Stoneage);
@@ -229,41 +250,13 @@ m_run(THIS, int argc, char **argv)
     while (running)
     {
 	SDL_WaitEvent(&event);
-	switch (event.type)
+	running = handleSDLEvent(this, &event);
+	while (running && DeliverEvents())
 	{
-	    case SDL_USEREVENT:
-		if (!event.user.code)
-		    switch ((TickerType)event.user.data2)
-		    {
-			case TT_None:
-			    handleTick(this);
-			    break;
-			case TT_KeyCombine:
-			    checkKeys(this);
-			    break;
-		    }
-		else
-		    DeliverEvent(CAST(event.user.data1, Event));
-		break;
-	    
-	    case SDL_KEYDOWN:
-	    case SDL_KEYUP:
-		handleKeyboardEvent(this, &event.key);
-		break;
-
-	    case SDL_ACTIVEEVENT:
-		if ((event.active.gain == 0)
-			&& (event.active.state == SDL_APPINPUTFOCUS)
-			&& (! this->pimpl->paused))
-		{
-		    this->pimpl->paused = 1;
-		    handlePause(this);
-		}
-		break;
-	    case SDL_QUIT:
-		running = 0;
-		break;
-
+	    while (running && SDL_PollEvent(&event))
+	    {
+		running = handleSDLEvent(this, &event);
+	    }
 	}
     }
     return 0;
@@ -304,11 +297,13 @@ CTOR(Stoneage)
 
     s->ticker = SDL_AddTimer(1000, &createTickerEvent, this);
     s->keyCheck = 0;
+    this->MoveWilly = CreateEvent();
     return this;
 }
 
 DTOR(Stoneage)
 {
+    DestroyEvent(this->MoveWilly);
     SDL_RemoveTimer(this->pimpl->ticker);
     XFREE(this->pimpl);
     SDL_Quit();

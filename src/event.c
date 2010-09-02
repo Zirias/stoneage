@@ -2,134 +2,126 @@
 #include <stdint.h>
 
 #include "event.h"
-#include "ehandler.h"
 #include "app.h"
+
+#define EVENT_QUEUE_SIZE 64
+#define MAX_EVENT_HANDLERS 16
+
+struct Event
+{
+    int registeredHandlers;
+    struct
+    {
+	void *instance;
+	EventHandler method;
+    } handlers[MAX_EVENT_HANDLERS];
+};
 
 typedef struct
 {
-    int valid;
+    int active;
     Event e;
-    EHandler h;
-} EventRecord;
+    Object sender;
+    void *data;
+} EventDelivery;
 
-static EventRecord EventRegistry[64];
+static EventDelivery events[EVENT_QUEUE_SIZE];
+static volatile int pendingEvents = 0;
+static EventDelivery * volatile head = &(events[EVENT_QUEUE_SIZE]);
+static EventDelivery * volatile tail = &(events[EVENT_QUEUE_SIZE]);
 
-static void
-registerEvent(Event e)
+void
+AddHandler(Event e, void *instance, EventHandler handler)
 {
-    EventRecord *r;
-    EventRecord *end = &EventRegistry[64];
-    for(r = &EventRegistry[0]; r != end; ++r)
+    if (e->registeredHandlers == MAX_EVENT_HANDLERS)
     {
-	if (!r->valid)
-	{
-	    r->valid = 1;
-	    r->e = e;
-	    r->h = e->handler;
-	    return;
-	}
+	log_err("event handler overflow!\n");
+	mainApp->abort(mainApp);
     }
-    log_err("event queue overrun!\n");
-    DELETE(Event, e);
-    mainApp->abort(mainApp);
-}
-
-static int
-confirmEvent(Event e)
-{
-    EventRecord *r;
-    EventRecord *end = &EventRegistry[64];
-    for(r = &EventRegistry[0]; r != end; ++r)
-    {
-	if (!r->valid) continue;
-	if (r->e == e)
-	{
-	    r->valid = 0;
-	    return 1;
-	}
-    }
-    return 0;
+    e->handlers[e->registeredHandlers].instance = instance;
+    e->handlers[e->registeredHandlers++].method = handler;
 }
 
 void
-DeliverEvent(Event e)
+RaiseEvent(Event e, Object sender, void *data)
 {
-    if (!e) return;
-    if (!confirmEvent(e))
+    EventDelivery *newDelivery;
+
+    if (pendingEvents >= EVENT_QUEUE_SIZE)
     {
-	DELETE(Event, e);
-	return;
+	log_err("event queue overflow!\n");
+	mainApp->abort(mainApp);
+    }
+    if (head == &(events[0]))
+    {
+	head = &(events[EVENT_QUEUE_SIZE]);
+    }
+    newDelivery = --head;
+    newDelivery->active = 1;
+    newDelivery->e = e;
+    newDelivery->sender = sender;
+    newDelivery->data = data;
+    ++pendingEvents;
+}
+
+int
+DeliverEvents(void)
+{
+    EventDelivery *deliver;
+    int i;
+
+    if (!pendingEvents) return 0;
+
+    for (; pendingEvents; --pendingEvents)
+    {
+	if (tail == &events[0])
+	{
+	    tail = &(events[EVENT_QUEUE_SIZE]);
+	}
+	deliver = --tail;
+	if (deliver->active)
+	{
+	    for (i = 0; i < deliver->e->registeredHandlers; ++i)
+	    {
+		deliver->e->handlers[i].method(
+			deliver->e->handlers[i].instance,
+			deliver->sender, deliver->data);
+	    }
+	    XFREE(deliver->data);
+	}
     }
 
-    if (!e->handler || !e->handler->handleEvent)
-    {
-	DELETE(Event, e);
-	return;
-    }
-    e->handler->handleEvent(e->handler, e);
+    return 1;
 }
 
 void
 CancelEvent(Event e)
 {
-    EventRecord *r;
-    EventRecord *end = &EventRegistry[64];
-    for(r = &EventRegistry[0]; r != end; ++r)
+    int i;
+
+    if (!pendingEvents) return;
+    for (i = 0; i < EVENT_QUEUE_SIZE; ++i)
     {
-	if (!r->valid) continue;
-	if (r->e == e)
+	if (events[i].e == e)
 	{
-	    r->valid = 0;
-	    return;
+	    events[i].active = 0;
+	    XFREE(events[i].data);
 	}
     }
 }
 
-void
-CancelEventsFor(EHandler h)
+Event
+CreateEvent(void)
 {
-    EventRecord *r;
-    EventRecord *end = &EventRegistry[64];
-    for(r = &EventRegistry[0]; r != end; ++r)
-    {
-	if (!r->valid) continue;
-	if (r->h == h)
-	{
-	    r->valid = 0;
-	}
-    }
+    Event e = XMALLOC(struct Event, 1);
+    e->registeredHandlers = 0;
+    return e;
 }
 
 void
-RaiseEvent(Event e)
+DestroyEvent(Event e)
 {
-    SDL_Event ev;
-    SDL_UserEvent uev;
-
-    registerEvent(e);
-
-    uev.type = SDL_USEREVENT;
-    uev.code = 1;
-    uev.data1 = e;
-    uev.data2 = 0;
-    ev.type = SDL_USEREVENT;
-    ev.user = uev;
-
-    SDL_PushEvent(&ev);
+    CancelEvent(e);
+    XFREE(e);
 }
 
-CTOR(Event)
-{
-    BASECTOR(Event, Object);
-    this->type = 0;
-    this->sender = 0;
-    this->handler = 0;
-    this->data = 0;
-    return this;
-}
-
-DTOR(Event)
-{
-    XFREE(this->data);
-    BASEDTOR(Object);
-}

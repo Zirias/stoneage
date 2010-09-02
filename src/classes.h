@@ -10,8 +10,6 @@
  * "RTTI" and secure CAST() functionality
  */
 enum Type {
-    CLASS_Event,
-    CLASS_EHandler,
     CLASS_Screen,
     CLASS_Board,
     CLASS_Move,

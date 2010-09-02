@@ -21,7 +21,7 @@ m_dispose(THIS)
 
 CTOR(Entity)
 {
-    BASECTOR(Entity, EHandler);
+    BASECTOR(Entity, Object);
     this->init = &m_init;
     this->dispose = &m_dispose;
     this->getSurface = 0;
@@ -31,6 +31,6 @@ CTOR(Entity)
 
 DTOR(Entity)
 {
-    BASEDTOR(EHandler);
+    BASEDTOR(Object);
 }
 
