@@ -9,27 +9,6 @@ typedef void (* EventHandler)(THIS, Object sender, void *eventData);
  * Includes definition of Event class
  */
 
-/** A type of an Event.
- * This enumerates all possible event types
- */
-enum EventType
-{
-    SAEV_MoveTick,
-    SAEV_MoveFinished,
-    SAEV_Move
-};
-
-struct MoveData;
-typedef struct MoveData *MoveData;
-
-/** Data for SAEV_Move event.
- */
-struct MoveData
-{
-    int x;  /**< x component of requested move (-1,0,1) */
-    int y;  /**< y component of requested move (-1,0,1) */
-};
-
 struct Event;
 /** Class representing an Event.
  */
