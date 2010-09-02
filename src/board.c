@@ -90,13 +90,72 @@ scanLevel(Board b)
 }
 
 static void
+Move_Finished(THIS, Object sender, void *data)
+{
+    METHOD(Board);
+
+    Move m;
+    Entity e, d;
+    int x, y;
+
+    struct Board_impl *b = this->pimpl;
+
+    m = CAST(sender, Move);
+    e = m->entity(m);
+
+    if (m->prev)
+    {
+	m->prev->next = m->next;
+    }
+    else
+    {
+	b->movelist = m->next;
+    }
+    if (m->next)
+    {
+	m->next->prev = m->prev;
+    }
+    b->entity[e->y][e->x] = 0;
+    e->x += m->dx;
+    e->y += m->dy;
+    d = b->entity[e->y][e->x];
+    if (d)
+    {
+	if (CAST(d, ECabbage))
+	{
+	    b->num_cabbages--;
+	}
+	if (!CAST(d, EWilly)) d->dispose(d);
+    }
+    b->entity[e->y][e->x] = e;
+
+    if (CAST(e, EWilly))
+    {
+	for (x=e->x-1; x<=e->x+1; ++x) for (y=e->y-1; y<=e->y+1; ++y)
+	    this->draw(this, x, y, 1);
+    }
+
+    checkRocks(this);
+
+    if (!b->movelist)
+    {
+	/* all moves finished, unfreeze willy */
+	getWilly()->moveLock = 0;
+    }
+
+    if (!b->num_cabbages) {
+	b->level++;
+	if (b->level >= BUILTIN_LEVELS) b->level = 0;
+	this->loadLevel(this, -1);
+    }
+}
+
+static void
 moveStep(Board this, Move m)
 {
-    int done;
     int tw, th;
     SDL_Rect dirty;
     Entity e;
-    Entity d;
     
     Screen s = getScreen();
     SDL_Surface *sf = SDL_GetVideoSurface();
@@ -128,56 +187,10 @@ moveStep(Board this, Move m)
 	if (m->dx && m->dy) this->draw(this, e->x + m->dx, e->y + m->dy, 0);
     }
 
-    done = m->step(m, &(b->drawArea.x), &(b->drawArea.y));
+    m->step(m, &(b->drawArea.x), &(b->drawArea.y));
     SDL_BlitSurface((SDL_Surface *)e->getSurface(e),
 	    0, sf, &(b->drawArea));
     SDL_UpdateRects(sf, 1, &dirty);
-
-    if (done)
-    {
-	if (m->prev)
-	{
-	    m->prev->next = m->next;
-	}
-	else
-	{
-	    b->movelist = m->next;
-	}
-	if (m->next)
-	{
-	    m->next->prev = m->prev;
-	}
-	b->entity[e->y][e->x] = 0;
-	e->x += m->dx;
-	e->y += m->dy;
-	e->m = 0;
-	d = b->entity[e->y][e->x];
-	if (d)
-	{
-	    if (CAST(d, ECabbage))
-	    {
-		b->num_cabbages--;
-	    }
-	    if (!CAST(d, EWilly)) d->dispose(d);
-	}
-	b->entity[e->y][e->x] = e;
-
-	DELETE(Move, m);
-
-	checkRocks(this);
-
-	if (!b->movelist)
-	{
-	    /* all moves finished, unfreeze willy */
-	    getWilly()->moveLock = 0;
-	}
-    }
-
-    if (!b->num_cabbages) {
-	b->level++;
-	if (b->level >= BUILTIN_LEVELS) b->level = 0;
-	this->loadLevel(this, -1);
-    }
 }
 
 static void
@@ -287,7 +300,7 @@ m_draw(THIS, int x, int y, int refresh)
 		0, sf, &(b->drawArea));
 
 
-    if (tile && !e->m)
+    if (tile && (!e->m || e->m->finished))
 	SDL_BlitSurface((SDL_Surface *)tile, 0, sf, &(b->drawArea));
 
     if (refresh)
@@ -398,6 +411,8 @@ m_startMove(THIS, Move m)
 	this->pimpl->moveticker = SDL_AddTimer(
 		20, &createMoveTickEvent, this);
     }
+
+    AddHandler(m->Finished, (Object)this, &Move_Finished);
 }
 
 static void
@@ -406,11 +421,10 @@ checkRocks(Board b)
     int i;
     ERock r;
     Entity e;
-    EWilly w;
 
     /* let willy finish his current move */
-    w = getWilly();
-    if (w && CAST(w, Entity)->m) return;
+    e = (Entity)getWilly();
+    if (e && e->m && !e->m->finished) return;
 
     for (i=0; i<b->pimpl->num_rocks; ++i)
     {

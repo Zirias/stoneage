@@ -78,6 +78,7 @@ m_init(THIS, Entity e, int dx, int dy, Trajectory t)
     this->dy = dy;
     this->next = 0;
     this->prev = 0;
+    this->finished = 0;
     this->rel = MR_None;
 }
 
@@ -101,6 +102,7 @@ m_step(THIS, Sint16 *x, Sint16 *y)
     {
 	*x = p->tx;
 	*y = p->ty;
+	this->finished = 1;
 	RaiseEvent(this->Finished, (Object)this, 0);
 	return 1;
     }

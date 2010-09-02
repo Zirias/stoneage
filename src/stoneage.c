@@ -4,6 +4,7 @@
 #include "screen.h"
 #include "board.h"
 #include "event.h"
+#include "move.h"
 #include "ewilly.h"
 
 typedef enum
@@ -68,7 +69,12 @@ toggleFullscreen(Stoneage this)
 static void
 moveWilly(Stoneage this, int x, int y)
 {
-    MoveWillyEventData *data = XMALLOC(MoveWillyEventData, 1);
+    MoveWillyEventData *data;
+    Entity e = (Entity)getWilly();
+
+    if (e->m && !e->m->finished) return;
+    
+    data = XMALLOC(MoveWillyEventData, 1);
     data->x = x;
     data->y = y;
     RaiseEvent(this->MoveWilly, (Object)this, data);
@@ -249,6 +255,12 @@ m_run(THIS, int argc, char **argv)
     keyState = SDL_GetKeyState(0);
     while (running)
     {
+	DeliverEvents();
+	while (SDL_PollEvent(&event))
+	{
+	    running = handleSDLEvent(this, &event);
+	}
+	/*
 	SDL_WaitEvent(&event);
 	running = handleSDLEvent(this, &event);
 	while (running && DeliverEvents())
@@ -258,6 +270,7 @@ m_run(THIS, int argc, char **argv)
 		running = handleSDLEvent(this, &event);
 	    }
 	}
+	*/
     }
     return 0;
 }

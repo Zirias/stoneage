@@ -4,7 +4,7 @@
 #include "event.h"
 #include "app.h"
 
-#define EVENT_QUEUE_SIZE 64
+#define EVENT_QUEUE_SIZE 512
 #define MAX_EVENT_HANDLERS 16
 
 struct Event
@@ -25,10 +25,11 @@ typedef struct
     void *data;
 } EventDelivery;
 
+static volatile int raiseLock = 1;
 static EventDelivery events[EVENT_QUEUE_SIZE];
 static volatile int pendingEvents = 0;
-static EventDelivery * volatile head = &(events[EVENT_QUEUE_SIZE]);
-static EventDelivery * volatile tail = &(events[EVENT_QUEUE_SIZE]);
+static EventDelivery * volatile head = &events[EVENT_QUEUE_SIZE];
+static EventDelivery * volatile tail = &events[EVENT_QUEUE_SIZE];
 
 void
 AddHandler(Event e, void *instance, EventHandler handler)
@@ -47,14 +48,15 @@ RaiseEvent(Event e, Object sender, void *data)
 {
     EventDelivery *newDelivery;
 
+    while (--raiseLock) { ++raiseLock; SDL_Delay(10); }
     if (pendingEvents >= EVENT_QUEUE_SIZE)
     {
 	log_err("event queue overflow!\n");
 	mainApp->abort(mainApp);
     }
-    if (head == &(events[0]))
+    if (head == &events[0])
     {
-	head = &(events[EVENT_QUEUE_SIZE]);
+	head = &events[EVENT_QUEUE_SIZE];
     }
     newDelivery = --head;
     newDelivery->active = 1;
@@ -62,6 +64,7 @@ RaiseEvent(Event e, Object sender, void *data)
     newDelivery->sender = sender;
     newDelivery->data = data;
     ++pendingEvents;
+    ++raiseLock;
 }
 
 int
@@ -72,11 +75,12 @@ DeliverEvents(void)
 
     if (!pendingEvents) return 0;
 
-    for (; pendingEvents; --pendingEvents)
+    while (pendingEvents)
     {
+	--pendingEvents;
 	if (tail == &events[0])
 	{
-	    tail = &(events[EVENT_QUEUE_SIZE]);
+	    tail = &events[EVENT_QUEUE_SIZE];
 	}
 	deliver = --tail;
 	if (deliver->active)

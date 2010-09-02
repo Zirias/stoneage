@@ -32,14 +32,19 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
     METHOD(EWilly);
     
     Entity e, d, d1, d2;
-    MoveWillyEventData *md;
+    MoveWillyEventData *md = data;
    
     e = CAST(this, Entity);
 
     if (this->moveLock) return;	/* no moving allowed */
     if (!this->alive) return;	/* dead willy */
-    if (e->m) return;		/* already moving */
-    md = (MoveWillyEventData *)data;
+    if (e->m)
+    {
+	if (e->m->finished)
+	    DELETE(Move, e->m);
+	else
+	    return;		/* already moving */
+    }
 
     /* check destination coordinates */
     if (e->b->entity(e->b, e->x+md->x, e->y+md->y, &d) < 0)
@@ -63,8 +68,8 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
     {
 	e->m = NEW(Move);
 	e->m->init(e->m, e, md->x, md->y, TR_Linear);
-	AddHandler(e->m->Finished, this, &Move_Finished);
 	e->b->startMove(e->b, e->m);
+	AddHandler(e->m->Finished, this, &Move_Finished);
     }
 
     /* special case: pushing a rock */
@@ -76,8 +81,8 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
 	    e->m = NEW(Move);
 	    e->m->init(e->m, e, md->x, 0, TR_Linear);
 	    e->m->rel = MR_Master;
-	    AddHandler(e->m->Finished, this, &Move_Finished);
 	    e->b->startMove(e->b, e->m);
+	    AddHandler(e->m->Finished, this, &Move_Finished);
 	    d->m = NEW(Move);
 	    d->m->init(d->m, d, md->x, 0, TR_Linear);
 	    d->m->rel = MR_Slave;

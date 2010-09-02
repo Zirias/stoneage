@@ -18,7 +18,13 @@ Move_Finished(THIS, Object sender, void *data)
 
     e = CAST(this, Entity);
     w = 0;
-    if (e->m) return; /* new move already started */
+    if (e->m)
+    {
+	if (e->m->finished)
+	    DELETE(Move, e->m);
+	else
+	    return; /* new move already started */
+    }
 
     /* bottom of board */
     if (e->b->entity(e->b, e->x, e->y+1, &n) < 0) return;
@@ -43,7 +49,6 @@ Move_Finished(THIS, Object sender, void *data)
 	{
 	    e->m = NEW(Move);
 	    e->m->init(e->m, e, 1, 1, TR_CircleX);
-	    AddHandler(e->m->Finished, this, &Move_Finished);
 	    if (w) w->alive = 0;
 	}
     }
@@ -57,14 +62,16 @@ Move_Finished(THIS, Object sender, void *data)
 	{
 	    e->m = NEW(Move);
 	    e->m->init(e->m, e, -1, 1, TR_CircleX);
-	    AddHandler(e->m->Finished, this, &Move_Finished);
 	    if (w) w->alive = 0;
 	}
     }
 
     /* found possible move -> start it */
     if (e->m)
+    {
 	e->b->startMove(e->b, e->m);
+	AddHandler(e->m->Finished, this, &Move_Finished);
+    }
 
 }
 
@@ -92,11 +99,17 @@ m_fall(THIS)
     METHOD(ERock);
 
     Entity e = CAST(this, Entity);
-    if (e->m) return;
+    if (e->m)
+    {
+	if (e->m->finished)
+	    DELETE(Move, e->m);
+	else
+	    return; /* new move already started */
+    }
     e->m = NEW(Move);
     e->m->init(e->m, e, 0, 1, TR_Linear);
-    AddHandler(e->m->Finished, this, &Move_Finished);
     e->b->startMove(e->b, e->m);
+    AddHandler(e->m->Finished, this, &Move_Finished);
 }
 
 static const SDL_Surface *
