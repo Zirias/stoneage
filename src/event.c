@@ -82,18 +82,15 @@ DeliverEvents(void)
 	    tail = &events[EVENT_QUEUE_SIZE];
 	}
 	deliver = --tail;
-	if (deliver->active)
+	for (i = 0;
+		deliver->active && i < deliver->e->registeredHandlers;
+		++i )
 	{
-	    for (i = 0;
-		    deliver->active && i < deliver->e->registeredHandlers;
-		    ++i )
-	    {
-		deliver->e->handlers[i].method(
-			deliver->e->handlers[i].instance,
-			deliver->sender, deliver->data);
-	    }
-	    XFREE(deliver->data);
+	    deliver->e->handlers[i].method(
+		    deliver->e->handlers[i].instance,
+		    deliver->sender, deliver->data);
 	}
+	XFREE(deliver->data);
 	--pendingEvents;
     }
 
@@ -111,7 +108,6 @@ CancelEvent(Event e)
 	if (events[i].e == e)
 	{
 	    events[i].active = 0;
-	    XFREE(events[i].data);
 	}
     }
 }
