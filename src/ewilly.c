@@ -22,6 +22,7 @@ Move_Finished(THIS, Object sender, void *data)
     int x, y;
     Entity e = CAST(this, Entity);
 
+    this->moving = 0;
     for (x=e->x-1; x<=e->x+1; ++x) for (y=e->y-1; y<=e->y+1; ++y)
 	e->b->draw(e->b, x, y, 1);
 }
@@ -38,13 +39,8 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
 
     if (this->moveLock) return;	/* no moving allowed */
     if (!this->alive) return;	/* dead willy */
-    if (e->m)
-    {
-	if (e->m->finished)
-	    DELETE(Move, e->m);
-	else
-	    return;		/* already moving */
-    }
+    if (this->moving) return;	/* already moving */
+    DELETE(Move, e->m);
 
     /* check destination coordinates */
     if (e->b->entity(e->b, e->x+md->x, e->y+md->y, &d) < 0)
@@ -68,6 +64,7 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
     {
 	e->m = NEW(Move);
 	e->m->init(e->m, e, md->x, md->y, TR_Linear);
+	this->moving = 1;
 	e->b->startMove(e->b, e->m);
 	AddHandler(e->m->Finished, this, &Move_Finished);
     }
@@ -81,6 +78,7 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
 	    e->m = NEW(Move);
 	    e->m->init(e->m, e, md->x, 0, TR_Linear);
 	    e->m->rel = MR_Master;
+	    this->moving = 1;
 	    e->b->startMove(e->b, e->m);
 	    AddHandler(e->m->Finished, this, &Move_Finished);
 	    d->m = NEW(Move);
@@ -102,6 +100,7 @@ m_init(THIS, Board b, int x, int y)
     e->getBackground = b->getEmptyBackground;
     this->moveLock = 0;
     this->alive = 1;
+    this->moving = 0;
     instance = this;
     
     AddHandler(CAST(mainApp, Stoneage)->MoveWilly, this, &Stoneage_MoveWilly);

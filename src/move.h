@@ -43,7 +43,6 @@ CLASS(Move)
     Move prev;	    /**< pointer to previous Move in list, used by Board. */
     int dx;	    /**< x-direction of the Move (-1, 0, 1) */
     int dy;	    /**< y-direction of the Move (-1, 0, 1) */
-    int finished;   /**< 1 when move is finished */
     MoveRel rel;    /**< relationship to other Move */
 
     Event Finished;

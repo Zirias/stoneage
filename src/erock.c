@@ -18,13 +18,8 @@ Move_Finished(THIS, Object sender, void *data)
 
     e = CAST(this, Entity);
     w = 0;
-    if (e->m)
-    {
-	if (e->m->finished)
-	    DELETE(Move, e->m);
-	else
-	    return; /* new move already started */
-    }
+    DELETE(Move, e->m);
+    this->moving = 0;
 
     /* bottom of board */
     if (e->b->entity(e->b, e->x, e->y+1, &n) < 0) return;
@@ -69,6 +64,7 @@ Move_Finished(THIS, Object sender, void *data)
     /* found possible move -> start it */
     if (e->m)
     {
+	this->moving = 1;
 	e->b->startMove(e->b, e->m);
 	AddHandler(e->m->Finished, this, &Move_Finished);
     }
@@ -82,6 +78,8 @@ m_init(THIS, Board b, int x, int y)
 
     Entity e = CAST(this, Entity);
     parent_init(e, b, x, y);
+
+    this->moving = 0;
 
     e->getBackground = b->getEmptyBackground;
 }
@@ -99,15 +97,11 @@ m_fall(THIS)
     METHOD(ERock);
 
     Entity e = CAST(this, Entity);
-    if (e->m)
-    {
-	if (e->m->finished)
-	    DELETE(Move, e->m);
-	else
-	    return; /* new move already started */
-    }
+    if (this->moving) return; /* new move already started */
+    DELETE(Move, e->m);
     e->m = NEW(Move);
     e->m->init(e->m, e, 0, 1, TR_Linear);
+    this->moving = 1;
     e->b->startMove(e->b, e->m);
     AddHandler(e->m->Finished, this, &Move_Finished);
 }

@@ -300,7 +300,9 @@ m_draw(THIS, int x, int y, int refresh)
 		0, sf, &(b->drawArea));
 
 
-    if (tile && (!e->m || e->m->finished))
+    if (tile &&
+	    (!CAST(e, EWilly) || !((EWilly)e)->moving) &&
+	    (!CAST(e, ERock) || !((ERock)e)->moving))
 	SDL_BlitSurface((SDL_Surface *)tile, 0, sf, &(b->drawArea));
 
     if (refresh)
@@ -422,13 +424,10 @@ checkRocks(Board b)
     ERock r;
     Entity e;
 
-    /* let willy finish his current move */
-    e = (Entity)getWilly();
-    if (e && e->m && !e->m->finished) return;
-
     for (i=0; i<b->pimpl->num_rocks; ++i)
     {
 	r = b->pimpl->rock[i];
+	if (r->moving) continue;
 	e = CAST(r, Entity);
 	if (e->y<LVL_ROWS-1 && !b->pimpl->entity[e->y+1][e->x])
 	{

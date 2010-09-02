@@ -4,7 +4,7 @@
 #include "event.h"
 #include "app.h"
 
-#define EVENT_QUEUE_SIZE 512
+#define EVENT_QUEUE_SIZE 64
 #define MAX_EVENT_HANDLERS 16
 
 struct Event
@@ -19,7 +19,7 @@ struct Event
 
 typedef struct
 {
-    int active;
+    volatile int active;
     Event e;
     Object sender;
     void *data;
@@ -27,9 +27,9 @@ typedef struct
 
 static volatile int raiseLock = 1;
 static EventDelivery events[EVENT_QUEUE_SIZE];
-static volatile int pendingEvents = 0;
-static EventDelivery * volatile head = &events[EVENT_QUEUE_SIZE];
-static EventDelivery * volatile tail = &events[EVENT_QUEUE_SIZE];
+static int pendingEvents = 0;
+static EventDelivery *head = &events[EVENT_QUEUE_SIZE];
+static EventDelivery *tail = &events[EVENT_QUEUE_SIZE];
 
 void
 AddHandler(Event e, void *instance, EventHandler handler)
@@ -77,7 +77,6 @@ DeliverEvents(void)
 
     while (pendingEvents)
     {
-	--pendingEvents;
 	if (tail == &events[0])
 	{
 	    tail = &events[EVENT_QUEUE_SIZE];
@@ -85,7 +84,9 @@ DeliverEvents(void)
 	deliver = --tail;
 	if (deliver->active)
 	{
-	    for (i = 0; i < deliver->e->registeredHandlers; ++i)
+	    for (i = 0;
+		    deliver->active && i < deliver->e->registeredHandlers;
+		    ++i )
 	    {
 		deliver->e->handlers[i].method(
 			deliver->e->handlers[i].instance,
@@ -93,6 +94,7 @@ DeliverEvents(void)
 	    }
 	    XFREE(deliver->data);
 	}
+	--pendingEvents;
     }
 
     return 1;

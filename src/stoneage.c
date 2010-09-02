@@ -4,7 +4,6 @@
 #include "screen.h"
 #include "board.h"
 #include "event.h"
-#include "move.h"
 #include "ewilly.h"
 
 typedef enum
@@ -70,9 +69,9 @@ static void
 moveWilly(Stoneage this, int x, int y)
 {
     MoveWillyEventData *data;
-    Entity e = (Entity)getWilly();
+    EWilly w = getWilly();
 
-    if (e->m && !e->m->finished) return;
+    if (w->moving) return;
     
     data = XMALLOC(MoveWillyEventData, 1);
     data->x = x;
@@ -104,7 +103,6 @@ checkKeys(Stoneage this)
 {
     int x, y;
 
-    SDL_PumpEvents();
     x = keyState[SDLK_RIGHT] - keyState[SDLK_LEFT];
     y = keyState[SDLK_DOWN] - keyState[SDLK_UP];
     if (x||y)
@@ -260,17 +258,7 @@ m_run(THIS, int argc, char **argv)
 	{
 	    running = handleSDLEvent(this, &event);
 	}
-	/*
-	SDL_WaitEvent(&event);
-	running = handleSDLEvent(this, &event);
-	while (running && DeliverEvents())
-	{
-	    while (running && SDL_PollEvent(&event))
-	    {
-		running = handleSDLEvent(this, &event);
-	    }
-	}
-	*/
+	SDL_Delay(10);
     }
     return 0;
 }
