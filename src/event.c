@@ -127,13 +127,18 @@ DeliverEvents(wait)
     EventDelivery *deliver;
     int i;
 
+    SDL_SemWait(raiseLock);
     if (wait)
     {
 	SDL_SemWait(pendingEvents);
     }
     else
     {
-	if (!SDL_SemTryWait(pendingEvents)) return 0;
+	if (!SDL_SemTryWait(pendingEvents))
+	{
+	    SDL_SemPost(raiseLock);
+	    return 0;
+	}
     }
 
     while (eventCount)
@@ -154,6 +159,7 @@ DeliverEvents(wait)
 	XFREE(deliver->data);
 	--eventCount;
     }
+    SDL_SemPost(raiseLock);
 
     return 1;
 }
