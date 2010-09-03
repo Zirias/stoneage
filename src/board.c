@@ -103,17 +103,15 @@ Move_Finished(THIS, Object sender, void *data)
     m = CAST(sender, Move);
     e = m->entity(m);
 
-    if (m->prev)
+    if (m->prev != m)
     {
 	m->prev->next = m->next;
+	m->next->prev = m->prev;
+	if (b->movelist == m) b->movelist = m->next;
     }
     else
     {
-	b->movelist = m->next;
-    }
-    if (m->next)
-    {
-	m->next->prev = m->prev;
+	b->movelist = 0;
     }
     b->entity[e->y][e->x] = 0;
     e->x += m->dx;
@@ -247,12 +245,12 @@ Board_MoveTick(THIS, Object sender, void *data)
     }
     else
     {
-	while (m)
+	do
 	{
 	    next = m->next;
 	    moveStep(this, m);
 	    m = next;
-	}
+	} while (m != this->pimpl->movelist);
     }
 }
 
@@ -403,10 +401,17 @@ m_startMove(THIS, Move m)
 
     if (this->pimpl->movelist) 
     {
-	this->pimpl->movelist->prev = m;
 	m->next = this->pimpl->movelist;
+	m->prev = this->pimpl->movelist->prev;
+	this->pimpl->movelist->prev->next = m;
+	this->pimpl->movelist->prev = m;
     }
-    this->pimpl->movelist = m;
+    else
+    {
+	m->next = m;
+	m->prev = m;
+	this->pimpl->movelist = m;
+    }
 
     if (!this->pimpl->moveticker)
     {

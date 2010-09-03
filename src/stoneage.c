@@ -6,40 +6,30 @@
 #include "event.h"
 #include "ewilly.h"
 
-typedef enum
-{
-    TT_None,
-    TT_KeyCombine
-} TickerType;
-
 static Uint8 *keyState;
 
 struct Stoneage_impl
 {
     int paused;
+    int running;
     Uint32 lastTimerTicks;
     Uint32 remainingTimerTicks;
 
     SDL_TimerID ticker;
-    SDL_TimerID keyCheck;
+    SDL_TimerID keyCheckTimer;
+
+    Event KeyCheck;
 };
 
 Uint32
 createTickerEvent(Uint32 interval, void *param)
 {
     Stoneage this = CAST(param, Stoneage);
+    struct Stoneage_impl *s = this->pimpl;
 
-    SDL_Event e;
-    SDL_UserEvent ue;
+    s->lastTimerTicks = SDL_GetTicks();
+    RaiseEvent(this->Tick, (Object)this, 0);
 
-    this->pimpl->lastTimerTicks = SDL_GetTicks();
-    ue.type = SDL_USEREVENT;
-    ue.code = 0;
-    ue.data1 = 0;
-    ue.data2 = (void *)TT_None;
-    e.type = SDL_USEREVENT;
-    e.user = ue;
-    SDL_PushEvent(&e);
     return 1000;
 }
 
@@ -82,25 +72,19 @@ moveWilly(Stoneage this, int x, int y)
 Uint32
 combineKey(Uint32 interval, void *param)
 {
-    /*
     Stoneage this = CAST(param, Stoneage);
-    */
+    struct Stoneage_impl *s = this->pimpl;
 
-    SDL_Event e;
-    SDL_UserEvent ue;
-    ue.type = SDL_USEREVENT;
-    ue.code = 0;
-    ue.data1 = 0;
-    ue.data2 = (void *)TT_KeyCombine;
-    e.type = SDL_USEREVENT;
-    e.user = ue;
-    SDL_PushEvent(&e);
+    RaiseEvent(s->KeyCheck, (Object)this, 0);
+
     return interval;
 }
 
 static void
-checkKeys(Stoneage this)
+Stoneage_KeyCheck(THIS, Object sender, void *eventData)
 {
+    METHOD(Stoneage);
+
     int x, y;
 
     x = keyState[SDLK_RIGHT] - keyState[SDLK_LEFT];
@@ -109,8 +93,8 @@ checkKeys(Stoneage this)
 	moveWilly(this, x, y);
     else
     {
-	SDL_RemoveTimer(this->pimpl->keyCheck);
-	this->pimpl->keyCheck = 0;
+	SDL_RemoveTimer(this->pimpl->keyCheckTimer);
+	this->pimpl->keyCheckTimer = 0;
     }
 }
 
@@ -184,8 +168,8 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 		case SDLK_DOWN:
 		case SDLK_LEFT:
 		case SDLK_RIGHT:
-		    if (!simpl->keyCheck)
-			simpl->keyCheck = SDL_AddTimer(30, &combineKey, this);
+		    if (!simpl->keyCheckTimer)
+			simpl->keyCheckTimer = SDL_AddTimer(30, &combineKey, this);
 		    break;
 		case SDLK_p:
 		    simpl->paused ^= 1;
@@ -199,40 +183,23 @@ handleKeyboardEvent(Stoneage this, SDL_KeyboardEvent *e)
 }
 
 static void
-handleTick(Stoneage this)
+handleSDLEvent(THIS, Object sender, void *eventData)
 {
-    Screen s = getScreen();
+    METHOD(Stoneage);
 
-    s->timeStep(s);
-}
+    SDL_Event *e = eventData;
 
-static int
-handleSDLEvent(Stoneage this, SDL_Event *e)
-{
     switch (e->type)
     {
-	case SDL_USEREVENT:
-	    switch ((TickerType)e->user.data2)
-	    {
-		case TT_None:
-		    handleTick(this);
-		    break;
-		case TT_KeyCombine:
-		    checkKeys(this);
-		    break;
-	    }
-	    break;
-	
 	case SDL_KEYDOWN:
 	case SDL_KEYUP:
 	    handleKeyboardEvent(this, &(e->key));
 	    break;
 
 	case SDL_QUIT:
-	    return 0;
+	    this->pimpl->running = 0;
 	    break;
     }
-    return 1;
 }
 
 static int
@@ -240,26 +207,23 @@ m_run(THIS, int argc, char **argv)
 {
     METHOD(Stoneage);
 
-    SDL_Event event;
-    int running;
     Screen s;
-
     s = getScreen();
     setupVideo(this);
     s->initVideo(s);
     s->startGame(s);
 
-    running = 1;
+    this->pimpl->running = 1;
     keyState = SDL_GetKeyState(0);
-    while (running)
+    InitEvents();
+    AddHandler(SDLEvent, this, &handleSDLEvent);
+
+    while (this->pimpl->running)
     {
-	DeliverEvents();
-	while (SDL_PollEvent(&event))
-	{
-	    running = handleSDLEvent(this, &event);
-	}
-	SDL_Delay(10);
+	DeliverEvents(1);
     }
+
+    DoneEvents();
     return 0;
 }
 
@@ -297,14 +261,23 @@ CTOR(Stoneage)
 	    " -- as seen 1988 in AmigaBASIC", "stoneage");
 
     s->ticker = SDL_AddTimer(1000, &createTickerEvent, this);
-    s->keyCheck = 0;
+    s->keyCheckTimer = 0;
+
     this->MoveWilly = CreateEvent();
+    this->Tick = CreateEvent();
+    s->KeyCheck = CreateEvent();
+
+    AddHandler(s->KeyCheck, this, &Stoneage_KeyCheck);
+
     return this;
 }
 
 DTOR(Stoneage)
 {
+    DestroyEvent(this->pimpl->KeyCheck);
+    DestroyEvent(this->Tick);
     DestroyEvent(this->MoveWilly);
+
     SDL_RemoveTimer(this->pimpl->ticker);
     XFREE(this->pimpl);
     SDL_Quit();

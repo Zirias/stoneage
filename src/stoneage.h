@@ -23,6 +23,7 @@ CLASS(Stoneage)
     struct Stoneage_impl *pimpl;
 
     Event MoveWilly;
+    Event Tick;
 
     SDL_Surface *screen;
 

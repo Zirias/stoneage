@@ -1,5 +1,5 @@
 #include <SDL.h>
-#include <stdint.h>
+#include <SDL_thread.h>
 
 #include "event.h"
 #include "app.h"
@@ -25,11 +25,64 @@ typedef struct
     void *data;
 } EventDelivery;
 
-static volatile int raiseLock = 1;
+static SDL_sem *pendingEvents;
+static SDL_sem *raiseLock;
 static EventDelivery events[EVENT_QUEUE_SIZE];
-static int pendingEvents = 0;
+static int eventCount = 0;
 static EventDelivery *head = &events[EVENT_QUEUE_SIZE];
 static EventDelivery *tail = &events[EVENT_QUEUE_SIZE];
+
+static SDL_Thread *SDLEventListener;
+
+static int SDLEventListenerMain(void *data)
+{
+    SDL_Event *ev;
+
+    while (1)
+    {
+	ev = XMALLOC(SDL_Event, 1);
+	SDL_WaitEvent(ev);
+	if (ev->type == SDL_USEREVENT)
+	{
+	    XFREE(ev);
+	    break;
+	}
+	RaiseEvent(SDLEvent, (Object)0, ev);
+    }
+    return 0;
+}
+
+Event SDLEvent;
+
+void
+InitEvents(void)
+{
+    pendingEvents = SDL_CreateSemaphore(0);
+    raiseLock = SDL_CreateSemaphore(1);
+    SDLEvent = CreateEvent();
+    SDLEventListener = SDL_CreateThread(&SDLEventListenerMain, 0);
+}
+
+void
+DoneEvents(void)
+{
+    int i;
+    SDL_Event e;
+
+    e.type = SDL_USEREVENT;
+    SDL_PushEvent(&e);
+    SDL_WaitThread(SDLEventListener, 0);
+
+    for (i = 0; i < EVENT_QUEUE_SIZE; ++i)
+    {
+	events[i].active = 0;
+    }
+    DeliverEvents(0);
+
+    DestroyEvent(SDLEvent);
+    SDL_DestroySemaphore(raiseLock);
+    SDL_DestroySemaphore(pendingEvents);
+}
 
 void
 AddHandler(Event e, void *instance, EventHandler handler)
@@ -48,8 +101,8 @@ RaiseEvent(Event e, Object sender, void *data)
 {
     EventDelivery *newDelivery;
 
-    while (--raiseLock) { ++raiseLock; SDL_Delay(10); }
-    if (pendingEvents >= EVENT_QUEUE_SIZE)
+    SDL_SemWait(raiseLock);
+    if (eventCount >= EVENT_QUEUE_SIZE)
     {
 	log_err("event queue overflow!\n");
 	mainApp->abort(mainApp);
@@ -63,19 +116,27 @@ RaiseEvent(Event e, Object sender, void *data)
     newDelivery->e = e;
     newDelivery->sender = sender;
     newDelivery->data = data;
-    ++pendingEvents;
-    ++raiseLock;
+    ++eventCount;
+    if (SDL_SemValue(pendingEvents)) SDL_SemPost(pendingEvents);
+    SDL_SemPost(raiseLock);
 }
 
 int
-DeliverEvents(void)
+DeliverEvents(wait)
 {
     EventDelivery *deliver;
     int i;
 
-    if (!pendingEvents) return 0;
+    if (wait)
+    {
+	SDL_SemWait(pendingEvents);
+    }
+    else
+    {
+	if (!SDL_SemTryWait(pendingEvents)) return 0;
+    }
 
-    while (pendingEvents)
+    while (eventCount)
     {
 	if (tail == &events[0])
 	{
@@ -91,7 +152,7 @@ DeliverEvents(void)
 		    deliver->sender, deliver->data);
 	}
 	XFREE(deliver->data);
-	--pendingEvents;
+	--eventCount;
     }
 
     return 1;
@@ -102,7 +163,7 @@ CancelEvent(Event e)
 {
     int i;
 
-    if (!pendingEvents) return;
+    if (!eventCount) return;
     for (i = 0; i < EVENT_QUEUE_SIZE; ++i)
     {
 	if (events[i].e == e)
