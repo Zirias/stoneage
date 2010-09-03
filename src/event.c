@@ -1,174 +1,135 @@
 #include <SDL.h>
-#include <SDL_thread.h>
+#include <stdint.h>
 
 #include "event.h"
+#include "ehandler.h"
 #include "app.h"
-
-#define EVENT_QUEUE_SIZE 64
-#define MAX_EVENT_HANDLERS 16
-
-struct Event
-{
-    int registeredHandlers;
-    struct
-    {
-	void *instance;
-	EventHandler method;
-    } handlers[MAX_EVENT_HANDLERS];
-};
 
 typedef struct
 {
-    volatile int active;
+    int valid;
     Event e;
-    Object sender;
-    void *data;
-} EventDelivery;
+    EHandler h;
+} EventRecord;
 
-static volatile int processingEvents = 0;
-static SDL_sem *raiseLock;
-static EventDelivery events[EVENT_QUEUE_SIZE];
-static volatile int eventCount = 0;
-static EventDelivery *head = &events[EVENT_QUEUE_SIZE];
-static EventDelivery *tail = &events[EVENT_QUEUE_SIZE];
+static EventRecord EventRegistry[64];
 
-static void checkSdlEvents(void)
+static void
+registerEvent(Event e)
 {
-    SDL_Event *ev;
-
-    while (1)
+    EventRecord *r;
+    EventRecord *end = &EventRegistry[64];
+    for(r = &EventRegistry[0]; r != end; ++r)
     {
-	ev = XMALLOC(SDL_Event, 1);
-	if (!SDL_PollEvent(ev))
+	if (!r->valid)
 	{
-	    XFREE(ev);
-	    break;
+	    r->valid = 1;
+	    r->e = e;
+	    r->h = e->handler;
+	    return;
 	}
-	RaiseEvent(SDLEvent, (Object)0, ev);
     }
+    log_err("event queue overrun!\n");
+    DELETE(Event, e);
+    mainApp->abort(mainApp);
 }
 
-Event SDLEvent;
-
-void
-InitEvents(void)
+static int
+confirmEvent(Event e)
 {
-    raiseLock = SDL_CreateSemaphore(1);
-    SDLEvent = CreateEvent();
-}
-
-void
-DoneEvents(void)
-{
-    int i;
-
-    processingEvents = 0;
-
-    for (i = 0; i < EVENT_QUEUE_SIZE; ++i)
+    EventRecord *r;
+    EventRecord *end = &EventRegistry[64];
+    for(r = &EventRegistry[0]; r != end; ++r)
     {
-	events[i].active = 0;
+	if (!r->valid) continue;
+	if (r->e == e)
+	{
+	    r->valid = 0;
+	    return 1;
+	}
     }
-
-    DestroyEvent(SDLEvent);
-    SDL_DestroySemaphore(raiseLock);
+    return 0;
 }
 
 void
-AddHandler(Event e, void *instance, EventHandler handler)
+DeliverEvent(Event e)
 {
-    if (e->registeredHandlers == MAX_EVENT_HANDLERS)
+    if (!e) return;
+    if (!confirmEvent(e))
     {
-	log_err("event handler overflow!\n");
-	mainApp->abort(mainApp);
-    }
-    e->handlers[e->registeredHandlers].instance = instance;
-    e->handlers[e->registeredHandlers++].method = handler;
-}
-
-void
-RaiseEvent(Event e, Object sender, void *data)
-{
-    EventDelivery *newDelivery;
-
-    if (eventCount >= EVENT_QUEUE_SIZE)
-    {
-	log_err("event queue overflow!\n");
+	DELETE(Event, e);
 	return;
     }
-    if (head == &events[0])
+
+    if (!e->handler || !e->handler->handleEvent)
     {
-	head = &events[EVENT_QUEUE_SIZE];
+	DELETE(Event, e);
+	return;
     }
-    SDL_SemWait(raiseLock);
-    newDelivery = --head;
-    newDelivery->active = 1;
-    newDelivery->e = e;
-    newDelivery->sender = sender;
-    newDelivery->data = data;
-    ++eventCount;
-    SDL_SemPost(raiseLock);
-}
-
-void
-DeliverEvents(void)
-{
-    EventDelivery *deliver;
-    int i;
-
-    processingEvents = 1;
-
-    while (processingEvents)
-    {
-	while (eventCount)
-	{
-	    if (tail == &events[0])
-	    {
-		tail = &events[EVENT_QUEUE_SIZE];
-	    }
-	    deliver = --tail;
-	    for (i = 0;
-		    deliver->active && i < deliver->e->registeredHandlers;
-		    ++i )
-	    {
-		deliver->e->handlers[i].method(
-			deliver->e->handlers[i].instance,
-			deliver->sender, deliver->data);
-	    }
-	    XFREE(deliver->data);
-	    --eventCount;
-	}
-	SDL_Delay(10);
-	checkSdlEvents();
-    }
+    e->handler->handleEvent(e->handler, e);
 }
 
 void
 CancelEvent(Event e)
 {
-    int i;
-
-    if (!eventCount) return;
-    for (i = 0; i < EVENT_QUEUE_SIZE; ++i)
+    EventRecord *r;
+    EventRecord *end = &EventRegistry[64];
+    for(r = &EventRegistry[0]; r != end; ++r)
     {
-	if (events[i].e == e)
+	if (!r->valid) continue;
+	if (r->e == e)
 	{
-	    events[i].active = 0;
+	    r->valid = 0;
+	    return;
 	}
     }
 }
 
-Event
-CreateEvent(void)
+void
+CancelEventsFor(EHandler h)
 {
-    Event e = XMALLOC(struct Event, 1);
-    e->registeredHandlers = 0;
-    return e;
+    EventRecord *r;
+    EventRecord *end = &EventRegistry[64];
+    for(r = &EventRegistry[0]; r != end; ++r)
+    {
+	if (!r->valid) continue;
+	if (r->h == h)
+	{
+	    r->valid = 0;
+	}
+    }
 }
 
 void
-DestroyEvent(Event e)
+RaiseEvent(Event e)
 {
-    CancelEvent(e);
-    XFREE(e);
+    SDL_Event ev;
+    SDL_UserEvent uev;
+
+    registerEvent(e);
+
+    uev.type = SDL_USEREVENT;
+    uev.code = 1;
+    uev.data1 = e;
+    uev.data2 = 0;
+    ev.type = SDL_USEREVENT;
+    ev.user = uev;
+
+    SDL_PushEvent(&ev);
 }
 
+CTOR(Event)
+{
+    BASECTOR(Event, Object);
+    this->type = 0;
+    this->sender = 0;
+    this->handler = 0;
+    this->data = 0;
+    return this;
+}
+
+DTOR(Event)
+{
+    XFREE(this->data);
+    BASEDTOR(Object);
+}

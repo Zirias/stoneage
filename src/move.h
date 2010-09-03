@@ -2,7 +2,6 @@
 #define STONEAGE_MOVE_H
 
 #include "common.h"
-#include "event.h"
 
 /** @file move.h
  * includes definition of class Move.
@@ -43,9 +42,7 @@ CLASS(Move)
     Move prev;	    /**< pointer to previous Move in list, used by Board. */
     int dx;	    /**< x-direction of the Move (-1, 0, 1) */
     int dy;	    /**< y-direction of the Move (-1, 0, 1) */
-    MoveRel rel;    /**< relationship to other Move */
-
-    Event Finished;
+    MoveRel rel;	    /**< relationship to other Move */
 
     /** Initialize a new Move.
      * Initializes a new Move for a given Entity with directions and trajectory.

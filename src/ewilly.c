@@ -1,5 +1,4 @@
 #include "ewilly.h"
-#include "stoneage.h"
 #include "board.h"
 #include "move.h"
 #include "screen.h"
@@ -15,78 +14,74 @@ static void
 FUNC(parent_init)(THIS, Board b, int x, int y);
 
 static void
-Move_Finished(THIS, Object sender, void *data)
+m_handleEvent(THIS, Event ev)
 {
     METHOD(EWilly);
 
-    int x, y;
-    Entity e = CAST(this, Entity);
-
-    this->moving = 0;
-    for (x=e->x-1; x<=e->x+1; ++x) for (y=e->y-1; y<=e->y+1; ++y)
-	e->b->draw(e->b, x, y, 1);
-}
-
-static void
-Stoneage_MoveWilly(THIS, Object sender, void *data)
-{
-    METHOD(EWilly);
-    
     Entity e, d, d1, d2;
-    MoveWillyEventData *md = data;
-   
+    MoveData md;
+    int x, y;
+
     e = CAST(this, Entity);
 
-    if (this->moveLock) return;	/* no moving allowed */
-    if (!this->alive) return;	/* dead willy */
-    if (this->moving) return;	/* already moving */
-    DELETE(Move, e->m);
-
-    /* check destination coordinates */
-    if (e->b->entity(e->b, e->x+md->x, e->y+md->y, &d) < 0)
-	return;
-
-    /* check diagonal neighbors if necessary */
-    if (md->x && md->y)
+    if (ev->type == SAEV_Move)
     {
-	e->b->entity(e->b, e->x+md->x, e->y, &d1);
-	e->b->entity(e->b, e->x, e->y+md->y, &d2);
+	if (this->moveLock) goto m_handleEvent_done;	/* no moving allowed */
+	if (!this->alive) goto m_handleEvent_done;	/* dead willy */
+	if (e->m) goto m_handleEvent_done;		/* already moving */
+	md = (MoveData) ev->data;
 
-	/* both are walls or rocks? -> no move possible */
-	if (d1 && d2 &&
-		(CAST(d1, EWall) || CAST(d1, ERock)) &&
-		(CAST(d2, EWall) || CAST(d2, ERock)))
-	    return;
-    }
+	/* check destination coordinates */
+	if (e->b->entity(e->b, e->x+md->x, e->y+md->y, &d) < 0)
+	    goto m_handleEvent_done;
 
-    /* check destination field */
-    if (!d || CAST(d, EEarth) || CAST(d, ECabbage))
-    {
-	e->m = NEW(Move);
-	e->m->init(e->m, e, md->x, md->y, TR_Linear);
-	this->moving = 1;
-	e->b->startMove(e->b, e->m);
-	AddHandler(e->m->Finished, this, &Move_Finished);
-    }
+	/* check diagonal neighbors if necessary */
+	if (md->x && md->y)
+	{
+	    e->b->entity(e->b, e->x+md->x, e->y, &d1);
+	    e->b->entity(e->b, e->x, e->y+md->y, &d2);
 
-    /* special case: pushing a rock */
-    else if (!md->y && CAST(d, ERock) && !(d->m))
-    {
-	if (e->b->entity(e->b, e->x+2*md->x, e->y, &d1) < 0) return;
-	if (!d1)
+	    /* both are walls or rocks? -> no move possible */
+	    if (d1 && d2 &&
+		    (CAST(d1, EWall) || CAST(d1, ERock)) &&
+		    (CAST(d2, EWall) || CAST(d2, ERock)))
+		goto m_handleEvent_done;
+	}
+
+	/* check destination field */
+	if (!d || CAST(d, EEarth) || CAST(d, ECabbage))
 	{
 	    e->m = NEW(Move);
-	    e->m->init(e->m, e, md->x, 0, TR_Linear);
-	    e->m->rel = MR_Master;
-	    this->moving = 1;
+	    e->m->init(e->m, e, md->x, md->y, TR_Linear);
 	    e->b->startMove(e->b, e->m);
-	    AddHandler(e->m->Finished, this, &Move_Finished);
-	    d->m = NEW(Move);
-	    d->m->init(d->m, d, md->x, 0, TR_Linear);
-	    d->m->rel = MR_Slave;
-	    e->b->startMove(e->b, d->m);
+	}
+
+	/* special case: pushing a rock */
+	else if (!md->y && CAST(d, ERock) && !(d->m))
+	{
+	    if (e->b->entity(e->b, e->x+2*md->x, e->y, &d1) < 0)
+		goto m_handleEvent_done;
+	    if (!d1)
+	    {
+		e->m = NEW(Move);
+		e->m->init(e->m, e, md->x, 0, TR_Linear);
+		e->m->rel = MR_Master;
+		e->b->startMove(e->b, e->m);
+		d->m = NEW(Move);
+		d->m->init(d->m, d, md->x, 0, TR_Linear);
+		d->m->rel = MR_Slave;
+		e->b->startMove(e->b, d->m);
+	    }
 	}
     }
+    else if (ev->type == SAEV_MoveFinished)
+    {
+	for (x=e->x-1; x<=e->x+1; ++x) for (y=e->y-1; y<=e->y+1; ++y)
+	    e->b->draw(e->b, x, y, 1);
+    }
+
+m_handleEvent_done:
+    DELETE(Event, ev);
 }
 
 static void
@@ -100,10 +95,7 @@ m_init(THIS, Board b, int x, int y)
     e->getBackground = b->getEmptyBackground;
     this->moveLock = 0;
     this->alive = 1;
-    this->moving = 0;
     instance = this;
-    
-    AddHandler(CAST(mainApp, Stoneage)->MoveWilly, this, &Stoneage_MoveWilly);
 }
 
 static void
@@ -128,6 +120,7 @@ CTOR(EWilly)
 
     BASECTOR(EWilly, Entity);
 
+    ((EHandler)this)->handleEvent = &m_handleEvent;
     e = CAST(this, Entity);
     parent_init = e->init;
     e->init = &m_init;

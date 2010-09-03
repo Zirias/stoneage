@@ -4,7 +4,7 @@
 #include <SDL.h>
 
 #include "common.h"
-#include "event.h"
+#include "ehandler.h"
 
 struct Board_impl;
 
@@ -21,11 +21,9 @@ struct Move;
  */
 CLASS(Board)
 {
-    INHERIT(Object);
+    INHERIT(EHandler);
 
     struct Board_impl *pimpl; /**< @private */
-
-    Event MoveTick;
 
     /** Set geometry information of the board.
      * This must be called when the size of a tile is about to change, e.g.

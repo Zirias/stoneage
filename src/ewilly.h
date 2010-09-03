@@ -9,7 +9,6 @@ CLASS(EWilly)
     INHERIT(Entity);
 
     int moveLock;
-    int moving;
     int alive;
 };
 

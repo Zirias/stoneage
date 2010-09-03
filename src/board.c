@@ -65,7 +65,12 @@ createMoveTickEvent(Uint32 interval, void *param)
 {
     Board b = CAST(param, Board);
 
-    RaiseEvent(b->MoveTick, (Object)b, 0);
+    Event e = NEW(Event);
+    e->sender = CAST(b, Object);
+    e->handler = CAST(b, EHandler);
+    e->type = SAEV_MoveTick;
+
+    RaiseEvent(e);
     
     return interval;
 }
@@ -90,70 +95,14 @@ scanLevel(Board b)
 }
 
 static void
-Move_Finished(THIS, Object sender, void *data)
-{
-    METHOD(Board);
-
-    Move m;
-    Entity e, d;
-    int x, y;
-
-    struct Board_impl *b = this->pimpl;
-
-    m = CAST(sender, Move);
-    e = m->entity(m);
-
-    if (m->prev != m)
-    {
-	m->prev->next = m->next;
-	m->next->prev = m->prev;
-	if (b->movelist == m) b->movelist = m->next;
-    }
-    else
-    {
-	b->movelist = 0;
-    }
-    b->entity[e->y][e->x] = 0;
-    e->x += m->dx;
-    e->y += m->dy;
-    d = b->entity[e->y][e->x];
-    if (d)
-    {
-	if (CAST(d, ECabbage))
-	{
-	    b->num_cabbages--;
-	}
-	if (!CAST(d, EWilly)) d->dispose(d);
-    }
-    b->entity[e->y][e->x] = e;
-
-    if (CAST(e, EWilly))
-    {
-	for (x=e->x-1; x<=e->x+1; ++x) for (y=e->y-1; y<=e->y+1; ++y)
-	    this->draw(this, x, y, 1);
-    }
-
-    checkRocks(this);
-
-    if (!b->movelist)
-    {
-	/* all moves finished, unfreeze willy */
-	getWilly()->moveLock = 0;
-    }
-
-    if (!b->num_cabbages) {
-	b->level++;
-	if (b->level >= BUILTIN_LEVELS) b->level = 0;
-	this->loadLevel(this, -1);
-    }
-}
-
-static void
 moveStep(Board this, Move m)
 {
+    int done;
     int tw, th;
     SDL_Rect dirty;
     Entity e;
+    Entity d;
+    Event ev;
     
     Screen s = getScreen();
     SDL_Surface *sf = SDL_GetVideoSurface();
@@ -185,10 +134,67 @@ moveStep(Board this, Move m)
 	if (m->dx && m->dy) this->draw(this, e->x + m->dx, e->y + m->dy, 0);
     }
 
-    m->step(m, &(b->drawArea.x), &(b->drawArea.y));
+    done = m->step(m, &(b->drawArea.x), &(b->drawArea.y));
     SDL_BlitSurface((SDL_Surface *)e->getSurface(e),
 	    0, sf, &(b->drawArea));
     SDL_UpdateRects(sf, 1, &dirty);
+
+    if (done)
+    {
+	if (m->prev)
+	{
+	    m->prev->next = m->next;
+	}
+	else
+	{
+	    b->movelist = m->next;
+	}
+	if (m->next)
+	{
+	    m->next->prev = m->prev;
+	}
+	b->entity[e->y][e->x] = 0;
+	e->x += m->dx;
+	e->y += m->dy;
+	e->m = 0;
+	d = b->entity[e->y][e->x];
+	if (d)
+	{
+	    if (CAST(d, ECabbage))
+	    {
+		b->num_cabbages--;
+	    }
+	    if (!CAST(d, EWilly)) d->dispose(d);
+	}
+	b->entity[e->y][e->x] = e;
+
+	if (m->rel != MR_Slave)
+	{
+	    /* don't give the slave of a move any events */
+
+	    ev = NEW(Event);
+	    ev->sender = CAST(this, Object);
+	    ev->handler = CAST(e, EHandler);
+	    ev->type = SAEV_MoveFinished;
+	    RaiseEvent(ev);
+	}
+
+	DELETE(Move, m);
+
+	checkRocks(this);
+
+	if (!b->movelist)
+	{
+	    /* all moves finished, unfreeze willy */
+	    getWilly()->moveLock = 0;
+	}
+    }
+
+    if (!b->num_cabbages) {
+	b->level++;
+	if (b->level >= BUILTIN_LEVELS) b->level = 0;
+	this->loadLevel(this, -1);
+    }
 }
 
 static void
@@ -203,7 +209,7 @@ internal_clear(Board b)
     {
 	SDL_RemoveTimer(b->pimpl->moveticker);
 	b->pimpl->moveticker = 0;
-	CancelEvent(b->MoveTick);
+	CancelEventsFor(CAST(b, EHandler));
 	m = b->pimpl->movelist;
 	b->pimpl->movelist = 0;
 	while (m)
@@ -216,9 +222,9 @@ internal_clear(Board b)
 
     for (e = (Entity *) &(b->pimpl->entity); e != end; ++e)
     {
-	if (*e)
+	if(*e)
 	{
-	    if ((*e)->m) CancelEvent((*e)->m->Finished);
+	    CancelEventsFor(CAST(*e, EHandler));
 	    (*e)->dispose(*e);
 	}
 	*e = 0;
@@ -231,27 +237,33 @@ internal_clear(Board b)
 }
 
 static void
-Board_MoveTick(THIS, Object sender, void *data)
+m_handleEvent(THIS, Event e)
 {
     METHOD(Board);
 
-    Move m, next;
+    Move m;
+    Move next;
 
-    m = this->pimpl->movelist;
-    if (!m)
+    if (e->type == SAEV_MoveTick)
     {
-	SDL_RemoveTimer(this->pimpl->moveticker);
-	this->pimpl->moveticker = 0;
-    }
-    else
-    {
-	do
+	m = this->pimpl->movelist;
+	if (!m)
 	{
-	    next = m->next;
-	    moveStep(this, m);
-	    m = next;
-	} while (m != this->pimpl->movelist);
+	    SDL_RemoveTimer(this->pimpl->moveticker);
+	    this->pimpl->moveticker = 0;
+	}
+	else
+	{
+	    while (m)
+	    {
+		next = m->next;
+		moveStep(this, m);
+		m = next;
+	    }
+	}
     }
+    
+    DELETE(Event, e);
 }
 
 static void
@@ -298,9 +310,7 @@ m_draw(THIS, int x, int y, int refresh)
 		0, sf, &(b->drawArea));
 
 
-    if (tile &&
-	    (!CAST(e, EWilly) || !((EWilly)e)->moving) &&
-	    (!CAST(e, ERock) || !((ERock)e)->moving))
+    if (tile && !e->m)
 	SDL_BlitSurface((SDL_Surface *)tile, 0, sf, &(b->drawArea));
 
     if (refresh)
@@ -401,25 +411,16 @@ m_startMove(THIS, Move m)
 
     if (this->pimpl->movelist) 
     {
-	m->next = this->pimpl->movelist;
-	m->prev = this->pimpl->movelist->prev;
-	this->pimpl->movelist->prev->next = m;
 	this->pimpl->movelist->prev = m;
+	m->next = this->pimpl->movelist;
     }
-    else
-    {
-	m->next = m;
-	m->prev = m;
-	this->pimpl->movelist = m;
-    }
+    this->pimpl->movelist = m;
 
     if (!this->pimpl->moveticker)
     {
 	this->pimpl->moveticker = SDL_AddTimer(
 		20, &createMoveTickEvent, this);
     }
-
-    AddHandler(m->Finished, (Object)this, &Move_Finished);
 }
 
 static void
@@ -428,11 +429,15 @@ checkRocks(Board b)
     int i;
     ERock r;
     Entity e;
+    EWilly w;
+
+    /* let willy finish his current move */
+    w = getWilly();
+    if (w && CAST(w, Entity)->m) return;
 
     for (i=0; i<b->pimpl->num_rocks; ++i)
     {
 	r = b->pimpl->rock[i];
-	if (r->moving) continue;
 	e = CAST(r, Entity);
 	if (e->y<LVL_ROWS-1 && !b->pimpl->entity[e->y+1][e->x])
 	{
@@ -541,13 +546,14 @@ CTOR(Board)
 {
     struct Board_impl *b;
 
-    BASECTOR(Board, Object);
+    BASECTOR(Board, EHandler);
 
     b = XMALLOC(struct Board_impl, 1);
     memset(b, 0, sizeof(struct Board_impl));
     b->level = -1;
     this->pimpl = b;
 
+    ((EHandler)this)->handleEvent = &m_handleEvent;
     this->setGeometry = &m_setGeometry;
     this->loadLevel = &m_loadLevel;
     this->redraw = &m_redraw;
@@ -558,9 +564,6 @@ CTOR(Board)
     this->getEmptyBackground = &m_getEmptyBackground;
     this->getEarthBackground = &m_getEarthBackground;
 
-    this->MoveTick = CreateEvent();
-    AddHandler(this->MoveTick, this, &Board_MoveTick);
-
     return this;
 }
 
@@ -568,9 +571,7 @@ DTOR(Board)
 {
     internal_clear(this);
 
-    DestroyEvent(this->MoveTick);
-
     XFREE(this->pimpl);
-    BASEDTOR(Object);
+    BASEDTOR(EHandler);
 }
 

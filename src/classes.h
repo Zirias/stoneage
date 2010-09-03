@@ -10,6 +10,8 @@
  * "RTTI" and secure CAST() functionality
  */
 enum Type {
+    CLASS_Event,
+    CLASS_EHandler,
     CLASS_Screen,
     CLASS_Board,
     CLASS_Move,
@@ -24,7 +26,6 @@ enum Type {
     CLASS_Resfile,
     CLASS_Stoneage,
     CLASS_Entity,
-    CLASS_JobQueue,
     CLASS_App,
     CLASS_Object
 };

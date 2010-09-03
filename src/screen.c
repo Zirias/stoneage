@@ -6,8 +6,7 @@
 #include "resfile.h"
 #include "resource.h"
 #include "board.h"
-#include "stoneage.h"
-#include "event.h"
+#include "app.h"
 
 static Screen _instance = 0;
 
@@ -306,7 +305,7 @@ drawTime(Screen this)
 }
 
 static void
-Stoneage_Tick(THIS, Object sender, void *eventData)
+m_timeStep(THIS)
 {
     METHOD(Screen);
 
@@ -393,6 +392,7 @@ CTOR(Screen)
     this->coordinatesToPixel = &m_coordinatesToPixel;
     this->initVideo = &m_initVideo;
     this->startGame = &m_startGame;
+    this->timeStep = &m_timeStep;
 
     rf = NEW(Resfile);
     rf->setFile(rf, RES_GFX);
@@ -436,8 +436,6 @@ CTOR(Screen)
     }
 
     DELETE(Resfile, rf);
-
-    AddHandler(((Stoneage)mainApp)->Tick, this, &Stoneage_Tick);
 
     return this;
 }

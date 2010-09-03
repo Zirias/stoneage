@@ -3,50 +3,59 @@
 
 #include "common.h"
 
-typedef void (* EventHandler)(THIS, Object sender, void *eventData);
+struct EHandler;
 
 /** @file event.h
  * Includes definition of Event class
  */
 
-struct Event;
+/** A type of an Event.
+ * This enumerates all possible event types
+ */
+enum EventType
+{
+    SAEV_MoveTick,
+    SAEV_MoveFinished,
+    SAEV_Move
+};
+
+struct MoveData;
+typedef struct MoveData *MoveData;
+
+/** Data for SAEV_Move event.
+ */
+struct MoveData
+{
+    int x;  /**< x component of requested move (-1,0,1) */
+    int y;  /**< y component of requested move (-1,0,1) */
+};
+
 /** Class representing an Event.
  */
-typedef struct Event *Event;
+CLASS(Event)
+{
+    INHERIT(Object);
 
-/** Fires when an SDL Event occured.
- * The original SDL event is delivered through the eventData pointer
- */
-extern Event SDLEvent;
-
-/** Initialization of Event system.
- * Needs to be called before any Events can be used
- */
-void extern InitEvents(void);
-
-/** Cleanup of Event system.
- * Needs to be called when application is about to exit
- */
-void extern DoneEvents(void);
-
-/** Add a new handler to an event.
- * @relates Event
- * @param e the Event to handle when raised
- * @param instance a pointer to the object instance on which to invoke the handler
- * @param handler pointer to an EventHandler that is called when the Event is raised
- */
-void extern AddHandler(Event e, void *instance, EventHandler handler);
+    enum EventType type;	/**< the event type */
+    Object sender;		/**< who sent the event */
+    struct EHandler *handler;	/**< who should handle the event */
+    void *data;			/**< optional extra data */
+};
 
 /** Schedule an Event for delivery.
  * @relates Event
- * Raise an event, so all registered handlers get called with the next
- * DeliverEvent() invocation. RaiseEvent() is thread-safe, so it can be called
- * for example from SDL timer callbacks.
  * @param e the Event to raise
- * @param sender the sender of the Event
- * @param data optional Event arguments
  */
-void extern RaiseEvent(Event e, Object sender, void *data);
+void extern RaiseEvent(Event e);
+
+/** Deliver an Event.
+ * @relates Event
+ * The event is checked for validity and the receiver object is checked
+ * whether it actually provides the handleEvent() implementation. If the
+ * event can't be delivered, it is deleted and forgotten.
+ * @param e the Event to deliver
+ */
+void extern DeliverEvent(Event e);
 
 /** Cancel a scheduled Event.
  * @relates Event
@@ -56,26 +65,11 @@ void extern RaiseEvent(Event e, Object sender, void *data);
  */
 void extern CancelEvent(Event e);
 
-/** Deliver pending events.
+/** Cancel all Events addressed to a given receiver.
  * @relates Event
- * This function is intended to be called in a main loop. Its return value indicates
- * whether there were events to deliver.
- * @param wait waits until there is a pending event if non-zero
- * @returns 1 if there were events delivered, 0 otherwise
+ * All pending events for the given receiver are marked invalid.
+ * @param h the receiver whose events should be canceled
  */
-void extern DeliverEvents(void);
-
-/** Create an event instance.
- * @relates Event
- * example: Event Acivated = CreateEvent();
- * @returns an event instance
- */
-Event extern CreateEvent(void);
-
-/** Destroys an event (for use in destructors).
- * @relates Event
- * @param e the Event to destroy
- */
-void extern DestroyEvent(Event e);
+void extern CancelEventsFor(struct EHandler *h);
 
 #endif

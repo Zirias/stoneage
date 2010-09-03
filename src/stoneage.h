@@ -5,14 +5,8 @@
 
 #include "common.h"
 #include "app.h"
-#include "event.h"
 
 struct Board;
-
-typedef struct
-{
-    int x, y;
-} MoveWillyEventData;
 
 struct Stoneage_impl;
 
@@ -21,9 +15,6 @@ CLASS(Stoneage)
     INHERIT(App);
 
     struct Stoneage_impl *pimpl;
-
-    Event MoveWilly;
-    Event Tick;
 
     SDL_Surface *screen;
 

@@ -3,72 +3,73 @@
 #include "board.h"
 #include "move.h"
 #include "event.h"
+#include "ehandler.h"
 #include "screen.h"
 
 static void
 FUNC(parent_init)(THIS, Board b, int x, int y);
 
 static void
-Move_Finished(THIS, Object sender, void *data)
+m_handleEvent(THIS, Event ev)
 {
     METHOD(ERock);
 
     Entity e, n;
     EWilly w;
 
-    e = CAST(this, Entity);
-    w = 0;
-    DELETE(Move, e->m);
-    this->moving = 0;
-
-    /* bottom of board */
-    if (e->b->entity(e->b, e->x, e->y+1, &n) < 0) return;
-
-    if (!n || ( w = CAST(n, EWilly) )) {
-	/* fall straight down */
-	this->fall(this);
-	if (w) w->alive = 0;
-	return;
-    }
-
-    if (!CAST(n, ERock)) return;
-
-    w = 0;
-    /* rock below, check rolling off it's edge */
-    if ((e->b->entity(e->b, e->x+1, e->y+1, &n) == 0) &&
-	    (!n || ( w = CAST(n, EWilly) )))
+    if (ev->type == SAEV_MoveFinished)
     {
-	/* to the right ... */
-	e->b->entity(e->b, e->x+1, e->y, &n);
-	if (!n)
-	{
-	    e->m = NEW(Move);
-	    e->m->init(e->m, e, 1, 1, TR_CircleX);
+	e = CAST(this, Entity);
+	w = 0;
+	if (e->m) goto m_handleEvent_done; /* new move already started */
+
+	/* bottom of board */
+	if (e->b->entity(e->b, e->x, e->y+1, &n) < 0) goto m_handleEvent_done;
+
+	if (!n || ( w = CAST(n, EWilly) )) {
+	    /* fall straight down */
+	    this->fall(this);
 	    if (w) w->alive = 0;
+	    goto m_handleEvent_done;
 	}
-    }
-    w = 0;
-    if (!e->m && (e->b->entity(e->b, e->x-1, e->y+1, &n) == 0) &&
-	    (!n || ( w = CAST(n, EWilly) )))
-    {
-	/* or else to the left */
-	e->b->entity(e->b, e->x-1, e->y, &n);
-	if (!n)
+
+	if (!CAST(n, ERock)) goto m_handleEvent_done;
+
+	w = 0;
+	/* rock below, check rolling off it's edge */
+	if ((e->b->entity(e->b, e->x+1, e->y+1, &n) == 0) &&
+		(!n || ( w = CAST(n, EWilly) )))
 	{
-	    e->m = NEW(Move);
-	    e->m->init(e->m, e, -1, 1, TR_CircleX);
-	    if (w) w->alive = 0;
+	    /* to the right ... */
+	    e->b->entity(e->b, e->x+1, e->y, &n);
+	    if (!n)
+	    {
+		e->m = NEW(Move);
+		e->m->init(e->m, e, 1, 1, TR_CircleX);
+		if (w) w->alive = 0;
+	    }
 	}
+	w = 0;
+	if (!e->m && (e->b->entity(e->b, e->x-1, e->y+1, &n) == 0) &&
+		(!n || ( w = CAST(n, EWilly) )))
+	{
+	    /* or else to the left */
+	    e->b->entity(e->b, e->x-1, e->y, &n);
+	    if (!n)
+	    {
+		e->m = NEW(Move);
+		e->m->init(e->m, e, -1, 1, TR_CircleX);
+		if (w) w->alive = 0;
+	    }
+	}
+
+	/* found possible move -> start it */
+	if (e->m)
+	    e->b->startMove(e->b, e->m);
     }
 
-    /* found possible move -> start it */
-    if (e->m)
-    {
-	this->moving = 1;
-	e->b->startMove(e->b, e->m);
-	AddHandler(e->m->Finished, this, &Move_Finished);
-    }
-
+m_handleEvent_done:
+    DELETE(Event, ev);
 }
 
 static void
@@ -78,8 +79,6 @@ m_init(THIS, Board b, int x, int y)
 
     Entity e = CAST(this, Entity);
     parent_init(e, b, x, y);
-
-    this->moving = 0;
 
     e->getBackground = b->getEmptyBackground;
 }
@@ -97,13 +96,10 @@ m_fall(THIS)
     METHOD(ERock);
 
     Entity e = CAST(this, Entity);
-    if (this->moving) return; /* new move already started */
-    DELETE(Move, e->m);
+    if (e->m) return;
     e->m = NEW(Move);
     e->m->init(e->m, e, 0, 1, TR_Linear);
-    this->moving = 1;
     e->b->startMove(e->b, e->m);
-    AddHandler(e->m->Finished, this, &Move_Finished);
 }
 
 static const SDL_Surface *
@@ -121,6 +117,7 @@ CTOR(ERock)
 
     BASECTOR(ERock, Entity);
 
+    ((EHandler)this)->handleEvent = &m_handleEvent;
     e = CAST(this, Entity);
     parent_init = e->init;
     e->init = &m_init;

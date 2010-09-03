@@ -101,7 +101,6 @@ m_step(THIS, Sint16 *x, Sint16 *y)
     {
 	*x = p->tx;
 	*y = p->ty;
-	RaiseEvent(this->Finished, (Object)this, 0);
 	return 1;
     }
     
@@ -125,13 +124,11 @@ CTOR(Move)
     this->init = &m_init;
     this->entity = &m_entity;
     this->step = &m_step;
-    this->Finished = CreateEvent();
     return this;
 }
 
 DTOR(Move)
 {
-    DestroyEvent(this->Finished);
     XFREE(this->pimpl);
     BASEDTOR(Object);
 }

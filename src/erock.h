@@ -14,8 +14,6 @@ CLASS(ERock)
 {
     INHERIT(Entity);
 
-    int moving;
-
     /** initiate falling down.
      */
     void FUNC(fall)(THIS);
