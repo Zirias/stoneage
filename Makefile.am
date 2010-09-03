@@ -172,7 +172,6 @@ bin_stoneage_SOURCES = src/common.h src/classes.h \
 	src/mm.h src/mm.c \
 	src/object.h src/object.c \
 	src/app.h src/app.c \
-	src/jobqueue.h src/jobqueue.c \
 	src/event.h src/event.c \
 	src/screen.h src/screen.c \
 	src/board.h src/board.c \

@@ -63,7 +63,7 @@ void extern CancelEvent(Event e);
  * @param wait waits until there is a pending event if non-zero
  * @returns 1 if there were events delivered, 0 otherwise
  */
-int extern DeliverEvents(int wait);
+void extern DeliverEvents(void);
 
 /** Create an event instance.
  * @relates Event

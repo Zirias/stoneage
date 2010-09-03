@@ -11,7 +11,6 @@ static Uint8 *keyState;
 struct Stoneage_impl
 {
     int paused;
-    int running;
     Uint32 lastTimerTicks;
     Uint32 remainingTimerTicks;
 
@@ -87,6 +86,7 @@ Stoneage_KeyCheck(THIS, Object sender, void *eventData)
 
     int x, y;
 
+    SDL_PumpEvents();
     x = keyState[SDLK_RIGHT] - keyState[SDLK_LEFT];
     y = keyState[SDLK_DOWN] - keyState[SDLK_UP];
     if (x||y)
@@ -197,7 +197,7 @@ handleSDLEvent(THIS, Object sender, void *eventData)
 	    break;
 
 	case SDL_QUIT:
-	    this->pimpl->running = 0;
+	    DoneEvents();
 	    break;
     }
 }
@@ -213,17 +213,11 @@ m_run(THIS, int argc, char **argv)
     s->initVideo(s);
     s->startGame(s);
 
-    this->pimpl->running = 1;
     keyState = SDL_GetKeyState(0);
     InitEvents();
     AddHandler(SDLEvent, this, &handleSDLEvent);
 
-    while (this->pimpl->running)
-    {
-	DeliverEvents(1);
-    }
-
-    DoneEvents();
+    DeliverEvents();
     return 0;
 }
 
@@ -260,6 +254,8 @@ CTOR(Stoneage)
     SDL_WM_SetCaption("Stonage " VERSION
 	    " -- as seen 1988 in AmigaBASIC", "stoneage");
 
+    InitEvents();
+
     s->ticker = SDL_AddTimer(1000, &createTickerEvent, this);
     s->keyCheckTimer = 0;
 
@@ -280,6 +276,9 @@ DTOR(Stoneage)
 
     SDL_RemoveTimer(this->pimpl->ticker);
     XFREE(this->pimpl);
+
+    DoneEvents();
+
     SDL_Quit();
     BASEDTOR(App);
 }

@@ -25,31 +25,27 @@ typedef struct
     void *data;
 } EventDelivery;
 
-static SDL_sem *pendingEvents;
+static volatile int processingEvents = 0;
 static SDL_sem *raiseLock;
 static EventDelivery events[EVENT_QUEUE_SIZE];
-static int eventCount = 0;
+static volatile int eventCount = 0;
 static EventDelivery *head = &events[EVENT_QUEUE_SIZE];
 static EventDelivery *tail = &events[EVENT_QUEUE_SIZE];
 
-static SDL_Thread *SDLEventListener;
-
-static int SDLEventListenerMain(void *data)
+static void checkSdlEvents(void)
 {
     SDL_Event *ev;
 
     while (1)
     {
 	ev = XMALLOC(SDL_Event, 1);
-	SDL_WaitEvent(ev);
-	if (ev->type == SDL_USEREVENT)
+	if (!SDL_PollEvent(ev))
 	{
 	    XFREE(ev);
 	    break;
 	}
 	RaiseEvent(SDLEvent, (Object)0, ev);
     }
-    return 0;
 }
 
 Event SDLEvent;
@@ -57,31 +53,24 @@ Event SDLEvent;
 void
 InitEvents(void)
 {
-    pendingEvents = SDL_CreateSemaphore(0);
     raiseLock = SDL_CreateSemaphore(1);
     SDLEvent = CreateEvent();
-    SDLEventListener = SDL_CreateThread(&SDLEventListenerMain, 0);
 }
 
 void
 DoneEvents(void)
 {
     int i;
-    SDL_Event e;
 
-    e.type = SDL_USEREVENT;
-    SDL_PushEvent(&e);
-    SDL_WaitThread(SDLEventListener, 0);
+    processingEvents = 0;
 
     for (i = 0; i < EVENT_QUEUE_SIZE; ++i)
     {
 	events[i].active = 0;
     }
-    DeliverEvents(0);
 
     DestroyEvent(SDLEvent);
     SDL_DestroySemaphore(raiseLock);
-    SDL_DestroySemaphore(pendingEvents);
 }
 
 void
@@ -101,67 +90,56 @@ RaiseEvent(Event e, Object sender, void *data)
 {
     EventDelivery *newDelivery;
 
-    SDL_SemWait(raiseLock);
     if (eventCount >= EVENT_QUEUE_SIZE)
     {
 	log_err("event queue overflow!\n");
-	mainApp->abort(mainApp);
+	return;
     }
     if (head == &events[0])
     {
 	head = &events[EVENT_QUEUE_SIZE];
     }
+    SDL_SemWait(raiseLock);
     newDelivery = --head;
     newDelivery->active = 1;
     newDelivery->e = e;
     newDelivery->sender = sender;
     newDelivery->data = data;
     ++eventCount;
-    if (SDL_SemValue(pendingEvents)) SDL_SemPost(pendingEvents);
     SDL_SemPost(raiseLock);
 }
 
-int
-DeliverEvents(wait)
+void
+DeliverEvents(void)
 {
     EventDelivery *deliver;
     int i;
 
-    SDL_SemWait(raiseLock);
-    if (wait)
-    {
-	SDL_SemWait(pendingEvents);
-    }
-    else
-    {
-	if (!SDL_SemTryWait(pendingEvents))
-	{
-	    SDL_SemPost(raiseLock);
-	    return 0;
-	}
-    }
+    processingEvents = 1;
 
-    while (eventCount)
+    while (processingEvents)
     {
-	if (tail == &events[0])
+	while (eventCount)
 	{
-	    tail = &events[EVENT_QUEUE_SIZE];
+	    if (tail == &events[0])
+	    {
+		tail = &events[EVENT_QUEUE_SIZE];
+	    }
+	    deliver = --tail;
+	    for (i = 0;
+		    deliver->active && i < deliver->e->registeredHandlers;
+		    ++i )
+	    {
+		deliver->e->handlers[i].method(
+			deliver->e->handlers[i].instance,
+			deliver->sender, deliver->data);
+	    }
+	    XFREE(deliver->data);
+	    --eventCount;
 	}
-	deliver = --tail;
-	for (i = 0;
-		deliver->active && i < deliver->e->registeredHandlers;
-		++i )
-	{
-	    deliver->e->handlers[i].method(
-		    deliver->e->handlers[i].instance,
-		    deliver->sender, deliver->data);
-	}
-	XFREE(deliver->data);
-	--eventCount;
+	SDL_Delay(10);
+	checkSdlEvents();
     }
-    SDL_SemPost(raiseLock);
-
-    return 1;
 }
 
 void
