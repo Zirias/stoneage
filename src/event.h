@@ -37,6 +37,14 @@ void extern DoneEvents(void);
  */
 void extern AddHandler(Event e, void *instance, EventHandler handler);
 
+/** Remove a handler from an event.
+ * @relates Event;
+ * @param e the Event to remove a handler from
+ * @param instance a pointer to the object instance of the handler
+ * @param handler a pointer to the handler method itself
+ */
+void extern RemoveHandler(Event e, void *instance, EventHandler handler);
+
 /** Schedule an Event for delivery.
  * @relates Event
  * Raise an event, so all registered handlers get called with the next

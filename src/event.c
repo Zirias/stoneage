@@ -91,6 +91,26 @@ AddHandler(Event e, void *instance, EventHandler handler)
 }
 
 void
+RemoveHandler(Event e, void *instance, EventHandler handler)
+{
+    EventHandlerEntry *entry;
+    EventHandlerEntry *previous;
+
+    for (entry = e->handlers, previous = 0;
+	    entry;
+	    previous = entry, entry = entry->next)
+    {
+	if (entry->instance != instance || entry->method != handler) continue;
+	if (previous)
+	    previous->next = entry->next;
+	else
+	    e->handlers = entry->next;
+	XFREE(entry);
+	break;
+    }
+}
+
+void
 RaiseEvent(Event e, Object sender, void *data)
 {
     EventDelivery *newDelivery;
