@@ -4,7 +4,6 @@
 #include <SDL.h>
 
 #include "common.h"
-#include "ehandler.h"
 
 struct Board_impl;
 
@@ -21,7 +20,7 @@ struct Move;
  */
 CLASS(Board)
 {
-    INHERIT(EHandler);
+    INHERIT(Object);
 
     struct Board_impl *pimpl; /**< @private */
 

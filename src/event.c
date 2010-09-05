@@ -1,135 +1,198 @@
 #include <SDL.h>
-#include <stdint.h>
 
 #include "event.h"
-#include "ehandler.h"
 #include "app.h"
 
-typedef struct
+struct EventHandlerEntry;
+typedef struct EventHandlerEntry EventHandlerEntry;
+
+struct EventHandlerEntry
 {
-    int valid;
+    void *instance;
+    EventHandler method;
+    EventHandlerEntry *next;
+};
+
+struct Event
+{
+    EventHandlerEntry *handlers;
+};
+
+struct EventDelivery;
+typedef struct EventDelivery EventDelivery;
+
+struct EventDelivery
+{
+    volatile int active;
     Event e;
-    EHandler h;
-} EventRecord;
+    Object sender;
+    void *data;
+    EventDelivery *next;
+    EventDelivery *prev;
+};
 
-static EventRecord EventRegistry[64];
+static EventDelivery events = { -1, 0, 0, 0, 0, 0 };
 
-static void
-registerEvent(Event e)
+static SDL_Event sdlEv;
+
+Event SDLEvent;
+static EventDelivery SDLEventDelivery;
+
+void
+InitEvents(void)
 {
-    EventRecord *r;
-    EventRecord *end = &EventRegistry[64];
-    for(r = &EventRegistry[0]; r != end; ++r)
-    {
-	if (!r->valid)
-	{
-	    r->valid = 1;
-	    r->e = e;
-	    r->h = e->handler;
-	    return;
-	}
-    }
-    log_err("event queue overrun!\n");
-    DELETE(Event, e);
-    mainApp->abort(mainApp);
-}
-
-static int
-confirmEvent(Event e)
-{
-    EventRecord *r;
-    EventRecord *end = &EventRegistry[64];
-    for(r = &EventRegistry[0]; r != end; ++r)
-    {
-	if (!r->valid) continue;
-	if (r->e == e)
-	{
-	    r->valid = 0;
-	    return 1;
-	}
-    }
-    return 0;
+    sdlEv.type = SDL_USEREVENT;
+    sdlEv.user.type = SDL_USEREVENT;
+    sdlEv.user.code = 0;
+    SDLEventDelivery.active = 1;
+    SDLEventDelivery.e = SDLEvent;
+    SDLEventDelivery.sender = 0;
+    SDLEventDelivery.data = 0;
+    SDLEvent = CreateEvent();
 }
 
 void
-DeliverEvent(Event e)
+DoneEvents(void)
 {
-    if (!e) return;
-    if (!confirmEvent(e))
-    {
-	DELETE(Event, e);
-	return;
-    }
+    EventDelivery *deliver;
 
-    if (!e->handler || !e->handler->handleEvent)
+    deliver = events.next;
+    while (deliver)
     {
-	DELETE(Event, e);
-	return;
+	deliver->active = 0;
+	deliver = deliver->next;
     }
-    e->handler->handleEvent(e->handler, e);
+    sdlEv.user.code = -1;
+    SDL_PushEvent(&sdlEv);
+
+    DestroyEvent(SDLEvent);
+}
+
+void
+AddHandler(Event e, void *instance, EventHandler handler)
+{
+    EventHandlerEntry *current;
+    EventHandlerEntry *entry;
+    
+    entry = XMALLOC(EventHandlerEntry, 1);
+    entry->instance = instance;
+    entry->method = handler;
+
+    if (e->handlers)
+    {
+	current = e->handlers;
+	while (current->next) current = current->next;
+	current->next = entry;
+    }
+    else
+    {
+	e->handlers = entry;
+    }
+}
+
+void
+RaiseEvent(Event e, Object sender, void *data)
+{
+    EventDelivery *newDelivery;
+
+    newDelivery = XMALLOC(EventDelivery, 1);
+    newDelivery->active = 1;
+    newDelivery->e = e;
+    newDelivery->sender = sender;
+    newDelivery->data = data;
+    newDelivery->next = 0;
+    newDelivery->prev = events.prev;
+    if (events.next)
+	events.prev->next = newDelivery;
+    else
+	events.next = newDelivery;
+    events.prev = newDelivery;
+    sdlEv.user.data1 = newDelivery;
+    SDL_PushEvent(&sdlEv);
+}
+
+void
+DoEventLoop(void)
+{
+    EventDelivery *deliver;
+    EventHandlerEntry *entry;
+    SDL_Event ev;
+    int isSdl;
+
+    while (1)
+    {
+	SDL_WaitEvent(&ev);
+	if (ev.type == SDL_USEREVENT)
+	{
+	    if (ev.user.code < 0) break;
+	    deliver = ev.user.data1;
+	    isSdl = 0;
+	}
+	else
+	{
+	    SDLEventDelivery.data = &ev;
+	    deliver = &SDLEventDelivery;
+	    isSdl = 1;
+	}
+	for (entry = deliver->e->handlers;
+		deliver->active && entry;
+		entry = entry->next)
+	{
+	    entry->method(entry->instance, deliver->sender, deliver->data);
+	}
+	if (isSdl) continue;
+	XFREE(deliver->data);
+	if (deliver->next)
+	{
+	    deliver->next->prev = deliver->prev;
+	}
+	else
+	{
+	    events.prev = deliver->prev;
+	}
+	if (deliver->prev)
+	{
+	    deliver->prev->next = deliver->next;
+	}
+	else
+	{
+	    events.next = deliver->next;
+	}
+	XFREE(deliver);
+    }
 }
 
 void
 CancelEvent(Event e)
 {
-    EventRecord *r;
-    EventRecord *end = &EventRegistry[64];
-    for(r = &EventRegistry[0]; r != end; ++r)
+    EventDelivery *deliver;
+
+    deliver = events.next;
+    while (deliver)
     {
-	if (!r->valid) continue;
-	if (r->e == e)
-	{
-	    r->valid = 0;
-	    return;
-	}
+	if (deliver->e == e) deliver->active = 0;
+	deliver = deliver->next;
     }
 }
 
-void
-CancelEventsFor(EHandler h)
+Event
+CreateEvent(void)
 {
-    EventRecord *r;
-    EventRecord *end = &EventRegistry[64];
-    for(r = &EventRegistry[0]; r != end; ++r)
+    Event e = XMALLOC(struct Event, 1);
+    e->handlers = 0;
+    return e;
+}
+
+void
+DestroyEvent(Event e)
+{
+    EventHandlerEntry *entry;
+
+    CancelEvent(e);
+    for (entry = e->handlers; entry; entry = entry->next)
     {
-	if (!r->valid) continue;
-	if (r->h == h)
-	{
-	    r->valid = 0;
-	}
+	XFREE(entry);
     }
+    XFREE(e);
 }
 
-void
-RaiseEvent(Event e)
-{
-    SDL_Event ev;
-    SDL_UserEvent uev;
-
-    registerEvent(e);
-
-    uev.type = SDL_USEREVENT;
-    uev.code = 1;
-    uev.data1 = e;
-    uev.data2 = 0;
-    ev.type = SDL_USEREVENT;
-    ev.user = uev;
-
-    SDL_PushEvent(&ev);
-}
-
-CTOR(Event)
-{
-    BASECTOR(Event, Object);
-    this->type = 0;
-    this->sender = 0;
-    this->handler = 0;
-    this->data = 0;
-    return this;
-}
-
-DTOR(Event)
-{
-    XFREE(this->data);
-    BASEDTOR(Object);
-}

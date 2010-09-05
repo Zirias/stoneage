@@ -4,7 +4,6 @@
 #include <SDL.h>
 
 #include "common.h"
-#include "ehandler.h"
 
 struct Board;
 struct Move;
@@ -18,7 +17,7 @@ struct Move;
  */
 CLASS(Entity)
 {
-    INHERIT(EHandler);
+    INHERIT(Object);
     
     struct Board *b;	/**< The game board to interact with */
     struct Move *m;	/**< Current move, 0 if not moving */

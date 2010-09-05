@@ -5,10 +5,15 @@
 
 #include "common.h"
 #include "app.h"
-
-struct Board;
+#include "event.h"
 
 struct Stoneage_impl;
+
+typedef struct
+{
+    int x;
+    int y;
+} Stoneage_MoveWillyData;
 
 CLASS(Stoneage)
 {
@@ -17,6 +22,9 @@ CLASS(Stoneage)
     struct Stoneage_impl *pimpl;
 
     SDL_Surface *screen;
+
+    Event MoveWilly;
+    Event Tick;
 
     int res_x;
     int res_y;
