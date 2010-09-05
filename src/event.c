@@ -41,6 +41,7 @@ static EventDelivery SDLEventDelivery;
 void
 InitEvents(void)
 {
+    SDLEvent = CreateEvent();
     sdlEv.type = SDL_USEREVENT;
     sdlEv.user.type = SDL_USEREVENT;
     sdlEv.user.code = 0;
@@ -48,7 +49,6 @@ InitEvents(void)
     SDLEventDelivery.e = SDLEvent;
     SDLEventDelivery.sender = 0;
     SDLEventDelivery.data = 0;
-    SDLEvent = CreateEvent();
 }
 
 void
