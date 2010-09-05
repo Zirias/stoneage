@@ -31,6 +31,7 @@ struct EventDelivery
     EventDelivery *prev;
 };
 
+static volatile int raiseLock = 1;
 static EventDelivery events = { -1, 0, 0, 0, 0, 0 };
 
 static SDL_Event sdlEv;
@@ -121,12 +122,16 @@ RaiseEvent(Event e, Object sender, void *data)
     newDelivery->sender = sender;
     newDelivery->data = data;
     newDelivery->next = 0;
+    /* begin critical section */
+    while (--raiseLock) { ++raiseLock; SDL_Delay(10); }
     newDelivery->prev = events.prev;
     if (events.next)
 	events.prev->next = newDelivery;
     else
 	events.next = newDelivery;
     events.prev = newDelivery;
+    ++raiseLock;
+    /* end critical section */
     sdlEv.user.data1 = newDelivery;
     SDL_PushEvent(&sdlEv);
 }
@@ -162,6 +167,8 @@ DoEventLoop(void)
 	}
 	if (isSdl) continue;
 	XFREE(deliver->data);
+	/* begin critical section */
+	while (--raiseLock) { ++raiseLock; SDL_Delay(10); }
 	if (deliver->next)
 	{
 	    deliver->next->prev = deliver->prev;
@@ -178,6 +185,8 @@ DoEventLoop(void)
 	{
 	    events.next = deliver->next;
 	}
+	++raiseLock;
+	/* end critical section */
 	XFREE(deliver);
     }
 }
