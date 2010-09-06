@@ -116,6 +116,8 @@ RaiseEvent(Event e, Object sender, void *data)
 {
     EventDelivery *newDelivery;
 
+    if (!e->handlers) return;
+
     newDelivery = XMALLOC(EventDelivery, 1);
     newDelivery->active = 1;
     newDelivery->e = e;

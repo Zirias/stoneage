@@ -1,7 +1,6 @@
 #include "board.h"
 #include "screen.h"
 #include "app.h"
-#include "event.h"
 #include "level.h"
 #include "move.h"
 
@@ -11,37 +10,9 @@
 #include "ecabbage.h"
 #include "ewilly.h"
 
-static const int emptyTileTable[16][2] = {
-    {SATN_Empty, 0},
-    {SATN_Empty_1, 3},
-    {SATN_Empty_1, 2},
-    {SATN_Empty_2a, 2},
-    {SATN_Empty_1, 1},
-    {SATN_Empty_2f, 1},
-    {SATN_Empty_2a, 1},
-    {SATN_Empty_3, 1},
-    {SATN_Empty_1, 0},
-    {SATN_Empty_2a, 3},
-    {SATN_Empty_2f, 0},
-    {SATN_Empty_3, 2},
-    {SATN_Empty_2a, 0},
-    {SATN_Empty_3, 3},
-    {SATN_Empty_3, 0},
-    {SATN_Empty_4, 0},
-};
-
-struct BlitSequence;
-typedef struct BlitSequence *BlitSequence;
-
-struct BlitSequence
-{
-    int n;
-    const SDL_Surface *blits[16];
-};
-
 struct Board_impl
 {
-    Move movelist;
+    int numberOfMoves;
 
     SDL_TimerID moveticker;
 
@@ -56,6 +27,7 @@ struct Board_impl
 
     Entity entity[LVL_ROWS][LVL_COLS];
     ERock rock[LVL_ROWS * LVL_COLS];
+    Entity emptyEntity;
 };
 
 static void checkRocks(Board b);
@@ -65,13 +37,7 @@ createMoveTickEvent(Uint32 interval, void *param)
 {
     Board b = CAST(param, Board);
 
-    Event e = NEW(Event);
-    e->sender = CAST(b, Object);
-    e->handler = CAST(b, EHandler);
-    e->type = SAEV_MoveTick;
-
-    RaiseEvent(e);
-    
+    RaiseEvent(b->MoveTick, (Object)b, 0);
     return interval;
 }
 
@@ -95,6 +61,33 @@ scanLevel(Board b)
 }
 
 static void
+Move_Finished(THIS, Object sender, void *data)
+{
+    METHOD(Board);
+
+    if (!(--this->pimpl->numberOfMoves))
+    {
+	SDL_RemoveTimer(this->pimpl->moveticker);
+	this->pimpl->moveticker = 0;
+    }
+}
+
+static void
+Entity_MoveStarting(THIS, Object sender, void *data)
+{
+    METHOD(Board);
+
+    Move m = data;
+    AddHandler(m->Finished, (Object)this, &Move_Finished);
+    
+    if (!(this->pimpl->numberOfMoves++))
+    {
+	this->pimpl->moveticker = SDL_AddTimer(
+		20, &createMoveTickEvent, this);
+    }
+}
+
+static void
 moveStep(Board this, Move m)
 {
     int done;
@@ -102,7 +95,6 @@ moveStep(Board this, Move m)
     SDL_Rect dirty;
     Entity e;
     Entity d;
-    Event ev;
     
     Screen s = getScreen();
     SDL_Surface *sf = SDL_GetVideoSurface();
@@ -172,11 +164,13 @@ moveStep(Board this, Move m)
 	{
 	    /* don't give the slave of a move any events */
 
+	    /*
 	    ev = NEW(Event);
 	    ev->sender = CAST(this, Object);
 	    ev->handler = CAST(e, EHandler);
 	    ev->type = SAEV_MoveFinished;
 	    RaiseEvent(ev);
+	    */
 	}
 
 	DELETE(Move, m);
@@ -209,7 +203,7 @@ internal_clear(Board b)
     {
 	SDL_RemoveTimer(b->pimpl->moveticker);
 	b->pimpl->moveticker = 0;
-	CancelEventsFor(CAST(b, EHandler));
+	CancelEvent(b->MoveTick);
 	m = b->pimpl->movelist;
 	b->pimpl->movelist = 0;
 	while (m)
@@ -224,7 +218,6 @@ internal_clear(Board b)
     {
 	if(*e)
 	{
-	    CancelEventsFor(CAST(*e, EHandler));
 	    (*e)->dispose(*e);
 	}
 	*e = 0;
@@ -236,6 +229,7 @@ internal_clear(Board b)
     if (( w = getWilly() )) DELETE(EWilly, w);
 }
 
+/*
 static void
 m_handleEvent(THIS, Event e)
 {
@@ -265,56 +259,25 @@ m_handleEvent(THIS, Event e)
     
     DELETE(Event, e);
 }
+*/
 
 static void
 m_draw(THIS, int x, int y, int refresh)
 {
     METHOD(Board);
 
-    const SDL_Surface *tile;
-    struct BlitSequence base;
-    int drawBase;
     Entity e;
-    int i;
 
-    Screen s = getScreen();
-    SDL_Surface *sf = SDL_GetVideoSurface();
-    struct Board_impl *b = this->pimpl;
-
-    if (s->coordinatesToPixel(s, x, y,
-		&(b->drawArea.x), &(b->drawArea.y)) < 0)
+    if (x<0||x>LVL_COLS||y<0||y>LVL_ROWS)
 	return;
-
-    e = b->entity[y][x];
-
-    drawBase = 0;
-    tile = 0;
-
-    if (e)
+    e = this->pimpl->entity[y][x];
+    if (!e)
     {
-	if (e->getBackground)
-	{
-	    e->getBackground(this, x, y, &base);
-	    drawBase = 1;
-	}
-	tile = e->getSurface(e);
+	e = this->pimpl->emptyEntity;
+	e->x = x;
+	e->y = y;
     }
-    else
-    {
-	this->getEmptyBackground(this, x, y, &base);
-	drawBase = 1;
-    }
-
-    if (drawBase) for (i=0; i<base.n; ++i)
-	SDL_BlitSurface((SDL_Surface *)base.blits[i],
-		0, sf, &(b->drawArea));
-
-
-    if (tile && !e->m)
-	SDL_BlitSurface((SDL_Surface *)tile, 0, sf, &(b->drawArea));
-
-    if (refresh)
-	SDL_UpdateRects(sf, 1, &(b->drawArea));
+    e->draw(e, refresh);
 }
 
 static void
@@ -418,8 +381,6 @@ m_startMove(THIS, Move m)
 
     if (!this->pimpl->moveticker)
     {
-	this->pimpl->moveticker = SDL_AddTimer(
-		20, &createMoveTickEvent, this);
     }
 }
 
@@ -446,53 +407,6 @@ checkRocks(Board b)
 	    r->fall(r);
 	}
     }
-}
-
-static int
-isSolidTile(Board this, int x, int y)
-{
-    Entity e = this->pimpl->entity[y][x];
-    if (!e) return 0;
-    if (CAST(e, ECabbage)) return 1;
-    if (CAST(e, EEarth)) return 1;
-    return 0;
-}
-
-static unsigned int
-calculateNeighbors(Board this, int x, int y)
-{
-    unsigned int neighbors = 0;
-    if ((y > 0) && isSolidTile(this, x, y-1)) neighbors += 8;
-    if ((x < LVL_COLS-1) && isSolidTile(this, x+1, y)) neighbors += 4;
-    if ((y < LVL_ROWS-1) && isSolidTile(this, x, y+1)) neighbors += 2;
-    if ((x > 0) && isSolidTile(this, x-1, y)) neighbors += 1;
-    return neighbors;
-}
-
-static void
-m_getEmptyBackground(THIS, int x, int y, void *buf)
-{
-    METHOD(Board);
-    
-    Screen s = getScreen();
-    BlitSequence bs = (BlitSequence)buf;
-    unsigned int n = calculateNeighbors(this, x, y);
-
-    bs->n = 0;
-    bs->blits[bs->n++] = s->getTile(s,
-	    emptyTileTable[n][0], emptyTileTable[n][1]);
-    if (!(n&(8|4)) && (y>0) && (x<LVL_COLS-1)
-	    && isSolidTile(this, x+1, y-1))
-	bs->blits[bs->n++] = s->getTile(s, SATN_Corner, 0);
-    if (!(n&(4|2)) && (y<LVL_ROWS-1) && (x<LVL_COLS-1)
-	    && isSolidTile(this, x+1, y+1))
-	bs->blits[bs->n++] = s->getTile(s, SATN_Corner, 1);
-    if (!(n&(2|1)) && (y<LVL_ROWS-1) && (x>0)
-	    && isSolidTile(this, x-1, y+1))
-	bs->blits[bs->n++] = s->getTile(s, SATN_Corner, 2);
-    if (!(n&(8|1)) && (y>0) && (x>0)
-	    && isSolidTile(this, x-1, y-1))
-	bs->blits[bs->n++] = s->getTile(s, SATN_Corner, 3);
 }
 
 static void
@@ -546,14 +460,15 @@ CTOR(Board)
 {
     struct Board_impl *b;
 
-    BASECTOR(Board, EHandler);
+    BASECTOR(Board, Object);
 
     b = XMALLOC(struct Board_impl, 1);
     memset(b, 0, sizeof(struct Board_impl));
     b->level = -1;
+    b->emptyEntity = NEW(Entity);
+    b->emptyEntity->init(b->emptyEntity, this, 0, 0);
     this->pimpl = b;
 
-    ((EHandler)this)->handleEvent = &m_handleEvent;
     this->setGeometry = &m_setGeometry;
     this->loadLevel = &m_loadLevel;
     this->redraw = &m_redraw;
@@ -571,7 +486,8 @@ DTOR(Board)
 {
     internal_clear(this);
 
+    DELETE(this->pimpl->emptyEntity);
     XFREE(this->pimpl);
-    BASEDTOR(EHandler);
+    BASEDTOR(Object);
 }
 

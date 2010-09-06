@@ -98,16 +98,16 @@ CLASS(Screen)
      */
     struct Board *FUNC(getBoard)(THIS);
 
-    /** Get real pixel position for a given coordinate.
-     * This function gives the upper left edge of a board coordinate in
-     * real pixels.
+    /** Get real pixel coordinates for given board coordinates.
+     * This function transforms given board coordinates to an SDL rectangle of
+     * real pixel coordinates suitable for drawing tiles to the board.
      * @param x x-coordinate on the board
      * @param y y-coordinate on the board
      * @param px x component of pixel position
      * @param py y component of pixel position
      * @return non-zero on error (coordinate out of board range)
      */
-    int FUNC(coordinatesToPixel)(THIS, int x, int y, Sint16 *px, Sint16 *py);
+    int FUNC(coordinatesToRect)(THIS, int x, int y, int w, int h, SDL_Rect *rect);
 };
 
 extern Screen getScreen(void);

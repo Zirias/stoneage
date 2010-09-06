@@ -201,13 +201,17 @@ m_getBoard(THIS)
 }
 
 static int
-m_coordinatesToPixel(THIS, int x, int y, Sint16 *px, Sint16 *py)
+m_coordinatesToRect(THIS, int x, int y, int w, int h, SDL_Rect *rect)
 {
     METHOD(Screen);
 
-    if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return -1;
-    *px = this->pimpl->tile_width * x + this->pimpl->off_x;
-    *py = this->pimpl->tile_height * y + this->pimpl->off_y;
+    struct Screen_impl *s = this->pimpl;
+
+    if ((x<0)||(x+w>LVL_COLS)||(y<0)||(y+h>LVL_ROWS)) return -1;
+    rect->w = s->tile_width;
+    rect->h = s->tile_height;
+    rect->x = s->tile_width * x + s->off_x;
+    rect->y = s->tile_height * y + s->off_y;
     return 0;
 }
 
@@ -389,7 +393,7 @@ CTOR(Screen)
     this->getTile = &m_getTile;
     this->getText = &m_getText;
     this->getBoard = &m_getBoard;
-    this->coordinatesToPixel = &m_coordinatesToPixel;
+    this->coordinatesToRect = &m_coordinatesToRect;
     this->initVideo = &m_initVideo;
     this->startGame = &m_startGame;
     this->timeStep = &m_timeStep;

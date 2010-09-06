@@ -47,9 +47,9 @@ void extern RemoveHandler(Event e, void *instance, EventHandler handler);
 
 /** Schedule an Event for delivery.
  * @relates Event
- * Raise an event, so all registered handlers get called with the next
- * DeliverEvent() invocation. RaiseEvent() is thread-safe, so it can be called
- * for example from SDL timer callbacks.
+ * Raise an event, so all registered handlers get called as soon as the event
+ * loop is running. RaiseEvent() is thread-safe, so it can be called for
+ * example from SDL timer callbacks.
  * @param e the Event to raise
  * @param sender the sender of the Event
  * @param data optional Event arguments
