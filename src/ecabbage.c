@@ -1,20 +1,5 @@
 #include "ecabbage.h"
-#include "board.h"
 #include "screen.h"
-
-static void
-FUNC(parent_init)(THIS, Board b, int x, int y);
-
-static void
-m_init(THIS, Board b, int x, int y)
-{
-    METHOD(ECabbage);
-
-    Entity e = CAST(this, Entity);
-    parent_init(e, b, x, y);
-
-    e->getBackground = b->getEarthBackground;
-}
 
 static void
 m_dispose(THIS)
@@ -24,7 +9,7 @@ m_dispose(THIS)
 }
 
 static const SDL_Surface *
-m_getSurface(THIS)
+m_getTile(THIS)
 {
     /* METHOD(ECabbage); */
 
@@ -39,10 +24,9 @@ CTOR(ECabbage)
     BASECTOR(ECabbage, Entity);
 
     e = CAST(this, Entity);
-    parent_init = e->init;
-    e->init = &m_init;
     e->dispose = &m_dispose;
-    e->getSurface = &m_getSurface;
+    e->getTile = &m_getTile;
+    e->bg = BG_Earth;
     return this;
 }
 

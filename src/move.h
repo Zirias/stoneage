@@ -2,6 +2,7 @@
 #define STONEAGE_MOVE_H
 
 #include "common.h"
+#include "event.h"
 
 /** @file move.h
  * includes definition of class Move.
@@ -17,19 +18,10 @@ struct Entity;
  */
 typedef enum
 {
-    TR_Linear = 0,	/**< linear trajectory, move along a straight line. */
+    TR_Linear,		/**< linear trajectory, move along a straight line. */
     TR_CircleX,		/**< circular trajectory in X-direction */
     Trajectory_count
 } Trajectory;
-
-/** Relationship of two moves.
- */
-typedef enum
-{
-    MR_None,	    /**< does not relate to another move */
-    MR_Master,	    /**< tells Board not to draw destination background */
-    MR_Slave	    /**< tells Board not to draw origin background */
-} MoveRel;
 
 struct Move_impl;
 
@@ -38,11 +30,10 @@ CLASS(Move)
     INHERIT(Object);
 
     struct Move_impl *pimpl;
-    Move next;	    /**< pointer to next Move in list, used by Board. */
-    Move prev;	    /**< pointer to previous Move in list, used by Board. */
-    int dx;	    /**< x-direction of the Move (-1, 0, 1) */
-    int dy;	    /**< y-direction of the Move (-1, 0, 1) */
-    MoveRel rel;	    /**< relationship to other Move */
+
+    int dx;		/**< x-direction of the Move (-1, 0, 1) */ 
+    int dy;		/**< y-direction of the Move (-1, 0, 1) */ 
+    Event Finished;	/**< raised when the Move finished */
 
     /** Initialize a new Move.
      * Initializes a new Move for a given Entity with directions and trajectory.
@@ -50,21 +41,22 @@ CLASS(Move)
      * @param dx x-direction of the Move (-1, 0, 1)
      * @param dy y-direction of the Move (-1, 0, 1)
      * @param t Trajectory of the Move
+     * @param slave A slave move that depends on this move, or null
      */
     void FUNC(init)(THIS, struct Entity *e, int dx, int dy, Trajectory t);
 
-    /** Get the moved Entity.
-     * @return the Entity that is moved
+    /** Sets a slave Move.
+     * Sets a Move to be this Move's slave, so it doesn't run by itself but
+     * lets this move control its steps. This is needed for rocks that are
+     * pushed by Willy
+     * @param slave the slave move
      */
-    struct Entity *FUNC(entity)(THIS);
+    void FUNC(setSlave)(THIS, Move slave);
 
-    /** Get the next movement step.
-     * Gets the next step in pixel coordinates for the move.
-     * @param x store pixel x coordinate here
-     * @param y story pixel y coordinate here
-     * @return 1 when this is the final step, 0 otherwise
+    /** Start a Move.
+     * Starts the Move and (if set) its slave Move
      */
-    int FUNC(step)(THIS, Sint16 *x, Sint16 *y);
+    void FUNC(start)(THIS);
 };
 
 /** Compute Trajectories in real pixel offsets.

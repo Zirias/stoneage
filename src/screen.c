@@ -344,8 +344,6 @@ m_initVideo(THIS)
 	s->digits[i] = createScaledSurface(
 		s->resDigits[i], s->tile_width, s->tile_height);
     }
-    s->board->setGeometry(s->board,
-	    s->tile_width, s->tile_height, s->off_x, s->off_y);
     s->board->redraw(s->board, 0);
     drawBoardFrame(this);
     drawTime(this);

@@ -92,12 +92,35 @@ calculateNeighbors(Entity this)
     return neighbors;
 }
 
+static const SDL_Surface *
+m_getTile(THIS)
+{
+    return 0;
+}
+
 static void
 m_draw(THIS, int refresh)
 {
     METHOD(Entity);
 
-    this->drawBackground(this);
+    SDL_Rect drawArea;
+    const SDL_Surface *tile;
+    Screen s;
+    SDL_Surface *sf;
+
+    tile = this->getTile(this);
+    this->drawBackground(this, tile?0:refresh);
+    if (!tile) return;
+
+    s = getScreen();
+    sf = SDL_GetVideoSurface();
+    s->coordinatesToRect(s, this->x, this->y, 1, 1, &drawArea);
+    SDL_BlitSurface((SDL_Surface *)tile, 0, sf, &drawArea);
+
+    if (refresh)
+    {
+	SDL_UpdateRect(sf, drawArea.x, drawArea.y, drawArea.w, drawArea.h);
+    }
 }
 
 static void
@@ -107,16 +130,21 @@ m_drawBackground(THIS, int refresh)
 
     SDL_Rect drawArea;
     const SDL_Surface *tile;
+    Screen s;
     SDL_Surface *sf;
+    unsigned int n;
 
-    Screen s = getScreen();
+    s = getScreen();
     s->coordinatesToRect(s, this->x, this->y, 1, 1, &drawArea);
     sf = SDL_GetVideoSurface();
 
     switch (this->bg)
     {
+	case BG_None:
+	    break;
+
 	case BG_Empty:
-	    unsigned int n = calculateNeighbors(this);
+	    n = calculateNeighbors(this);
 	    tile = s->getTile(s, emptyTileTable[n&15][0], emptyTileTable[n&15][1]);
 	    SDL_BlitSurface((SDL_Surface *)tile, 0, sf, &drawArea);	    
 	    if (n&128)
@@ -164,9 +192,10 @@ m_dispose(THIS)
 
 CTOR(Entity)
 {
-    BASECTOR(Entity, EHandler);
+    BASECTOR(Entity, Object);
     this->init = &m_init;
     this->dispose = &m_dispose;
+    this->getTile = &m_getTile;
     this->draw = &m_draw;
     this->drawBackground = &m_drawBackground;
     return this;
@@ -174,6 +203,6 @@ CTOR(Entity)
 
 DTOR(Entity)
 {
-    BASEDTOR(EHandler);
+    BASEDTOR(Object);
 }
 

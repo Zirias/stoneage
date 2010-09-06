@@ -9,15 +9,6 @@ m_dispose(THIS)
     DELETE(EEarth, this);
 }
 
-static const SDL_Surface *
-m_getSurface(THIS)
-{
-    /* METHOD(EEarth); */
-
-    Screen s = getScreen();
-    return s->getTile(s, SATN_Earth, 0);
-}
-
 CTOR(EEarth)
 {
     Entity e;
@@ -26,7 +17,7 @@ CTOR(EEarth)
 
     e = CAST(this, Entity);
     e->dispose = &m_dispose;
-    e->getSurface = &m_getSurface;
+    e->bg = BG_Earth;
     return this;
 }
 

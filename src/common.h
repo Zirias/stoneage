@@ -19,6 +19,14 @@
 #  include "icon.h"
 #endif
 
+/** number of rows in a level
+ */
+#define LVL_ROWS 18
+
+/** number of columns in a level
+ */
+#define LVL_COLS 31
+
 #include "classes.h"
 #include "log.h"
 #include "mm.h"
