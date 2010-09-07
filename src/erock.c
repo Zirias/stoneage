@@ -94,8 +94,14 @@ Move_Finished(THIS, Object sender, void *data)
     e->y = pcd->to_y;
     RaiseEvent(e->PositionChanged, (Object)this, pcd);
 
-    e->moving = 0;
-    createContinuationMove(this);
+    /* search for continuation move ONLY if rock was moving by itself
+     * (not pushed by Willy)
+     */
+    if (e->moving)
+    {
+	e->moving = 0;
+	createContinuationMove(this);
+    }
 
     e->draw(e, 1);
 }
@@ -137,6 +143,21 @@ m_getTile(THIS)
     return s->getTile(s, SATN_Rock, 0);
 }
 
+static void
+m_attachMove(THIS, Move m)
+{
+    METHOD(ERock);
+
+    Entity e;
+    MoveStartingEventData *msd;
+
+    e = (Entity)this;
+    AddHandler(m->Finished, this, &Move_Finished);
+    msd = XMALLOC(MoveStartingEventData, 1);
+    msd->m = m;
+    RaiseEvent(e->MoveStarting, (Object)e, msd);
+}
+
 CTOR(ERock)
 {
     Entity e;
@@ -147,6 +168,7 @@ CTOR(ERock)
     e->dispose = &m_dispose;
     e->getTile = &m_getTile;
     this->fall = &m_fall;
+    this->attachMove = &m_attachMove;
     return this;
 }
 

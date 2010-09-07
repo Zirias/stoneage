@@ -19,7 +19,6 @@ Move_Finished(THIS, Object sender, void *data)
     Entity e;
     Move m;
     PositionChangedEventData *pcd;
-    int x, y;
 
     e = (Entity) this;
     m = (Move) sender;
@@ -33,9 +32,6 @@ Move_Finished(THIS, Object sender, void *data)
     RaiseEvent(e->PositionChanged, (Object)this, pcd);
 
     e->moving = 0;
-
-    for (x=e->x-1; x<=e->x+1; ++x) for (y=e->y-1; y<=e->y+1; ++y)
-	e->b->draw(e->b, x, y, 1);
 }
 
 static void
@@ -44,6 +40,7 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
     METHOD(EWilly);
 
     Entity e, d, d1, d2;
+    ERock r;
     Move m, slave;
     MoveStartingEventData *msd;
     MoveWillyEventData *md;
@@ -87,7 +84,7 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
     }
 
     /* special case: pushing a rock */
-    else if (!md->dy && CAST(d, ERock))
+    else if (!md->dy && (r = CAST(d, ERock)))
     {
 	if (e->b->entity(e->b, e->x+2*md->dx, e->y, &d1) < 0)
 	    return;
@@ -98,13 +95,9 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
 	    m = NEW(Move);
 	    m->init(m, e, md->dx, 0, TR_Linear);
 	    m->setSlave(m, slave);
-	    AddHandler(slave->Finished, d, &Move_Finished);
+	    r->attachMove(r, slave);
 	    AddHandler(m->Finished, this, &Move_Finished);
-	    d->moving = 1;
 	    e->moving = 1;
-	    msd = XMALLOC(MoveStartingEventData, 1);
-	    msd->m = slave;
-	    RaiseEvent(d->MoveStarting, (Object)d, msd);
 	    msd = XMALLOC(MoveStartingEventData, 1);
 	    msd->m = m;
 	    RaiseEvent(e->MoveStarting, (Object)e, msd);

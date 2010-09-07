@@ -111,17 +111,20 @@ m_setSlave(THIS, Move slave)
 static int
 step(Move this)
 {
+    Screen s = getScreen();
     struct Move_impl *m = this->pimpl;
 
     if (m->step == 7)
     {
-	return 0;
+	s->coordinatesToRect(s, m->e->x + this->dx, m->e->y + this->dy,
+		1, 1, &(m->stepArea));
+	return 1;
     }
     
     m->stepArea.x = m->x + this->dx * (*m->t)[m->step][0];
     m->stepArea.y = m->y + this->dy * (*m->t)[m->step++][0];
 
-    return 1;
+    return 0;
 }
 
 static void
@@ -180,6 +183,7 @@ Board_MoveTick(THIS, Object sender, void *data)
 {
     METHOD(Move);
 
+    int done;
     struct Move_impl *m = this->pimpl;
 
     MoveTickEventData *mtd = data;
@@ -192,14 +196,12 @@ Board_MoveTick(THIS, Object sender, void *data)
     if (m->slave) drawBackgrounds(m->slave);
     drawBackgrounds(this);
     if (m->slave) step(m->slave);
-    if (step(this))
-    {
-	if (m->slave) drawTile(m->slave);
-	drawTile(this);
-	if (m->slave) refreshDirtyArea(m->slave);
-	refreshDirtyArea(this);
-    }
-    else
+    done = step(this);
+    if (m->slave) drawTile(m->slave);
+    drawTile(this);
+    if (m->slave) refreshDirtyArea(m->slave);
+    refreshDirtyArea(this);
+    if (done)
     {
 	AddHandler(this->Finished, this, Move_Finished);
 	if (m->slave) RaiseEvent(m->slave->Finished, (Object)this, 0);

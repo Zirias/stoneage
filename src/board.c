@@ -47,6 +47,7 @@ Entity_PositionChanged(THIS, Object sender, void *data)
     Entity e;
     Entity d;
     int lvl;
+    int x, y;
 
     PositionChangedEventData *pcd = data;
     struct Board_impl *b = this->pimpl;
@@ -55,8 +56,11 @@ Entity_PositionChanged(THIS, Object sender, void *data)
     d = b->entity[pcd->to_y][pcd->to_x];
     b->entity[pcd->from_y][pcd->from_x] = 0;
     b->entity[pcd->to_y][pcd->to_x] = e;
+
+    /* destination occupied? */
     if (d)
     {
+	/* found a cabbage? */
 	if (CAST(d, ECabbage) && ! --(b->num_cabbages))
 	{
 	    lvl = b->level + 1;
@@ -64,8 +68,18 @@ Entity_PositionChanged(THIS, Object sender, void *data)
 	    this->loadLevel(this, lvl);
 	    return;
 	}
-	d->dispose(d);
+
+	/* delete destination entity if it is not a rock */
+	if (!CAST(d, ERock)) d->dispose(d);
+
+	/* redraw region */
+	for (x = pcd->to_x - 1; x < pcd->to_x + 2; ++x)
+	    for (y = pcd->to_y - 1; y < pcd->to_y + 2; ++y)
+		this->draw(this, x, y, 1);
     }
+
+    /* no more moves active -> check for rocks that should fall now */
+    if (!b->numberOfMoves) checkRocks(this);
 }
 
 static void
@@ -78,7 +92,6 @@ Move_Finished(THIS, Object sender, void *data)
 	SDL_RemoveTimer(this->pimpl->moveticker);
 	this->pimpl->moveticker = 0;
 	getWilly()->moveLock = 0;
-	checkRocks(this);
     }
 }
 
