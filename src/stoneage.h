@@ -11,9 +11,9 @@ struct Stoneage_impl;
 
 typedef struct
 {
-    int x;
-    int y;
-} Stoneage_MoveWillyData;
+    int dx;
+    int dy;
+} MoveWillyEventData;
 
 CLASS(Stoneage)
 {

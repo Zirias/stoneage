@@ -40,6 +40,35 @@ createMoveTickEvent(Uint32 interval, void *param)
 }
 
 static void
+Entity_PositionChanged(THIS, Object sender, void *data)
+{
+    METHOD(Board);
+
+    Entity e;
+    Entity d;
+    int lvl;
+
+    PositionChangedEventData *pcd = data;
+    struct Board_impl *b = this->pimpl;
+
+    e = (Entity)sender;
+    d = b->entity[pcd->to_y][pcd->to_x];
+    b->entity[pcd->from_y][pcd->from_x] = 0;
+    b->entity[pcd->to_y][pcd->to_x] = e;
+    if (d)
+    {
+	if (CAST(d, ECabbage) && ! --(b->num_cabbages))
+	{
+	    lvl = b->level + 1;
+	    if (lvl >= BUILTIN_LEVELS) lvl = 0;
+	    this->loadLevel(this, lvl);
+	    return;
+	}
+	d->dispose(d);
+    }
+}
+
+static void
 Move_Finished(THIS, Object sender, void *data)
 {
     METHOD(Board);
@@ -80,6 +109,7 @@ scanLevel(Board b)
 	e = b->pimpl->entity[y][x];
 	if (!e) continue;
 	AddHandler(e->MoveStarting, b, &Entity_MoveStarting);
+	AddHandler(e->PositionChanged, b, &Entity_PositionChanged);
 	r = CAST(e, ERock);
 	if (r) b->pimpl->rock[b->pimpl->num_rocks++] = r;
 	else if CAST(e, ECabbage) b->pimpl->num_cabbages++;
@@ -258,6 +288,7 @@ m_loadLevel(THIS, int n)
     if (n < 0) n = this->pimpl->level;
     internal_clear(this);
     l = NEW(Level);
+
     l->builtin(l, n);
     l->createEntities(l, this, (Entity *)&this->pimpl->entity);
     DELETE(Level, l);

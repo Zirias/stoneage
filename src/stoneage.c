@@ -53,13 +53,13 @@ toggleFullscreen(Stoneage this)
 }
 
 static void
-moveWilly(Stoneage this, int x, int y)
+moveWilly(Stoneage this, int dx, int dy)
 {
-    Stoneage_MoveWillyData *md;
+    MoveWillyEventData *md;
 
-    md = XMALLOC(Stoneage_MoveWillyData, 1);
-    md->x = x;
-    md->y = y;
+    md = XMALLOC(MoveWillyEventData, 1);
+    md->dx = dx;
+    md->dy = dy;
     RaiseEvent(this->MoveWilly, (Object)this, md);
 }
 
