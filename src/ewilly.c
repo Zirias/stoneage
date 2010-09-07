@@ -133,6 +133,10 @@ CTOR(EWilly)
 
 DTOR(EWilly)
 {
+    Stoneage s;
+
+    s = (Stoneage)mainApp;
+    RemoveHandler(s->MoveWilly, this, &Stoneage_MoveWilly);
     instance = 0;
     BASEDTOR(Entity);
 }

@@ -19,6 +19,7 @@ struct Board_impl
     int num_rocks;
     int num_cabbages;
     int level;
+    int levelStep;
     int paused;
 
     Entity entity[LVL_ROWS][LVL_COLS];
@@ -26,7 +27,8 @@ struct Board_impl
     Entity emptyEntity;
 };
 
-static void checkRocks(Board b);
+static void checkRocks(Board this);
+static void levelStart(Board this);
 
 Uint32
 createMoveTickEvent(Uint32 interval, void *param)
@@ -87,7 +89,14 @@ Move_Finished(THIS, Object sender, void *data)
     {
 	SDL_RemoveTimer(this->pimpl->moveticker);
 	this->pimpl->moveticker = 0;
-	checkRocks(this);
+	if (this->pimpl->levelStep)
+	{
+	    levelStart(this);
+	}
+	else
+	{
+	    checkRocks(this);
+	}
     }
 }
 
@@ -265,7 +274,7 @@ m_setPaused(THIS, int paused)
 }
 
 static void
-checkRocks(Board b)
+checkRocks(Board this)
 {
     int i;
     ERock r;
@@ -273,16 +282,18 @@ checkRocks(Board b)
     EWilly w;
     int falling;
 
+    struct Board_impl *b = this->pimpl;
+
     /* let willy finish his current move */
     w = getWilly();
     if (w && CAST(w, Entity)->moving) return;
 
     falling = 0;
-    for (i=0; i<b->pimpl->num_rocks; ++i)
+    for (i = 0; i < b->num_rocks; ++i)
     {
-	r = b->pimpl->rock[i];
+	r = b->rock[i];
 	e = CAST(r, Entity);
-	if (e->y<LVL_ROWS-1 && !b->pimpl->entity[e->y+1][e->x])
+	if (e->y < LVL_ROWS - 1 && !b->entity[e->y+1][e->x])
 	{
 	    /* freeze willy and let rock fall */
 	    falling = 1;
@@ -296,22 +307,34 @@ checkRocks(Board b)
 }
 
 static void
-m_loadLevel(THIS, int n)
+levelStart(Board this)
 {
     Level l;
-    METHOD(Board);
 
-    if (n < 0) n = this->pimpl->level;
+    struct Board_impl *b = this->pimpl;
+
     internal_clear(this);
     l = NEW(Level);
 
-    l->builtin(l, n);
+    l->builtin(l, b->level);
     l->createEntities(l, this, (Entity *)&this->pimpl->entity);
     DELETE(Level, l);
-    this->pimpl->level = n;
+    b->levelStep = 0;
     scanLevel(this);
     this->redraw(this, 1);
     checkRocks(this);
+}
+
+static void
+m_loadLevel(THIS, int n)
+{
+    METHOD(Board);
+
+    struct Board_impl *b = this->pimpl;
+
+    if (n >= 0) b->level = n;
+    b->levelStep = 1;
+    if (!b->numberOfMoves) levelStart(this);
 }
 
 CTOR(Board)
@@ -323,6 +346,7 @@ CTOR(Board)
     b = XMALLOC(struct Board_impl, 1);
     memset(b, 0, sizeof(struct Board_impl));
     b->level = -1;
+    b->levelStep = 0;
     b->emptyEntity = NEW(Entity);
     b->emptyEntity->init(b->emptyEntity, this, 0, 0);
     this->pimpl = b;

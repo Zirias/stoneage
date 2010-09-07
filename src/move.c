@@ -13,6 +13,7 @@ Board_MoveTick(THIS, Object sender, void *data);
 struct Move_impl
 {
     Entity e;
+    Board b;
     Move slave;
     SDL_Rect stepArea;
     SDL_Rect destArea;
@@ -82,6 +83,7 @@ m_init(THIS, Entity e, int dx, int dy, Trajectory t)
     struct Move_impl *m = this->pimpl;
 
     m->e = e;
+    m->b = e->b;
     s->coordinatesToRect(s, e->x, e->y, 1, 1, &(m->stepArea));
 
     s->coordinatesToRect(s,
@@ -134,15 +136,15 @@ drawBackgrounds(Move this)
     m->e->drawBackground(m->e, 0);
     if (this->dx)
     {
-	m->e->b->draw(m->e->b, m->e->x + this->dx, m->e->y, 0); 
+	m->b->draw(m->b, m->e->x + this->dx, m->e->y, 0); 
     }
     if (this->dy)
     {
-	m->e->b->draw(m->e->b, m->e->x, m->e->y + this->dy, 0);
+	m->b->draw(m->b, m->e->x, m->e->y + this->dy, 0);
     }
     if (this->dx && this->dy)
     {
-	m->e->b->draw(m->e->b, m->e->x + this->dx, m->e->y + this->dy, 0); 
+	m->b->draw(m->b, m->e->x + this->dx, m->e->y + this->dy, 0); 
     }
 }
 
@@ -173,7 +175,7 @@ Move_Finished(THIS, Object sender, void *data)
 {
     METHOD(Move);
 
-    RemoveHandler(this->pimpl->e->b->MoveTick, this, &Board_MoveTick);
+    RemoveHandler(this->pimpl->b->MoveTick, this, &Board_MoveTick);
     if (this->pimpl->slave) DELETE(Move, this->pimpl->slave);
     DELETE(Move, this);
 }
@@ -214,7 +216,7 @@ m_start(THIS)
 {
     METHOD(Move);
 
-    Board b = this->pimpl->e->b;
+    Board b = this->pimpl->b;
     AddHandler(b->MoveTick, this, &Board_MoveTick);
 }
 
