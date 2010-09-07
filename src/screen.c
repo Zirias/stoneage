@@ -7,6 +7,7 @@
 #include "resource.h"
 #include "board.h"
 #include "app.h"
+#include "move.h"
 
 static Screen _instance = 0;
 
@@ -347,6 +348,7 @@ m_initVideo(THIS)
     s->board->redraw(s->board, 0);
     drawBoardFrame(this);
     drawTime(this);
+    computeTrajectories(s->tile_width, s->tile_height);
 
     SDL_UpdateRect(SDL_GetVideoSurface(), 0, 0, 0, 0);
 }

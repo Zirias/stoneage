@@ -83,7 +83,6 @@ m_init(THIS, Entity e, int dx, int dy, Trajectory t)
 
     m->e = e;
     s->coordinatesToRect(s, e->x, e->y, 1, 1, &(m->stepArea));
-    s->coordinatesToRect(s, e->x + dx, e->y + dy, 1, 1, &(m->stepArea));
 
     s->coordinatesToRect(s,
 	    min(e->x, e->x + dx),
