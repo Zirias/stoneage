@@ -70,11 +70,6 @@ CLASS(Screen)
      */
     void FUNC(startGame)(THIS);
 
-    /** Counts time down.
-     * Counts time down by one second
-     */
-    void FUNC(timeStep)(THIS);
-
     /** Get a surface for a particular tile in a given rotation.
      * This function returns a SDL-Surface of a tile in a given rotation.
      * Loading/rotating of the tile is handled automatically if necessary.

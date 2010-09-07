@@ -91,7 +91,6 @@ Move_Finished(THIS, Object sender, void *data)
     {
 	SDL_RemoveTimer(this->pimpl->moveticker);
 	this->pimpl->moveticker = 0;
-	getWilly()->moveLock = 0;
     }
 }
 
@@ -276,11 +275,13 @@ checkRocks(Board b)
     ERock r;
     Entity e;
     EWilly w;
+    int falling;
 
     /* let willy finish his current move */
     w = getWilly();
     if (w && CAST(w, Entity)->moving) return;
 
+    falling = 0;
     for (i=0; i<b->pimpl->num_rocks; ++i)
     {
 	r = b->pimpl->rock[i];
@@ -288,10 +289,14 @@ checkRocks(Board b)
 	if (e->y<LVL_ROWS-1 && !b->pimpl->entity[e->y+1][e->x])
 	{
 	    /* freeze willy and let rock fall */
+	    falling = 1;
 	    getWilly()->moveLock = 1;
 	    r->fall(r);
 	}
     }
+
+    /* no rocks to fall -> unfreeze willy */
+    if (!falling) getWilly()->moveLock = 0;
 }
 
 static void
