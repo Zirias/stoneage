@@ -168,7 +168,7 @@ internal_clear(Board b)
     b->pimpl->num_rocks = 0;
     b->pimpl->num_cabbages = 0;
 
-    if (( w = getWilly() )) DELETE(EWilly, w);
+    if (( w = getWilly() )) ((Entity)w)->dispose(w);
 }
 
 static void
@@ -369,7 +369,7 @@ DTOR(Board)
 
     DestroyEvent(this->MoveTick);
 
-    DELETE(Entity, this->pimpl->emptyEntity);
+    this->pimpl->emptyEntity->dispose(this->pimpl->emptyEntity);
     XFREE(this->pimpl);
     BASEDTOR(Object);
 }

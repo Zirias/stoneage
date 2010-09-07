@@ -163,10 +163,11 @@ DoEventLoop(void)
 	    isSdl = 1;
 	}
 	for (entry = deliver->e->handlers;
-		deliver->active && entry;
+		entry;
 		entry = entry->next)
 	{
 	    entry->method(entry->instance, deliver->sender, deliver->data);
+	    if (!deliver->active) break;
 	}
 	if (isSdl) continue;
 	XFREE(deliver->data);
@@ -228,6 +229,7 @@ DestroyEvent(Event e)
     {
 	XFREE(entry);
     }
+    if (entry) XFREE(entry);
     XFREE(e);
 }
 

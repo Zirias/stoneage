@@ -218,6 +218,7 @@ m_run(THIS, int argc, char **argv)
 
     keyState = SDL_GetKeyState(0);
     DoEventLoop();
+    DELETE(Screen, s);
     return 0;
 }
 

@@ -447,9 +447,21 @@ CTOR(Screen)
 
 DTOR(Screen)
 {
+    int i;
+
     struct Screen_impl *s = this->pimpl;
+
+
     DELETE(Board, s->board);
     freeSurfaces(s);
+    for (i = 0; i < SATN_NumberOfTiles; ++i)
+    {
+	DELETE(Resource, s->res[i]);
+    }
+    for (i = 0; i < SATX_NumberOfTexts; ++i)
+    {
+	DELETE(Resource, s->resText[i]);
+    }
 
 #ifndef SDL_IMG_OLD
     IMG_Quit();
