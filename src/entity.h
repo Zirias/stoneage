@@ -10,12 +10,19 @@
  * Includes definition of the Entity class
  */
 
+struct Move;
+
 typedef enum
 {
     BG_None,
     BG_Empty,
     BG_Earth
 } Background;
+
+typedef struct
+{
+    struct Move *m;
+} MoveStartingEventData;
 
 typedef struct
 {

@@ -85,8 +85,8 @@ Entity_MoveStarting(THIS, Object sender, void *data)
 {
     METHOD(Board);
 
-    Move m = data;
-    AddHandler(m->Finished, (Object)this, &Move_Finished);
+    MoveStartingEventData *msd = data;
+    AddHandler(msd->m->Finished, (Object)this, &Move_Finished);
     
     if (!(this->pimpl->numberOfMoves++))
     {
@@ -317,12 +317,16 @@ CTOR(Board)
     this->entity = &m_entity;
     this->setPaused = &m_setPaused;
 
+    this->MoveTick = CreateEvent();
+
     return this;
 }
 
 DTOR(Board)
 {
     internal_clear(this);
+
+    DestroyEvent(this->MoveTick);
 
     DELETE(Entity, this->pimpl->emptyEntity);
     XFREE(this->pimpl);

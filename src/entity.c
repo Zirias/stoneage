@@ -198,6 +198,7 @@ CTOR(Entity)
     this->getTile = &m_getTile;
     this->draw = &m_draw;
     this->drawBackground = &m_drawBackground;
+    this->bg = BG_Empty;
     return this;
 }
 

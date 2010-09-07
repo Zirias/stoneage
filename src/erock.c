@@ -15,6 +15,7 @@ createContinuationMove(ERock this)
     Entity n;
     EWilly w;
     Move m;
+    MoveStartingEventData *msd;
 
     w = 0;
     m = 0;
@@ -66,7 +67,9 @@ createContinuationMove(ERock this)
     {
 	e->moving = 1;
 	AddHandler(m->Finished, this, &Move_Finished);
-	RaiseEvent(e->MoveStarting, (Object)this, m);
+	msd = XMALLOC(MoveStartingEventData, 1);
+	msd->m = m;
+	RaiseEvent(e->MoveStarting, (Object)this, msd);
 	m->start(m);
     }
 }
@@ -111,6 +114,7 @@ m_fall(THIS)
 
     Entity e;
     Move m;
+    MoveStartingEventData *msd;
 
     e = CAST(this, Entity);
     if (e->moving) return;
@@ -118,7 +122,9 @@ m_fall(THIS)
     m->init(m, e, 0, 1, TR_Linear);
     e->moving = 1;
     AddHandler(m->Finished, this, &Move_Finished);
-    RaiseEvent(e->MoveStarting, (Object)this, m);
+    msd = XMALLOC(MoveStartingEventData, 1);
+    msd->m = m;
+    RaiseEvent(e->MoveStarting, (Object)this, msd);
     m->start(m);
 }
 

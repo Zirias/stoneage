@@ -45,6 +45,7 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
 
     Entity e, d, d1, d2;
     Move m, slave;
+    MoveStartingEventData *msd;
     MoveWillyEventData *md;
 
     e = CAST(this, Entity);
@@ -79,7 +80,9 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
 	m->init(m, e, md->dx, md->dy, TR_Linear);
 	AddHandler(m->Finished, this, &Move_Finished);
 	e->moving = 1;
-	RaiseEvent(e->MoveStarting, (Object)e, m);
+	msd = XMALLOC(MoveStartingEventData, 1);
+	msd->m = m;
+	RaiseEvent(e->MoveStarting, (Object)e, msd);
 	m->start(m);
     }
 
@@ -99,8 +102,12 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
 	    AddHandler(m->Finished, this, &Move_Finished);
 	    d->moving = 1;
 	    e->moving = 1;
-	    RaiseEvent(d->MoveStarting, (Object)d, slave);
-	    RaiseEvent(e->MoveStarting, (Object)e, m);
+	    msd = XMALLOC(MoveStartingEventData, 1);
+	    msd->m = slave;
+	    RaiseEvent(d->MoveStarting, (Object)d, msd);
+	    msd = XMALLOC(MoveStartingEventData, 1);
+	    msd->m = m;
+	    RaiseEvent(e->MoveStarting, (Object)e, msd);
 	    m->start(m);
 	}
     }

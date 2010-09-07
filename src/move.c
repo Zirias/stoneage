@@ -7,6 +7,9 @@
 #include "screen.h"
 #include "board.h"
 
+static void
+Board_MoveTick(THIS, Object sender, void *data);
+
 struct Move_impl
 {
     Entity e;
@@ -168,6 +171,7 @@ Move_Finished(THIS, Object sender, void *data)
 {
     METHOD(Move);
 
+    RemoveHandler(this->pimpl->e->b->MoveTick, this, &Board_MoveTick);
     if (this->pimpl->slave) DELETE(Move, this->pimpl->slave);
     DELETE(Move, this);
 }
@@ -210,7 +214,7 @@ m_start(THIS)
     METHOD(Move);
 
     Board b = this->pimpl->e->b;
-    AddHandler(b->MoveTick, this, Board_MoveTick);
+    AddHandler(b->MoveTick, this, &Board_MoveTick);
 }
 
 CTOR(Move)
@@ -220,11 +224,13 @@ CTOR(Move)
     this->init = &m_init;
     this->setSlave = &m_setSlave;
     this->start = &m_start;
+    this->Finished = CreateEvent();
     return this;
 }
 
 DTOR(Move)
 {
+    DestroyEvent(this->Finished);
     XFREE(this->pimpl);
     BASEDTOR(Object);
 }

@@ -78,6 +78,7 @@ AddHandler(Event e, void *instance, EventHandler handler)
     entry = XMALLOC(EventHandlerEntry, 1);
     entry->instance = instance;
     entry->method = handler;
+    entry->next = 0;
 
     if (e->handlers)
     {
@@ -218,9 +219,12 @@ void
 DestroyEvent(Event e)
 {
     EventHandlerEntry *entry;
+    EventHandlerEntry *next;
 
     CancelEvent(e);
-    for (entry = e->handlers; entry; entry = entry->next)
+    for (entry = 0, next = e->handlers;
+	    next;
+	    entry = next, next = entry->next)
     {
 	XFREE(entry);
     }
