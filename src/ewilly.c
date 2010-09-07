@@ -136,6 +136,7 @@ CTOR(EWilly)
 
     BASECTOR(EWilly, Entity);
 
+    instance = this;
     e = CAST(this, Entity);
     e->dispose = &m_dispose;
     e->getTile = &m_getTile;
