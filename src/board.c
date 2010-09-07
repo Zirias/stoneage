@@ -40,22 +40,21 @@ createMoveTickEvent(Uint32 interval, void *param)
 }
 
 static void
-Entity_PositionChanged(THIS, Object sender, void *data)
+m_move(THIS, Entity e, int dx, int dy)
 {
     METHOD(Board);
 
-    Entity e;
     Entity d;
     int lvl;
     int x, y;
 
-    PositionChangedEventData *pcd = data;
     struct Board_impl *b = this->pimpl;
 
-    e = (Entity)sender;
-    d = b->entity[pcd->to_y][pcd->to_x];
-    b->entity[pcd->from_y][pcd->from_x] = 0;
-    b->entity[pcd->to_y][pcd->to_x] = e;
+    b->entity[e->y][e->x] = 0;
+    e->x += dx;
+    e->y += dy;
+    d = b->entity[e->y][e->x];
+    b->entity[e->y][e->x] = e;
 
     /* destination occupied? */
     if (d)
@@ -73,13 +72,10 @@ Entity_PositionChanged(THIS, Object sender, void *data)
 	if (!CAST(d, ERock)) d->dispose(d);
 
 	/* redraw region */
-	for (x = pcd->to_x - 1; x < pcd->to_x + 2; ++x)
-	    for (y = pcd->to_y - 1; y < pcd->to_y + 2; ++y)
+	for (x = e->x - 1; x < e->x + 2; ++x)
+	    for (y = e->y - 1; y < e->y + 2; ++y)
 		this->draw(this, x, y, 1);
     }
-
-    /* no more moves active -> check for rocks that should fall now */
-    if (!b->numberOfMoves) checkRocks(this);
 }
 
 static void
@@ -91,6 +87,7 @@ Move_Finished(THIS, Object sender, void *data)
     {
 	SDL_RemoveTimer(this->pimpl->moveticker);
 	this->pimpl->moveticker = 0;
+	checkRocks(this);
     }
 }
 
@@ -123,7 +120,6 @@ scanLevel(Board b)
 	e = b->pimpl->entity[y][x];
 	if (!e) continue;
 	AddHandler(e->MoveStarting, b, &Entity_MoveStarting);
-	AddHandler(e->PositionChanged, b, &Entity_PositionChanged);
 	r = CAST(e, ERock);
 	if (r) b->pimpl->rock[b->pimpl->num_rocks++] = r;
 	else if CAST(e, ECabbage) b->pimpl->num_cabbages++;
@@ -335,6 +331,7 @@ CTOR(Board)
     this->redraw = &m_redraw;
     this->draw = &m_draw;
     this->entity = &m_entity;
+    this->move = &m_move;
     this->setPaused = &m_setPaused;
 
     this->MoveTick = CreateEvent();

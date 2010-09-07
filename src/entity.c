@@ -32,7 +32,6 @@ m_init(THIS, Board b, int x, int y)
     this->moving = 0;
 
     this->MoveStarting = CreateEvent();
-    this->PositionChanged = CreateEvent();
 }
 
 static unsigned int
@@ -185,7 +184,6 @@ static void
 m_dispose(THIS)
 {
     METHOD(Entity);
-    DestroyEvent(this->PositionChanged);
     DestroyEvent(this->MoveStarting);
     DELETE(Entity, this);
 }

@@ -24,14 +24,6 @@ typedef struct
     struct Move *m;
 } MoveStartingEventData;
 
-typedef struct
-{
-    int from_x;
-    int from_y;
-    int to_x;
-    int to_y;
-} PositionChangedEventData;
-
 /** A class representing one entity on the game board.
  * This is the common base class for all available entities in the game
  */
@@ -46,7 +38,6 @@ CLASS(Entity)
     Background bg;	/**< type of the background for this entity */
 
     Event MoveStarting;
-    Event PositionChanged;
 
     /** Draw the entity on the board.
      * Draws the entity on the board on its current position

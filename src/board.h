@@ -60,6 +60,15 @@ CLASS(Board)
      */
     int FUNC(entity)(THIS, int x, int y, struct Entity **e);
 
+    /** Move entity on board.
+     * Moves the entity in the given direction on the board, to be called
+     * after the Move (animation) finished
+     * @param e the Entity to move
+     * @param dx offset in x direction (-1, 0, 1)
+     * @param dy offset in y direction (-1, 0, 1)
+     */
+    void FUNC(move)(THIS, struct Entity *e, int dx, int dy);
+
     /** Sets paused state
      * Pauses or unpauses the movements on the board.
      * @param paused 1 for pause, 0 for resume

@@ -18,20 +18,11 @@ Move_Finished(THIS, Object sender, void *data)
 
     Entity e;
     Move m;
-    PositionChangedEventData *pcd;
 
     e = (Entity) this;
     m = (Move) sender;
-    pcd = XMALLOC(PositionChangedEventData, 1);
-    pcd->from_x = e->x;
-    pcd->from_y = e->y;
-    pcd->to_x = e->x + m->dx;
-    pcd->to_y = e->y + m->dy;
-    e->x = pcd->to_x;
-    e->y = pcd->to_y;
-    RaiseEvent(e->PositionChanged, (Object)this, pcd);
-
     e->moving = 0;
+    e->b->move(e->b, e, m->dx, m->dy);
 }
 
 static void
