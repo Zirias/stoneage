@@ -77,6 +77,7 @@ Move_Finished(THIS, Object sender, void *data)
     {
 	SDL_RemoveTimer(this->pimpl->moveticker);
 	this->pimpl->moveticker = 0;
+	getWilly()->moveLock = 0;
 	checkRocks(this);
     }
 }

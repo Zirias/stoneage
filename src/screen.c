@@ -208,8 +208,8 @@ m_coordinatesToRect(THIS, int x, int y, int w, int h, SDL_Rect *rect)
     struct Screen_impl *s = this->pimpl;
 
     if ((x<0)||(x+w>LVL_COLS)||(y<0)||(y+h>LVL_ROWS)) return -1;
-    rect->w = s->tile_width;
-    rect->h = s->tile_height;
+    rect->w = s->tile_width * w;
+    rect->h = s->tile_height * h;
     rect->x = s->tile_width * x + s->off_x;
     rect->y = s->tile_height * y + s->off_y;
     return 0;
