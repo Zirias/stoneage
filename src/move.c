@@ -122,7 +122,7 @@ step(Move this)
     }
     
     m->stepArea.x = m->x + this->dx * (*m->t)[m->step][0];
-    m->stepArea.y = m->y + this->dy * (*m->t)[m->step++][0];
+    m->stepArea.y = m->y + this->dy * (*m->t)[m->step++][1];
 
     return 0;
 }
@@ -193,8 +193,8 @@ Board_MoveTick(THIS, Object sender, void *data)
 	return;
     }
 
-    if (m->slave) drawBackgrounds(m->slave);
     drawBackgrounds(this);
+    if (m->slave) drawBackgrounds(m->slave);
     if (m->slave) step(m->slave);
     done = step(this);
     if (m->slave) drawTile(m->slave);
