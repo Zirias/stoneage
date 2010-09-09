@@ -108,7 +108,7 @@ Entity_MoveStarting(THIS, Object sender, void *data)
     MoveStartingEventData *msd = data;
     AddHandler(msd->m->Finished, (Object)this, &Move_Finished);
     
-    if (!(this->pimpl->numberOfMoves++))
+    if (!(this->pimpl->numberOfMoves++) && !(this->pimpl->paused))
     {
 	this->pimpl->moveticker = SDL_AddTimer(
 		20, &createMoveTickEvent, this);
