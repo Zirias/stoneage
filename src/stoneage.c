@@ -57,6 +57,9 @@ moveWilly(Stoneage this, int dx, int dy)
 {
     MoveWillyEventData *md;
 
+    if (this->pimpl->paused) return;
+    if (((Entity)getWilly())->moving) return;
+
     md = XMALLOC(MoveWillyEventData, 1);
     md->dx = dx;
     md->dy = dy;
