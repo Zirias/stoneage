@@ -29,12 +29,12 @@ static void createWindowsConsole()
     hConHandle = _open_osfhandle(lStdHandle, _O_TEXT);
     fp = _fdopen( hConHandle, "w" );
     *stdout = *fp;
-    setvbuf( stdout, NULL, _IONBF, 0 );
+    setvbuf( stdout, 0, _IONBF, 0 );
     lStdHandle = (long)GetStdHandle(STD_ERROR_HANDLE);
     hConHandle = _open_osfhandle(lStdHandle, _O_TEXT);
     fp = _fdopen( hConHandle, "w" );
     *stderr = *fp;
-    setvbuf( stderr, NULL, _IONBF, 0 );
+    setvbuf( stderr, 0, _IONBF, 0 );
 }
 
 #endif

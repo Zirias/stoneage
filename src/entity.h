@@ -4,42 +4,60 @@
 #include <SDL.h>
 
 #include "common.h"
-#include "ehandler.h"
-
-struct Board;
-struct Move;
+#include "event.h"
 
 /** @file entity.h
  * Includes definition of the Entity class
  */
+
+struct Move;
+
+typedef enum
+{
+    BG_None,
+    BG_Empty,
+    BG_Earth
+} Background;
+
+typedef struct
+{
+    struct Move *m;
+} MoveStartingEventData;
 
 /** A class representing one entity on the game board.
  * This is the common base class for all available entities in the game
  */
 CLASS(Entity)
 {
-    INHERIT(EHandler);
+    INHERIT(Object);
     
     struct Board *b;	/**< The game board to interact with */
-    struct Move *m;	/**< Current move, 0 if not moving */
+    int moving;		/**< 1 when moving, 0 otherwise */
     int x;		/**< x coordinate of this entity on the board */
     int y;		/**< y coordinate of this entity on the board */
+    Background bg;	/**< type of the background for this entity */
 
-    /** Pointer for getting main tile.
-     * This points to one of the Board's methods for getting a surface
-     * containing the entities main tile
-     */
-    const SDL_Surface *FUNC(getSurface)(THIS);
+    Event MoveStarting;
 
-    /** Pointer for getting background tile.
-     * For partially transparent entities, this points to one of the
-     * Board's methods for getting surfaces containing the default
-     * background tile this entity should blend over
-     * @param x x coordinate on the board
-     * @param y y coordinate on the board
-     * @param buf store the surfaces here
+    /** Draw the entity on the board.
+     * Draws the entity on the board on its current position
+     * @param refresh whether to refresh the drawing surface using SDL_UpdateRect()
      */
-    void FUNC(getBackground)(THIS, int x, int y, void *buf);
+    void FUNC(draw)(THIS, int refresh);
+
+    /** Get the foreground tile for the entity.
+     * Get an SDL Surface containing the foreground tile of this entity or
+     * null if this entity has no foreground tile
+     */
+    const SDL_Surface *FUNC(getTile)(THIS);
+
+    /** Draw the entities background on the board.
+     * Draws only the background of the entity on its current position on
+     * the board, but not the entity itself (needed for examples for moving
+     * entities)
+     * @param refresh whether to refresh the drawing surface using SDL_UpdateRect()
+     */
+    void FUNC(drawBackground)(THIS, int refresh);
 
     /** Initialize the entity.
      * Sets the important properties and is called by the Board class
@@ -48,8 +66,7 @@ CLASS(Entity)
      * @param x x coordinate on the board
      * @param y y coordinate on the board
      */
-    void FUNC(init)(THIS, 
-	    struct Board *b, int x, int y);
+    void FUNC(init)(THIS, struct Board *b, int x, int y);
 
     /** "virtual" destructor.
      * This method serves as a virtual wrapper to the destructor. It

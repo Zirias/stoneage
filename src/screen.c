@@ -6,9 +6,10 @@
 #include "resfile.h"
 #include "resource.h"
 #include "board.h"
-#include "app.h"
+#include "stoneage.h"
+#include "move.h"
 
-static Screen _instance = NULL;
+static Screen _instance = 0;
 
 static const char *tileNameStrings[] =
 {
@@ -28,10 +29,20 @@ static const char *tileNameStrings[] =
     "tile_willy"
 };
 
+static const char *textNameStrings[] =
+{
+    "text_paused",
+    "text_time"
+};
+
 struct Screen_impl
 {
     Resource res[SATN_NumberOfTiles];
     SDL_Surface * tiles[SATN_NumberOfTiles][4];
+    Resource resDigits[10];
+    SDL_Surface * digits[10];
+    Resource resText[SATX_NumberOfTexts];
+    SDL_Surface * texts[SATX_NumberOfTexts];
 
     Board board;
 
@@ -39,6 +50,8 @@ struct Screen_impl
     int tile_height;
     int off_x;
     int off_y;
+
+    Uint16 time;
 };
 
 static SDL_Surface *
@@ -129,12 +142,18 @@ freeSurfaces(struct Screen_impl *s)
 {
     SDL_Surface **tile;
     SDL_Surface **tile_end;
+    int i;
 
-    tile_end = (SDL_Surface **) s->tiles + SATN_NumberOfTiles;
+    tile_end = (SDL_Surface **) s->tiles + 4 * SATN_NumberOfTiles;
     for (tile = (SDL_Surface **) s->tiles; tile != tile_end; ++tile)
     {
 	if (*tile) SDL_FreeSurface(*tile);
-	*tile = NULL;
+	*tile = 0;
+    }
+    for (i = 0; i < 10; ++i)
+    {
+	if (s->digits[i]) SDL_FreeSurface(s->digits[i]);
+	s->digits[i] = 0;
     }
 }
 
@@ -160,6 +179,20 @@ m_getTile(THIS, enum TileName tile, int rotation)
     return s->tiles[tile][rotation];
 }
 
+static const SDL_Surface *
+m_getText(THIS, enum TextName text)
+{
+    METHOD(Screen);
+
+    struct Screen_impl *s = this->pimpl;
+    if (! s->texts[text])
+    {
+	s->texts[text] = createScaledSurface(s->resText[text],
+		s->tile_width, s->tile_height);
+    }
+    return s->texts[text];
+}
+
 static Board
 m_getBoard(THIS)
 {
@@ -169,13 +202,17 @@ m_getBoard(THIS)
 }
 
 static int
-m_coordinatesToPixel(THIS, int x, int y, Sint16 *px, Sint16 *py)
+m_coordinatesToRect(THIS, int x, int y, int w, int h, SDL_Rect *rect)
 {
     METHOD(Screen);
 
-    if ((x<0)||(x>LVL_COLS-1)||(y<0)||(y>LVL_ROWS-1)) return -1;
-    *px = this->pimpl->tile_width * x + this->pimpl->off_x;
-    *py = this->pimpl->tile_height * y + this->pimpl->off_y;
+    struct Screen_impl *s = this->pimpl;
+
+    if ((x<0)||(x+w>LVL_COLS)||(y<0)||(y+h>LVL_ROWS)) return -1;
+    rect->w = s->tile_width * w;
+    rect->h = s->tile_height * h;
+    rect->x = s->tile_width * x + s->off_x;
+    rect->y = s->tile_height * y + s->off_y;
     return 0;
 }
 
@@ -235,13 +272,63 @@ drawBoardFrame(Screen this)
 	    drawArea.y += s->tile_height)
 	SDL_BlitSurface((SDL_Surface *)frameTile, 0, sf, &drawArea);
 
-    SDL_UpdateRect(sf, 0, 0, 0, 0);
+    drawArea.x = (LVL_COLS - 9) * s->tile_width + s->off_x;
+    drawArea.y = (LVL_ROWS + 3) * s->tile_height;
+    frameTile = this->getText(this, SATX_Time);
+    drawArea.w = frameTile->w;
+    SDL_BlitSurface((SDL_Surface *)frameTile, 0, sf, &drawArea);
+}
+
+static void
+drawTime(Screen this)
+{
+    SDL_Rect drawArea;
+    int i;
+    Uint16 time;
+    int digits[4];
+
+    struct Screen_impl *s = this->pimpl;
+    SDL_Surface *sf = SDL_GetVideoSurface();
+
+    time = s->time;
+    for (i = 3; i >= 0; --i)
+    {
+	digits[i] = time % 10;
+	time /= 10;
+    }
+
+    drawArea.x = (LVL_COLS - 5) * s->tile_width;
+    drawArea.y = (LVL_ROWS + 3) * s->tile_height;
+    drawArea.w = s->tile_width;
+    drawArea.h = s->tile_height;
+    
+    for (i = 0; i < 4; ++i)
+    {
+	SDL_BlitSurface(s->digits[digits[i]], 0, sf, &drawArea);
+	drawArea.x += s->tile_width;
+    }
+}
+
+static void
+Stoneage_Tick(THIS, Object sender, void *data)
+{
+    METHOD(Screen);
+
+    struct Screen_impl *s = this->pimpl;
+
+    s->time--;
+    drawTime(this);
+    SDL_UpdateRect(SDL_GetVideoSurface(), (LVL_COLS - 5) * s->tile_width,
+	    (LVL_ROWS + 3) * s->tile_height,
+	    4 * s->tile_width, s->tile_height);
 }
 
 static void
 m_initVideo(THIS)
 {
     METHOD(Screen);
+
+    int i;
 
     struct Screen_impl *s = this->pimpl;
     SDL_Surface *screen = SDL_GetVideoSurface();
@@ -253,10 +340,17 @@ m_initVideo(THIS)
     s->tile_height = screen->h / (LVL_ROWS + 6);
     s->off_x = s->tile_width / 2;
     s->off_y = s->tile_height / 2;
-    s->board->setGeometry(s->board,
-	    s->tile_width, s->tile_height, s->off_x, s->off_y);
+    for (i = 0; i < 10; ++i)
+    {
+	s->digits[i] = createScaledSurface(
+		s->resDigits[i], s->tile_width, s->tile_height);
+    }
     s->board->redraw(s->board, 0);
     drawBoardFrame(this);
+    drawTime(this);
+    computeTrajectories(s->tile_width, s->tile_height);
+
+    SDL_UpdateRect(SDL_GetVideoSurface(), 0, 0, 0, 0);
 }
 
 static void
@@ -266,6 +360,9 @@ m_startGame(THIS)
 
     struct Screen_impl *s = this->pimpl;
     s->board->loadLevel(s->board, 0);
+    s->time=100;
+    drawTime(this);
+    AddHandler(((Stoneage)mainApp)->Tick, this, &Stoneage_Tick);
 }
 
 CTOR(Screen)
@@ -276,6 +373,8 @@ CTOR(Screen)
 #ifndef SDL_IMG_OLD
     int imgflags;
 #endif
+    
+    char digitRes[] = "digit_x";
 
     BASECTOR(Screen, Object);
 
@@ -294,8 +393,9 @@ CTOR(Screen)
     this->pimpl = s;
 
     this->getTile = &m_getTile;
+    this->getText = &m_getText;
     this->getBoard = &m_getBoard;
-    this->coordinatesToPixel = &m_coordinatesToPixel;
+    this->coordinatesToRect = &m_coordinatesToRect;
     this->initVideo = &m_initVideo;
     this->startGame = &m_startGame;
 
@@ -317,6 +417,29 @@ CTOR(Screen)
 	    mainApp->abort(mainApp);
 	}
     }
+    for (i = 0; i < SATX_NumberOfTexts; ++i)
+    {
+	rf->load(rf, textNameStrings[i], &(s->resText[i]));
+	if (!s->resText[i])
+	{
+	    DELETE(Resfile, rf);
+	    log_err("Error loading text graphics.\n");
+	    mainApp->abort(mainApp);
+	}
+    }
+    digitRes[6] = '0';
+    for (i = 0; i < 10; ++i)
+    {
+	rf->load(rf, digitRes, &(s->resDigits[i]));
+	digitRes[6]++;
+	if (!s->resDigits[i])
+	{
+	    DELETE(Resfile, rf);
+	    log_err("Error loading digit graphics.\n");
+	    mainApp->abort(mainApp);
+	}
+    }
+
     DELETE(Resfile, rf);
 
     return this;
@@ -324,9 +447,21 @@ CTOR(Screen)
 
 DTOR(Screen)
 {
+    int i;
+
     struct Screen_impl *s = this->pimpl;
+
+
     DELETE(Board, s->board);
     freeSurfaces(s);
+    for (i = 0; i < SATN_NumberOfTiles; ++i)
+    {
+	DELETE(Resource, s->res[i]);
+    }
+    for (i = 0; i < SATX_NumberOfTexts; ++i)
+    {
+	DELETE(Resource, s->resText[i]);
+    }
 
 #ifndef SDL_IMG_OLD
     IMG_Quit();

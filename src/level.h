@@ -7,14 +7,6 @@
  * includes definition of class Level.
  */
 
-/** number of rows in a level
- */
-#define LVL_ROWS 18
-
-/** number of columns in a level
- */
-#define LVL_COLS 31
-
 /** number of builtin levels
  */
 #define BUILTIN_LEVELS 3

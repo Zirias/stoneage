@@ -10,7 +10,7 @@ m_dispose(THIS)
 }
 
 static const SDL_Surface *
-m_getSurface(THIS)
+m_getTile(THIS)
 {
     /* METHOD(EWall); */
 
@@ -26,7 +26,8 @@ CTOR(EWall)
 
     e = CAST(this, Entity);
     e->dispose = &m_dispose;
-    e->getSurface = &m_getSurface;
+    e->getTile = &m_getTile;
+    e->bg = BG_None;
     return this;
 }
 

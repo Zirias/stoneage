@@ -4,7 +4,7 @@
 #include <SDL.h>
 
 #include "common.h"
-#include "ehandler.h"
+#include "event.h"
 
 struct Board_impl;
 
@@ -15,27 +15,22 @@ struct Move;
  * Includes definition of class Board
  */
 
+typedef struct
+{
+    int cancelMoves;
+} MoveTickEventData;
+
 /** This class represents the Game's Board.
  * The Board class implements all drawing functionality and some of
  * the game logic.
  */
 CLASS(Board)
 {
-    INHERIT(EHandler);
+    INHERIT(Object);
 
     struct Board_impl *pimpl; /**< @private */
 
-    /** Set geometry information of the board.
-     * This must be called when the size of a tile is about to change, e.g.
-     * due to a new screen resolution. The drawing rectangle for SDL drawing
-     * functions and the individual points of movement trajectories are
-     * calculated when this is called.
-     * @param width new width of a tile
-     * @param height new height of a tile
-     * @param off_x x offset for the whole board
-     * @param off_y y offset for the whole board
-     */
-    void FUNC(setGeometry)(THIS, int width, int height, int off_x, int off_y);
+    Event MoveTick;
 
     /** Load and start a level.
      * STUB
@@ -65,46 +60,20 @@ CLASS(Board)
      */
     int FUNC(entity)(THIS, int x, int y, struct Entity **e);
 
-    /** Start a moving operation.
-     * Start movement described by a given Move object
-     * @param m a Move object describing the motion.
+    /** Move entity on board.
+     * Moves the entity in the given direction on the board, to be called
+     * after the Move (animation) finished
+     * @param e the Entity to move
+     * @param dx offset in x direction (-1, 0, 1)
+     * @param dy offset in y direction (-1, 0, 1)
      */
-    void FUNC(startMove)(THIS, struct Move *m);
+    void FUNC(move)(THIS, struct Entity *e, int dx, int dy);
 
-    /** Get SDL Surfaces with "Empty" Tiles suitable for the given position.
-     * @return SDL Surface
+    /** Sets paused state
+     * Pauses or unpauses the movements on the board.
+     * @param paused 1 for pause, 0 for resume
      */
-    void FUNC(getEmptyBackground)(THIS, int x, int y, void *buf);
-
-    /** Get SDL Surfaces with "Earth" Tiles suitable for the given position.
-     * @return SDL Surface
-     */
-    void FUNC(getEarthBackground)(THIS, int x, int y, void *buf);
-
-    /** Get SDL Surface with "Earth" Tile.
-     * @return SDL Surface
-     */
-    const SDL_Surface *FUNC(getEarthTile)(THIS);
-
-    /** Get SDL Surface with "Wall" Tile.
-     * @return SDL Surface
-     */
-    const SDL_Surface *FUNC(getWallTile)(THIS);
-
-    /** Get SDL Surface with "Rock" Tile.
-     * @return SDL Surface
-     */
-    const SDL_Surface *FUNC(getRockTile)(THIS);
-
-    /** Get SDL Surface with "Cabbage" Tile.
-     * @return SDL Surface
-     */
-    const SDL_Surface *FUNC(getCabbageTile)(THIS);
-
-    /** Get SDL Surface with "Willy" Tile.
-     * @return SDL Surface
-     */
-    const SDL_Surface *FUNC(getWillyTile)(THIS);
+    void FUNC(setPaused)(THIS, int paused);
 };
 
 #endif

@@ -37,6 +37,17 @@ enum TileName
     SATN_NumberOfTiles
 };
 
+/** The different types of text graphics
+ * This is a collection of symbolic names for the text graphics used in the
+ * game
+ */
+enum TextName
+{
+    SATX_Paused,
+    SATX_Time,
+    SATX_NumberOfTexts
+};
+
 /** This class represents the whole SDL screen.
  * The screen class includes primitives for loading, scaling and rotating
  * tile graphics as well as managing the position of the Board and the
@@ -68,22 +79,30 @@ CLASS(Screen)
      */
     const SDL_Surface *FUNC(getTile)(THIS, enum TileName tile, int rotation);
 
+    /** Get a surface containing a particular text
+     * This function returns a SDL-surface for a given text, it is scaled
+     * automatically.
+     * @param text which text to return
+     * @return SDL-Surface of the requested text.
+     */
+    const SDL_Surface *FUNC(getText)(THIS, enum TextName text);
+
     /** Get the board on the screen.
      * Returns the board that is displayed on the screen.
      * @return the board
      */
     struct Board *FUNC(getBoard)(THIS);
 
-    /** Get real pixel position for a given coordinate.
-     * This function gives the upper left edge of a board coordinate in
-     * real pixels.
+    /** Get real pixel coordinates for given board coordinates.
+     * This function transforms given board coordinates to an SDL rectangle of
+     * real pixel coordinates suitable for drawing tiles to the board.
      * @param x x-coordinate on the board
      * @param y y-coordinate on the board
      * @param px x component of pixel position
      * @param py y component of pixel position
      * @return non-zero on error (coordinate out of board range)
      */
-    int FUNC(coordinatesToPixel)(THIS, int x, int y, Sint16 *px, Sint16 *py);
+    int FUNC(coordinatesToRect)(THIS, int x, int y, int w, int h, SDL_Rect *rect);
 };
 
 extern Screen getScreen(void);

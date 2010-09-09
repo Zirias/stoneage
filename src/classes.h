@@ -8,10 +8,12 @@
 /** Enumeration of all CLASS types
  * Every class must be registered here, this info is needed for
  * "RTTI" and secure CAST() functionality
+ *
+ * A notable exception is the class "Event". It does not inherit from Object
+ * and thus does not support RTTI. It is also not possible to inherit from
+ * "Event".
  */
 enum Type {
-    CLASS_Event,
-    CLASS_EHandler,
     CLASS_Screen,
     CLASS_Board,
     CLASS_Move,

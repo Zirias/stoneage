@@ -5,29 +5,38 @@
 
 #include "entity.h"
 #include "screen.h"
+#include "board.h"
+
+static void
+Board_MoveTick(THIS, Object sender, void *data);
 
 struct Move_impl
 {
     Entity e;
-    Sint16 x;
-    Sint16 y;
-    Sint16 tx;
-    Sint16 ty;
+    Board b;
+    Move slave;
+    SDL_Rect stepArea;
+    SDL_Rect destArea;
+    SDL_Rect dirtyArea;
+    int x;
+    int y;
     int step;
     int (*t)[7][2];
 };
 
 static const double tTables[Trajectory_count][7][2] = {
     {
+	/* TR_Linear */
 	{.125,.125},
-	{.25,.25},
+	{ .25, .25},
 	{.375,.375},
-	{.5,.5},
+	{  .5,  .5},
 	{.625,.625},
-	{.75,.75},
+	{ .75, .75},
 	{.875,.875}
     },
     {
+	/* TR_CircleX */
 	{.195,.020},
 	{.383,.076},
 	{.556,.169},
@@ -59,62 +68,156 @@ computeTrajectories(int tile_width, int tile_height)
     }
 }
 
+static int
+min(int a, int b)
+{
+    return (a<b)?a:b;
+}
+
 static void
 m_init(THIS, Entity e, int dx, int dy, Trajectory t)
 {
     METHOD(Move);
 
     Screen s = getScreen();
-    struct Move_impl *p = this->pimpl;
+    struct Move_impl *m = this->pimpl;
 
-    p->e = e;
-    s->coordinatesToPixel(s, e->x, e->y, &p->x, &p->y);
-    s->coordinatesToPixel(s, e->x + dx, e->y + dy, &p->tx, &p->ty);
+    m->e = e;
+    m->b = e->b;
+    s->coordinatesToRect(s, e->x, e->y, 1, 1, &(m->stepArea));
 
-    p->step = 0;
-    p->t = &(pTables[t]);
+    s->coordinatesToRect(s,
+	    min(e->x, e->x + dx),
+	    min(e->y, e->y + dy),
+	    dx?2:1, dy?2:1, &(m->dirtyArea));
+    
+    m->x = m->stepArea.x;
+    m->y = m->stepArea.y;
+
+    m->step = 0;
+    m->t = &(pTables[t]);
 
     this->dx = dx;
     this->dy = dy;
-    this->next = 0;
-    this->prev = 0;
-    this->rel = MR_None;
+    m->slave = 0;
 }
 
-static Entity
-m_entity(THIS)
+static void
+m_setSlave(THIS, Move slave)
 {
     METHOD(Move);
-    return this->pimpl->e;
+
+    this->pimpl->slave = slave;
 }
 
 static int
-m_step(THIS, Sint16 *x, Sint16 *y)
+step(Move this)
 {
-    METHOD(Move);
+    Screen s = getScreen();
+    struct Move_impl *m = this->pimpl;
 
-    int dx;
-    int dy;
-
-    struct Move_impl *p = this->pimpl;
-    if (p->step == 7)
+    if (m->step == 7)
     {
-	*x = p->tx;
-	*y = p->ty;
+	s->coordinatesToRect(s, m->e->x + this->dx, m->e->y + this->dy,
+		1, 1, &(m->stepArea));
 	return 1;
     }
     
-    dx = p->tx - p->x;
-    dy = p->ty - p->y;
-    if (dx>0) *x = p->x + (*p->t)[p->step][0];
-    else if (dx<0) *x = p->x - (*p->t)[p->step][0];
-    else *x = p->x;
-    if (dy>0) *y = p->y + (*p->t)[p->step][1];
-    else if (dy<0) *y = p->y - (*p->t)[p->step][1];
-    else *y = p->y;
-    p->step++;
+    m->stepArea.x = m->x + this->dx * (*m->t)[m->step][0];
+    m->stepArea.y = m->y + this->dy * (*m->t)[m->step++][1];
 
     return 0;
+}
+
+static void
+drawBackgrounds(Move this)
+{
+    struct Move_impl *m = this->pimpl;
+    m->e->drawBackground(m->e, 0);
+    if (this->dx)
+    {
+	m->b->draw(m->b, m->e->x + this->dx, m->e->y, 0); 
+    }
+    if (this->dy)
+    {
+	m->b->draw(m->b, m->e->x, m->e->y + this->dy, 0);
+    }
+    if (this->dx && this->dy)
+    {
+	m->b->draw(m->b, m->e->x + this->dx, m->e->y + this->dy, 0); 
+    }
+}
+
+static void
+drawTile(Move this)
+{
+    const SDL_Surface *tile;
+    SDL_Surface *sf;
+
+    struct Move_impl *m = this->pimpl;
+    sf = SDL_GetVideoSurface();
+    tile = m->e->getTile(m->e);
+
+    SDL_BlitSurface((SDL_Surface *)tile, 0, sf, &(m->stepArea));
+}
+
+static void
+refreshDirtyArea(Move this)
+{
+    struct Move_impl *m = this->pimpl;
+    SDL_Surface *sf = SDL_GetVideoSurface();
+    SDL_UpdateRect(sf, m->dirtyArea.x, m->dirtyArea.y,
+	    m->dirtyArea.w, m->dirtyArea.h);
+}
+
+static void
+Move_Finished(THIS, Object sender, void *data)
+{
+    METHOD(Move);
+
+    RemoveHandler(this->pimpl->b->MoveTick, this, &Board_MoveTick);
+    if (this->pimpl->slave) DELETE(Move, this->pimpl->slave);
+    DELETE(Move, this);
+}
+
+static void
+Board_MoveTick(THIS, Object sender, void *data)
+{
+    METHOD(Move);
+
+    int done;
+    struct Move_impl *m = this->pimpl;
+
+    MoveTickEventData *mtd = data;
+    if (mtd->cancelMoves)
+    {
+	Move_Finished(this, (Object)this, 0);
+	return;
+    }
+
+    drawBackgrounds(this);
+    if (m->slave) drawBackgrounds(m->slave);
+    if (m->slave) step(m->slave);
+    done = step(this);
+    if (m->slave) drawTile(m->slave);
+    drawTile(this);
+    if (m->slave) refreshDirtyArea(m->slave);
+    refreshDirtyArea(this);
+    if (done)
+    {
+	AddHandler(this->Finished, this, Move_Finished);
+	if (m->slave) RaiseEvent(m->slave->Finished, (Object)this, 0);
+	RaiseEvent(this->Finished, (Object)this, 0);
+    }
+}
+
+static void
+m_start(THIS)
+{
+    METHOD(Move);
+
+    Board b = this->pimpl->b;
+    AddHandler(b->MoveTick, this, &Board_MoveTick);
 }
 
 CTOR(Move)
@@ -122,13 +225,15 @@ CTOR(Move)
     BASECTOR(Move, Object);
     this->pimpl = XMALLOC(struct Move_impl, 1);
     this->init = &m_init;
-    this->entity = &m_entity;
-    this->step = &m_step;
+    this->setSlave = &m_setSlave;
+    this->start = &m_start;
+    this->Finished = CreateEvent();
     return this;
 }
 
 DTOR(Move)
 {
+    DestroyEvent(this->Finished);
     XFREE(this->pimpl);
     BASEDTOR(Object);
 }
