@@ -144,7 +144,7 @@ freeSurfaces(struct Screen_impl *s)
     SDL_Surface **tile_end;
     int i;
 
-    tile_end = (SDL_Surface **) s->tiles + SATN_NumberOfTiles;
+    tile_end = (SDL_Surface **) s->tiles + 4 * SATN_NumberOfTiles;
     for (tile = (SDL_Surface **) s->tiles; tile != tile_end; ++tile)
     {
 	if (*tile) SDL_FreeSurface(*tile);

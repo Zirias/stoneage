@@ -30,8 +30,6 @@ m_init(THIS, Board b, int x, int y)
     this->x = x;
     this->y = y;
     this->moving = 0;
-
-    this->MoveStarting = CreateEvent();
 }
 
 static unsigned int
@@ -184,7 +182,6 @@ static void
 m_dispose(THIS)
 {
     METHOD(Entity);
-    DestroyEvent(this->MoveStarting);
     DELETE(Entity, this);
 }
 
@@ -197,11 +194,13 @@ CTOR(Entity)
     this->draw = &m_draw;
     this->drawBackground = &m_drawBackground;
     this->bg = BG_Empty;
+    this->MoveStarting = CreateEvent();
     return this;
 }
 
 DTOR(Entity)
 {
     BASEDTOR(Object);
+    DestroyEvent(this->MoveStarting);
 }
 

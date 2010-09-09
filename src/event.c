@@ -32,6 +32,7 @@ struct EventDelivery
 };
 
 static volatile int raiseLock = 1;
+static volatile int handleLock = 1;
 static EventDelivery events = { -1, 0, 0, 0, 0, 0 };
 
 static SDL_Event sdlEv;
@@ -65,8 +66,6 @@ DoneEvents(void)
     }
     sdlEv.user.code = -1;
     SDL_PushEvent(&sdlEv);
-
-    DestroyEvent(SDLEvent);
 }
 
 void
@@ -152,7 +151,11 @@ DoEventLoop(void)
 	SDL_WaitEvent(&ev);
 	if (ev.type == SDL_USEREVENT)
 	{
-	    if (ev.user.code < 0) break;
+	    if (ev.user.code < 0)
+	    {
+		DestroyEvent(SDLEvent);
+		break;
+	    }
 	    deliver = ev.user.data1;
 	    isSdl = 0;
 	}
@@ -162,7 +165,7 @@ DoEventLoop(void)
 	    deliver = &SDLEventDelivery;
 	    isSdl = 1;
 	}
-	for (entry = deliver->e->handlers;
+	if (deliver->active) for (entry = deliver->e->handlers;
 		entry;
 		entry = entry->next)
 	{

@@ -70,8 +70,8 @@ m_move(THIS, Entity e, int dx, int dy)
 	    return;
 	}
 
-	/* delete destination entity if it is not a rock */
-	if (!CAST(d, ERock)) d->dispose(d);
+	/* delete destination entity */
+	d->dispose(d);
 
 	/* redraw region */
 	for (x = e->x - 1; x < e->x + 2; ++x)
