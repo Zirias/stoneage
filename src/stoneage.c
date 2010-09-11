@@ -55,15 +55,11 @@ toggleFullscreen(Stoneage this)
 static void
 moveWilly(Stoneage this, int dx, int dy)
 {
-    MoveWillyEventData *md;
+    EWilly w;
 
     if (this->pimpl->paused) return;
-    if (((Entity)getWilly())->moving) return;
-
-    md = XMALLOC(MoveWillyEventData, 1);
-    md->dx = dx;
-    md->dy = dy;
-    RaiseEvent(this->MoveWilly, (Object)this, md);
+    w = getWilly();
+    w->move(w, dx, dy);
 }
 
 Uint32
@@ -256,7 +252,6 @@ CTOR(Stoneage)
 
     InitEvents();
     s->KeyCheck = CreateEvent();
-    this->MoveWilly = CreateEvent();
     this->Tick = CreateEvent();
 
     AddHandler(s->KeyCheck, this, &Stoneage_KeyCheck);
@@ -275,7 +270,6 @@ DTOR(Stoneage)
 {
     DestroyEvent(this->pimpl->KeyCheck);
     DestroyEvent(this->Tick);
-    DestroyEvent(this->MoveWilly);
     SDL_RemoveTimer(this->pimpl->ticker);
     XFREE(this->pimpl);
     SDL_Quit();

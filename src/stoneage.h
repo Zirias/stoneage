@@ -23,7 +23,6 @@ CLASS(Stoneage)
 
     SDL_Surface *screen;
 
-    Event MoveWilly;
     Event Tick;
 
     int res_x;

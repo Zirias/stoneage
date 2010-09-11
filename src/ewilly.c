@@ -2,7 +2,6 @@
 #include "board.h"
 #include "move.h"
 #include "screen.h"
-#include "stoneage.h"
 #include "event.h"
 #include "ewall.h"
 #include "eearth.h"
@@ -26,7 +25,7 @@ Move_Finished(THIS, Object sender, void *data)
 }
 
 static void
-Stoneage_MoveWilly(THIS, Object sender, void *data)
+m_move(THIS, int dx, int dy)
 {
     METHOD(EWilly);
 
@@ -34,25 +33,22 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
     ERock r;
     Move m, slave;
     MoveStartingEventData *msd;
-    MoveWillyEventData *md;
 
-    e = CAST(this, Entity);
+    e = (Entity) this;
 
     if (this->moveLock) return;	/* no moving allowed */
     if (!this->alive) return;	/* dead willy */
     if (e->moving) return;	/* already moving */
 
-    md = data;
-
     /* check destination coordinates */
-    if (e->b->entity(e->b, e->x+md->dx, e->y+md->dy, &d) < 0)
+    if (e->b->entity(e->b, e->x+dx, e->y+dy, &d) < 0)
 	return;
 
     /* check diagonal neighbors if necessary */
-    if (md->dx && md->dy)
+    if (dx && dy)
     {
-	e->b->entity(e->b, e->x+md->dx, e->y, &d1);
-	e->b->entity(e->b, e->x, e->y+md->dy, &d2);
+	e->b->entity(e->b, e->x+dx, e->y, &d1);
+	e->b->entity(e->b, e->x, e->y+dy, &d2);
 
 	/* both are walls or rocks? -> no move possible */
 	if (d1 && d2 && !d1->moving && !d2->moving &&
@@ -65,7 +61,7 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
     if (!d || d->moving || CAST(d, EEarth) || CAST(d, ECabbage))
     {
 	m = NEW(Move);
-	m->init(m, e, md->dx, md->dy, TR_Linear);
+	m->init(m, e, dx, dy, TR_Linear);
 	AddHandler(m->Finished, this, &Move_Finished);
 	e->moving = 1;
 	msd = XMALLOC(MoveStartingEventData, 1);
@@ -75,16 +71,16 @@ Stoneage_MoveWilly(THIS, Object sender, void *data)
     }
 
     /* special case: pushing a rock */
-    else if (!md->dy && (r = CAST(d, ERock)))
+    else if (!dy && (r = CAST(d, ERock)))
     {
-	if (e->b->entity(e->b, e->x+2*md->dx, e->y, &d1) < 0)
+	if (e->b->entity(e->b, e->x+2*dx, e->y, &d1) < 0)
 	    return;
 	if (!d1 || d1->moving)
 	{
 	    slave = NEW(Move);
-	    slave->init(slave, d, md->dx, 0, TR_Linear);
+	    slave->init(slave, d, dx, 0, TR_Linear);
 	    m = NEW(Move);
-	    m->init(m, e, md->dx, 0, TR_Linear);
+	    m->init(m, e, dx, 0, TR_Linear);
 	    m->setSlave(m, slave);
 	    r->attachMove(r, slave);
 	    AddHandler(m->Finished, this, &Move_Finished);
@@ -116,7 +112,6 @@ m_getTile(THIS)
 CTOR(EWilly)
 {
     Entity e;
-    Stoneage s;
 
     BASECTOR(EWilly, Entity);
 
@@ -124,19 +119,14 @@ CTOR(EWilly)
     e = CAST(this, Entity);
     e->dispose = &m_dispose;
     e->getTile = &m_getTile;
+    this->move = &m_move;
     this->moveLock = 0;
     this->alive = 1;
-    s = (Stoneage)mainApp;
-    AddHandler(s->MoveWilly, this, &Stoneage_MoveWilly);
     return this;
 }
 
 DTOR(EWilly)
 {
-    Stoneage s;
-
-    s = (Stoneage)mainApp;
-    RemoveHandler(s->MoveWilly, this, &Stoneage_MoveWilly);
     instance = 0;
     BASEDTOR(Entity);
 }

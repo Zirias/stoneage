@@ -22,7 +22,7 @@ CLASS(App)
     int FUNC(run)(THIS, int argc, char **argv);
 
     /** abort the application
-     * This function could be calle from anywhere through the global
+     * This function could be called from anywhere through the global
      * mainApp pointer. A derived class should make sure to properly
      * clean up and then exit with a negative return value.
      */

@@ -10,6 +10,13 @@ CLASS(EWilly)
 
     int moveLock;
     int alive;
+
+    /** Move willy.
+     * Moves willy in the given direction.
+     * @param dx x-direction (-1, 0, 1)
+     * @param dy y-direction (-1, 0, 1)
+     */
+    void FUNC(move)(THIS, int dx, int dy);
 };
 
 /** get current instance of Willy
