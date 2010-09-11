@@ -71,7 +71,7 @@ m_move(THIS, Entity e, int dx, int dy)
 	}
 
 	/* delete destination entity */
-	d->dispose(d);
+	if (d != (void *)getWilly()) d->dispose(d);
 
 	/* redraw region */
 	for (x = e->x - 1; x < e->x + 2; ++x)
