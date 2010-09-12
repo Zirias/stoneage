@@ -24,7 +24,7 @@ createContinuationMove(ERock this)
     /* bottom of board */
     if (e->b->entity(e->b, e->x, e->y+1, &n) < 0) return;
 
-    if (!n || n->moving || ( w = CAST(n, EWilly) )) {
+    if (!n || ( w = CAST(n, EWilly) )) {
 	/* fall straight down */
 	this->fall(this);
 	if (w) w->alive = 0;
@@ -36,7 +36,7 @@ createContinuationMove(ERock this)
     w = 0;
     /* rock below, check rolling off it's edge */
     if ((e->b->entity(e->b, e->x+1, e->y+1, &n) == 0) &&
-	    (!n || n->moving || ( w = CAST(n, EWilly) )))
+	    (!n || ( w = CAST(n, EWilly) )))
     {
 	/* to the right ... */
 	e->b->entity(e->b, e->x+1, e->y, &n);
@@ -50,7 +50,7 @@ createContinuationMove(ERock this)
 
     w = 0;
     if (!m && (e->b->entity(e->b, e->x-1, e->y+1, &n) == 0) &&
-	    (!n || n->moving || ( w = CAST(n, EWilly) )))
+	    (!n || ( w = CAST(n, EWilly) )))
     {
 	/* or else to the left */
 	e->b->entity(e->b, e->x-1, e->y, &n);

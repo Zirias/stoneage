@@ -51,14 +51,14 @@ m_move(THIS, int dx, int dy)
 	e->b->entity(e->b, e->x, e->y+dy, &d2);
 
 	/* both are walls or rocks? -> no move possible */
-	if (d1 && d2 && !d1->moving && !d2->moving &&
+	if (d1 && d2 &&
 		(CAST(d1, EWall) || CAST(d1, ERock)) &&
 		(CAST(d2, EWall) || CAST(d2, ERock)))
 	    return;
     }
 
     /* check destination field */
-    if (!d || d->moving || CAST(d, EEarth) || CAST(d, ECabbage))
+    if (!d || CAST(d, EEarth) || CAST(d, ECabbage))
     {
 	m = NEW(Move);
 	m->init(m, e, dx, dy, TR_Linear);
@@ -75,7 +75,7 @@ m_move(THIS, int dx, int dy)
     {
 	if (e->b->entity(e->b, e->x+2*dx, e->y, &d1) < 0)
 	    return;
-	if (!d1 || d1->moving)
+	if (!d1)
 	{
 	    slave = NEW(Move);
 	    slave->init(slave, d, dx, 0, TR_Linear);
