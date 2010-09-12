@@ -293,7 +293,12 @@ checkRocks(Board this)
     {
 	r = b->rock[i];
 	e = CAST(r, Entity);
-	if (e->y < LVL_ROWS - 1 && !b->entity[e->y+1][e->x])
+	if (e->moving)
+	{
+	    /* found moving rock -> ignore, but do not unfreeze willy */
+	    falling = 1;
+	}
+	else if (e->y < LVL_ROWS - 1 && !b->entity[e->y+1][e->x])
 	{
 	    /* freeze willy and let rock fall */
 	    falling = 1;
