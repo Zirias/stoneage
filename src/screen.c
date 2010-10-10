@@ -280,7 +280,7 @@ drawBoardFrame(Screen this)
 }
 
 static void
-drawTime(Screen this)
+drawTime(Screen this, int refresh)
 {
     SDL_Rect drawArea;
     int i;
@@ -307,6 +307,13 @@ drawTime(Screen this)
 	SDL_BlitSurface(s->digits[digits[i]], 0, sf, &drawArea);
 	drawArea.x += s->tile_width;
     }
+
+    if (refresh)
+    {
+	SDL_UpdateRect(SDL_GetVideoSurface(), (LVL_COLS - 5) * s->tile_width,
+		(LVL_ROWS + 3) * s->tile_height,
+		4 * s->tile_width, s->tile_height);
+    }
 }
 
 static void
@@ -317,10 +324,7 @@ Stoneage_Tick(THIS, Object sender, void *data)
     struct Screen_impl *s = this->pimpl;
 
     s->time--;
-    drawTime(this);
-    SDL_UpdateRect(SDL_GetVideoSurface(), (LVL_COLS - 5) * s->tile_width,
-	    (LVL_ROWS + 3) * s->tile_height,
-	    4 * s->tile_width, s->tile_height);
+    drawTime(this, 1);
 }
 
 static void
@@ -347,7 +351,7 @@ m_initVideo(THIS)
     }
     s->board->redraw(s->board, 0);
     drawBoardFrame(this);
-    drawTime(this);
+    drawTime(this, 0);
     computeTrajectories(s->tile_width, s->tile_height);
 
     SDL_UpdateRect(SDL_GetVideoSurface(), 0, 0, 0, 0);
@@ -361,7 +365,7 @@ m_startGame(THIS)
     struct Screen_impl *s = this->pimpl;
     s->board->loadLevel(s->board, 0);
     s->time=100;
-    drawTime(this);
+    drawTime(this, 1);
     AddHandler(((Stoneage)mainApp)->Tick, this, &Stoneage_Tick);
 }
 
