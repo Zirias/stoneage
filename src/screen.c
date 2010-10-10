@@ -378,7 +378,7 @@ CTOR(Screen)
     int imgflags;
 #endif
     
-    char digitRes[] = "digit_x";
+    char digitRes[] = "digit_x", * const digit = digitRes+6;
 
     BASECTOR(Screen, Object);
 
@@ -431,11 +431,11 @@ CTOR(Screen)
 	    mainApp->abort(mainApp);
 	}
     }
-    digitRes[6] = '0';
+    *digit = '0';
     for (i = 0; i < 10; ++i)
     {
 	rf->load(rf, digitRes, &(s->resDigits[i]));
-	digitRes[6]++;
+	++(*digit);
 	if (!s->resDigits[i])
 	{
 	    DELETE(Resfile, rf);
